@@ -308,3 +308,7 @@ browse pidp pid wavename partner_id _merge if pid==78217008  // this is a pid no
 save "$outputpath/UKHLS_matched.dta", replace
 
 browse survey wavename pidp pid partner_id hubuys hubuys_sp partner_match if partnered==1
+
+// let's make sure the matching worked
+browse pidp year hidp marital_status_defacto marr_trans partner_id partner_match
+browse pidp pid year partner_id partner_match husits husits_sp hubuys hubuys_sp age_all age_all_sp jbhrs jbhrs_sp sex sex_sp if hidp==483786010
