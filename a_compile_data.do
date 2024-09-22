@@ -1,4 +1,21 @@
 ********************************************************************************
+********************************************************************************
+* Project: Relative Density Approach - UK
+* Code owner: Kimberly McErlean
+* Started: September 2024
+* File name: a_compile_data.do
+********************************************************************************
+********************************************************************************
+
+********************************************************************************
+* Description
+********************************************************************************
+* This file taks all of the wave specific data, appends to create one longitudinal
+* file, as well as matches on some wave-specific HH characteristics
+* This file also has relevant macros to use throughout the code
+* (will work on a separate macro specific file to make this easier)
+
+********************************************************************************
 * Note: this code has been adapted from UKHLS code creator
 * Sample Code for your request:  2d16f6ee0ebf4c37a54bb709c012e475
 ********************************************************************************
@@ -13,7 +30,10 @@ cd "G:\Data\UKHLS data\temp created files"
 global ukhls "G:\Data\UKHLS data\UKDA-6614-stata\stata\stata13_se"
 
 // Replace "where" with the filepath of the folder where you want to store the final dataset produced by this programme.  eg:  c:\ukhls\results
-global outputpath "G:\Data\UKHLS data\output data"
+global outputpath "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\output data" // for Kim's computer
+global outputpath "G:\Data\UKHLS data\output data" // for EUI computer
+
+global temp "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\temp data" // for Kim's computer
 
 // The file produced by this programme will be named as below. If you want to change the name do it here.
 local outputfilename "UKHLS_long_all"
