@@ -335,6 +335,14 @@ browse pidp pid wavename partner_id partner_match if pidp==956765 // let's look 
 browse survey wavename pidp pid partner_id partner_match if partner_id==78217008 // waves 20-21 are master only	
 browse pidp pid wavename partner_id partner_match if pid==78217008  // this is a pid not a pidp. so yeah, this person doesn't have records for 20-21?
 
+********************************************************************************
+**# Okay, let's add on marital history as well, so I can use this to get duration / relationship order?
+********************************************************************************
+merge m:1 pidp using "$input/phistory_wide.dta", keepusing(status* partner* starty* startm* endy* endm* divorcey* divorcem* mrgend* cohend* ongoing* ttl_spells ttl_married ttl_civil_partnership ttl_cohabit ever_married ever_civil_partnership ever_cohabit lastintdate lastinty lastintm)
+tab marital_status_defacto _merge, row // so def some missing that shouldn't be...
+drop if _merge==2
+drop _merge
+
 save "$outputpath/UKHLS_matched.dta", replace
 
 browse survey wavename pidp pid partner_id hubuys hubuys_sp partner_match if partnered==1
