@@ -13,10 +13,9 @@
 * Restrict sample to just partnered, might restrict to just survey years with the unpaid labor questions
 
 ********************************************************************************
-* Import data and some small recodes
+* Import data
 ********************************************************************************
 use "$outputpath/UKHLS_matched.dta", clear
-drop if partnered==0
 
 // i am dumb and right now 1-13 are ukhls and 14-31 are bhps, so the wave order doesn't make a lot of sense. These aren't perfect but will work for now.
 // okay i added interview characteristics, so use that?
@@ -56,16 +55,29 @@ replace year=2006 if wavename==29
 replace year=2007 if wavename==30
 replace year=2008 if wavename==31
 
+********************************************************************************
+* Relationship recodes
+********************************************************************************
+
 sort pidp year
 
-browse pidp year marital_status_defacto partner_id howlng howlng_sp
+browse pidp year partnered marital_status_defacto partner_id howlng howlng_sp
 
-// identify couples who transitioned from cohab to marriage
+// identify couples who transitioned from cohab to marriage okay and transitioned into or out of a relationship also
 gen marr_trans=0
 replace marr_trans=1 if (marital_status_defacto==1 & marital_status_defacto[_n-1]==2) & pidp==pidp[_n-1] & partner_id==partner_id[_n-1] & year==year[_n-1]+1
 
-browse pidp year marital_status_defacto marr_trans partner_id howlng howlng_sp
+gen rel_start=0
+replace rel_start=1 if (inlist(marital_status_defacto,1,2) & inlist(marital_status_defacto[_n-1],3,4,5,6)) & pidp==pidp[_n-1] & year==year[_n-1]+1 //  & partner_id==partner_id[_n-1]
+
+gen rel_end=0
+replace rel_end=1 if (inlist(marital_status_defacto,3,4,5,6) & inlist(marital_status_defacto[_n-1],1,2)) & pidp==pidp[_n-1] & year==year[_n-1]+1 // partner_id==partner_id[_n-1] - won't have a partner id?
+
+browse pidp year partnered marital_status_defacto rel_start marr_trans rel_end partner_id howlng howlng_sp
 // this pidp did have transition 16339 - okay confirmed it worked.
+
+// drop people without partners
+keep if partnered==1 | rel_start==1 | marr_trans==1 | rel_end==1
 
 // drop same-sex couples?!
 tab sex sex_sp
@@ -74,7 +86,78 @@ drop if sex==sex_sp
 // okay want to try to figure out things like relationship duration and relationship order, as some might have married prior to entering the survey. not sure if I have to merge partner history.
 tab nmar survey, m // ukhls, but a lot of inapplicable? I think this variable is only for new entrants?! is there one maybe in the cross-wave file, then?!
 tab nmar_bh survey, m // same with bhps
+tab ttl_spells survey, m
 
+browse pidp marital_status_defacto partner_id partner1 status1 partner2 status2 partner3 status3 partner4 status4
+
+label define status_new 1 "Marriage" 2 "Cohab"
+foreach var in status1 status2 status3 status4 status5 status6 status7 status8 status9 status10 status11 status12 status13 status14{
+	gen x_`var' = `var'
+	replace `var' = 1 if inlist(`var',2,3)
+	replace `var' = 2 if `var'==10
+	label values `var' .
+	label values `var' status_new
+}
+
+gen rel_no=. // add this to get lookup for current relationship start and end dates
+forvalues r=1/14{
+	replace rel_no = `r' if status`r' == marital_status_defacto & partner`r' == partner_id
+}
+tab rel_no if inlist(marital_status_defacto,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
+browse pidp marital_status_defacto partner_id rel_no partner1 status1 partner2 status2 partner3 status3 partner4 status4
+browse pidp marital_status_defacto partner_id rel_no partner1 status1 starty1 startm1 endy1 endm1 divorcey1 divorcem1 mrgend1 cohend1 ongoing1 // if separated, then divorced, end date is seapration date, and divorce date is against divorcey.
+
+gen current_rel_start_year=.
+gen current_rel_start_month=.
+gen current_rel_end_year=.
+gen current_rel_end_month=.
+gen current_rel_ongoing=.
+// gen current_rel_how_end=.
+gen current_rel_marr_end=.
+gen current_rel_coh_end=.
+
+forvalues r=1/14{
+	replace current_rel_start_year = starty`r' if rel_no==`r'
+	replace current_rel_start_month = startm`r' if rel_no==`r'
+	replace current_rel_end_year = endy`r' if rel_no==`r'
+	replace current_rel_end_month = endm`r' if rel_no==`r'
+	replace current_rel_ongoing = ongoing`r' if rel_no==`r'
+	// replace current_rel_how_end = mrgend`r' if rel_no==`r' & status`r'==1 // if marriage - okay this actually won't work because the codes are different between marriage and cohab
+	// replace current_rel_how_end = cohend`r' if rel_no==`r' & status`r'==2 // if cohab
+	replace current_rel_marr_end = mrgend`r' if rel_no==`r'
+	replace current_rel_coh_end = cohend`r' if rel_no==`r'
+}
+
+replace current_rel_start_year=. if current_rel_start_year==-9
+replace current_rel_start_month=. if current_rel_start_month==-9
+replace current_rel_end_year=. if current_rel_end_year==-9
+replace current_rel_end_month=. if current_rel_end_month==-9
+
+label values current_rel_ongoing ongoing
+label values current_rel_marr_end mrgend
+label values current_rel_coh_end cohend
+
+browse pidp marital_status_defacto partner_id rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end partner1 status1 starty1 startm1 endy1 endm1 divorcey1 divorcem1 mrgend1 cohend1 ongoing1 partner2 status2 starty2 startm2 endy2 endm2 divorcey2 divorcem2 mrgend2 cohend2 ongoing2
+
+// for those with missing, maybe if only 1 spell, use that info? as long as the status matches and the interview date is within the confines of the spell?
+browse pidp istrtdaty istrtdatm marital_status_defacto partner_id rel_no ttl_spells partner1 status1 starty1 startm1 endy1 endm1 divorcey1 divorcem1 mrgend1 cohend1 ongoing1 partner2 status2 starty2 startm2 endy2 endm2 divorcey2 divorcem2 mrgend2 cohend2 ongoing2
+
+replace current_rel_start_year = starty1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
+replace current_rel_start_month = startm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
+replace current_rel_end_year = endy1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
+replace current_rel_end_month = endm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
+replace current_rel_ongoing = ongoing1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
+gen rel_no_orig=rel_no
+replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1 // okay this actually didn't add that many more that is fine.
+
+// okay duration info
+gen current_rel_duration=.
+replace current_rel_duration = istrtdaty-current_rel_start_year
+browse pidp istrtdaty istrtdatm current_rel_duration current_rel_start_year current_rel_start_month
+
+********************************************************************************
+* Division of Labor recodes
+********************************************************************************
 // create DoL variables for the two continuous variables
 egen paid_couple_total = rowtotal(jbhrs jbhrs_sp)
 gen paid_wife_pct=jbhrs / paid_couple_total if sex==2 & sex_sp==1
