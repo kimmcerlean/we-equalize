@@ -16,6 +16,17 @@
 * (will work on a separate macro specific file to make this easier)
 
 ********************************************************************************
+* Going to try to first update spouse id for BHPS so it's pidp NOT pid, I don't know if this will work
+********************************************************************************
+use "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave\xwaveid_bh.dta"
+
+keep pidp pid
+rename pid sppid_bh
+rename pidp partner_pidp_bh
+
+save "$temp\spid_lookup.dta", replace
+
+********************************************************************************
 * Import data (created in step a) and do some data cleaning / recoding before creating a file to match partners
 ********************************************************************************
 
@@ -138,17 +149,25 @@ inspect ppid if partnered==1 // worried this is only ukhls GAH
 inspect sppid if partnered==1 // okay this is also only ukhls and is just spouses
 inspect sppid_bh if partnered==1 // okay this is bhps but includes spouses and partners
 
+merge m:1 sppid_bh using "$temp\spid_lookup.dta"
+drop if _merge==2
+browse survey pidp pid sppid_bh partner_pidp_bh _merge
+inspect sppid_bh if partnered==1
+inspect partner_pidp_bh if partnered==1
+drop _merge
+
 browse pidp wavename survey marital_status_defacto partnered ppid sppid sppid_bh
 
 gen long partner_id = .
 replace partner_id = ppid if survey==1
-replace partner_id = sppid_bh if survey==2
+// replace partner_id = sppid_bh if survey==2
+replace partner_id = partner_pidp_bh if survey==2 // okay will try to use pidp instead? I don't know if this is smart?
 replace partner_id = . if partner_id <=0 // inapplicable / spouse not in HH
 
 inspect partner_id
 inspect partner_id if partnered==1
 
-browse pidp wavename survey marital_status_defacto partnered partner_id ppid sppid_bh if partnered==1
+browse pidp wavename survey marital_status_defacto partnered partner_id ppid partner_pidp_bh sppid_bh if partnered==1
 
 /* okay eventually want to see if I can get this from main file, but for now, think I need the bhps id for their partners. added this to step a
 merge m:1 pidp using "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave\xwaveid_bh.dta", keepusing(pid)
@@ -158,6 +177,13 @@ drop _merge
 */
 
 ** DoL variables
+/*
+attempting to QA howlng here - coverage feels low in next file, want to see if that is actually true. do before all recodes.
+tab howlng if wavename==6, m
+tab howlng if wavename==6 & howlng>=0, m
+browse survey istrtdaty istrtdatm  howlng if wavename==6
+*/
+
 foreach var in howlng husits hubuys hufrys huiron humops huboss jbstat aidhh aidxhh{
 	recode `var' (-10/-1=.)
 }
@@ -256,16 +282,18 @@ foreach var in `partnervars'{
 }
 
 // rename pidp to match the name I gave to partner pidp in main file to match
-// rename pidp partner_id
+rename pidp partner_id // okay tried to update all to be pidp above - let's see if this will work
 
 browse if pidp==537205
 browse if pid==537205
 
 // think I have to use pid for BHPS, so try that
+/* trying to match on pidp
 gen long partner_id =.
 replace partner_id = pidp if survey==1
 replace partner_id = pid if survey==2
 replace partner_id = pidp if partner_id==.
+*/
 
 // still not working, so use pid for everyone with a pid and pidp for everyone else
 /*
@@ -274,14 +302,15 @@ replace partner_id = pid if pid!=.
 replace partner_id = pidp if partner_id==.
 */
 
-drop pidp pid survey
+// drop pidp pid survey
+drop pid survey
 
 save "$temp/UKHLS_partners.dta", replace
 
 // now open file and merge on partner characteristics
 use "$outputpath/UKHLS_long_all_recoded.dta", clear
 
-merge m:1 partner_id wavename using "$temp/UKHLS_partners.dta"
+merge m:1 partner_id wavename using "$temp/UKHLS_partners.dta" // okay it feels like switching to pidp left me with the same number of matches...
 drop if _merge==2
 tab survey _merge, m
 tab survey partnered, m // so, there are more people partnered than matched...

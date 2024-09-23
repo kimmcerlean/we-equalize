@@ -19,6 +19,10 @@ use "$outputpath/UKHLS_matched.dta", clear
 drop if partnered==0
 
 // i am dumb and right now 1-13 are ukhls and 14-31 are bhps, so the wave order doesn't make a lot of sense. These aren't perfect but will work for now.
+// okay i added interview characteristics, so use that?
+browse pidp pid survey wavename intdatey intdaty_dv istrtdaty // istrtdaty seems the most comprehensive. the DV one is only UKHLS
+// okay, but sometimes consecutive surveys are NOT consecutive years? 
+
 gen year=.
 replace year=2009 if wavename==1
 replace year=2010 if wavename==2
@@ -67,6 +71,10 @@ browse pidp year marital_status_defacto marr_trans partner_id howlng howlng_sp
 tab sex sex_sp
 drop if sex==sex_sp
 
+// okay want to try to figure out things like relationship duration and relationship order, as some might have married prior to entering the survey. not sure if I have to merge partner history.
+tab nmar survey, m // ukhls, but a lot of inapplicable? I think this variable is only for new entrants?! is there one maybe in the cross-wave file, then?!
+tab nmar_bh survey, m // same with bhps
+
 // create DoL variables for the two continuous variables
 egen paid_couple_total = rowtotal(jbhrs jbhrs_sp)
 gen paid_wife_pct=jbhrs / paid_couple_total if sex==2 & sex_sp==1
@@ -80,8 +88,10 @@ replace paid_dol = 2 if paid_wife_pct <0.400000 & paid_wife_pct!=. // husband do
 replace paid_dol = 3 if paid_wife_pct >0.600000 & paid_wife_pct!=. // wife does more
 replace paid_dol = 4 if jbhrs==0 & jbhrs_sp==0 // neither works
 
-tab partner_match paid_dol, m // okay not quite sure what to do for the couples without a match...
-browse partner_match jbhrs jbhrs_sp employed employed_sp paid_couple_total paid_wife_pct if paid_dol==. & partner_match==1
+tab partner_match paid_dol, m // okay not quite sure what to do for the couples without a match...or when one partner is missing and the other is not. count as 0s? or ignore?
+browse partner_match age_all age_all_sp jbhrs jbhrs_sp employed employed_sp paid_couple_total paid_wife_pct if paid_dol==. & partner_match==1 //
+browse partner_match paid_dol age_all age_all_sp jbhrs jbhrs_sp employed employed_sp paid_couple_total paid_wife_pct // also a lot of neither works... is that concerning? so a bunch are retirement age, but also a lot are not... but should probably make an upper age limit?
+tab paid_dol if age_all<=65
 
 label define paid_dol 1 "Shared" 2 "Husband more" 3 "Wife more" 4 "Neither works"
 label values paid_dol paid_dol
@@ -98,13 +108,14 @@ replace unpaid_dol = 2 if unpaid_wife_pct >0.600000 & unpaid_wife_pct!=. // wife
 replace unpaid_dol = 3 if unpaid_wife_pct <0.400000 & unpaid_wife_pct!=. // husband does more
 replace unpaid_dol = 4 if howlng==0 & howlng_sp==0 // neither works
 
-tab partner_match unpaid_dol if inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31), m
-tab wavename unpaid_dol, m
-
-browse partner_match howlng howlng_sp unpaid_couple_total unpaid_wife_pct if unpaid_dol==. & inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31) // okay a lot of missing, even when matched. need to figure out eligibility. okay, at one point says only asked January to June? need to figure it out, because coverage looks very high in the codebook...
-
 label define unpaid_dol 1 "Shared" 2 "Wife more" 3 "Husband more" 4 "No one"
 label values unpaid_dol unpaid_dol
+
+tab partner_match unpaid_dol if inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31), m row
+tab wavename unpaid_dol, m
+
+browse partner_match howlng howlng_sp unpaid_couple_total unpaid_wife_pct if unpaid_dol==. & inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31) // okay a lot of missing, even when matched. need to figure out eligibility. okay, at one point says only asked January to June? need to figure it out, because coverage looks very high in the codebook... okay, but did a lot of checks and it actually seems right...
+browse survey year wavename istrtdatm howlng if inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31)
 
 ********************************************************************************
 * Create some preliminary descriptive statistics
