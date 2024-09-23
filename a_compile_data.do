@@ -34,6 +34,7 @@ global outputpath "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\P
 global outputpath "G:\Data\UKHLS data\output data" // for EUI computer
 
 global temp "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\temp data" // for Kim's computer
+global temp "G:\Data\UKHLS data\temp created files"  // for EUI computer
 
 // The file produced by this programme will be named as below. If you want to change the name do it here.
 local outputfilename "UKHLS_long_all"
@@ -42,10 +43,10 @@ local outputfilename "UKHLS_long_all"
 local allWaves = "a b c d e f g h i j k l m ba bb bc bd be bf bg bh bi bj bk bl bm bn bo bp bq br"
 
 // These variables from the indresp files will be included. These include some key variables as determined by us PLUS any variables requested by you. 
-local indvars "age age_dv aidhh aidhrs aidhrs_bh aidxhh birthy ccare coh1bm coh1by coh1em coh1ey coh1mr cohab cohab_dv cohabn country currmstat currpart1 currpart2 currpart3 currpart4 currpart5 currpart6 currpart7 dinner doby doby_dv emboost ethn_dv feend fenow fenow_bh fimngrs_dv fimnlabgrs_dv fimnlabnet_dv gor_dv hgpart hgr2r hgra hgsex hhch12 hhsize hhtype hhtype_dv hid hidp hiqual_dv hiqualb_dv hoh howlng hrpid hrpno huboss hubuys hubuys_bh hufrys hufrys_bh huiron huiron_bh humops humops_bh hunurs husits husits2 huxpch ind5mus_lw ind5mus_xw indbd91_lw indbdub_lw indin01_lw indin01_xw indin91_lw indin91_xw indin99_lw indin99_xw indinub_lw indinub_xw indinui_lw indinui_xw indinus_lw indinus_xw indns91_lw indnsub_lw indpxub_lw indpxub_xw indpxui_lw indpxui_xw indpxus_lw indpxus_xw indscub_lw indscub_xw indscui_lw indscui_xw indscus_lw indscus_xw isced ivfio j2hrs jbbgy jbhas jbhrs jboff jbot jbotpd jbstat jbttwt jshrs lcoh lcohnpi livesp_dv lmar1m lmar1y lmcbm1 lmcbm2 lmcbm3 lmcbm4 lmcbm5 lmcbm6 lmcbm7 lmcby41 lmcby42 lmcby43 lmcby44 lmcby45 lmcby46 lmcby47 lmspm1 lmspm2 lmspm3 lmspm4 lmspm5 lmspm6 lmspm7 lmspy41 lmspy42 lmspy43 lmspy44 lmspy45 lmspy46 lmspy47 lnprnt lprnt marstat marstat_dv mastat mastat_dv mlstat mlstat_bh nchild_dv ndepchl_dv nmar nmar_bh payg_dv paygl paygu_dv paygw paygwc payn_dv paynl paynu_dv pid pidp plbornc pno ppid ppno psu qfachi qfedhi qfhigh qfhigh_dv race racel racel_bh racel_dv rach16_dv region sampst sampst_bh scend school sex sex_dv single_dv spjb spjbhr spjbot sppayg sppid sppid_bh sppno strata tenure_dv ukborn urban_dv"
+local indvars "age age_dv aidhh aidhrs aidhrs_bh aidxhh birthy ccare coh1bm coh1by coh1em coh1ey coh1mr cohab cohab_dv cohabn country currmstat currpart1 currpart2 currpart3 currpart4 currpart5 currpart6 currpart7 dinner doby doby_dv emboost ethn_dv feend fenow fenow_bh fimngrs_dv fimnlabgrs_dv fimnlabnet_dv gor_dv hgpart hgr2r hgra hgsex hhch12 hhsize hhtype hhtype_dv hid hidp hiqual_dv hiqualb_dv hoh howlng hrpid hrpno huboss hubuys hubuys_bh hufrys hufrys_bh huiron huiron_bh humops humops_bh hunurs husits husits2 huxpch ind5mus_lw ind5mus_xw indbd91_lw indbdub_lw indin01_lw indin01_xw indin91_lw indin91_xw indin99_lw indin99_xw indinub_lw indinub_xw indinui_lw indinui_xw indinus_lw indinus_xw indns91_lw indnsub_lw indpxub_lw indpxub_xw indpxui_lw indpxui_xw indpxus_lw indpxus_xw indscub_lw indscub_xw indscui_lw indscui_xw indscus_lw indscus_xw isced ivfio j2hrs jbbgy jbhas jbhrs jboff jbot jbotpd jbstat jbttwt jshrs lcoh lcohnpi livesp_dv lmar1m lmar1y lmcbm1 lmcbm2 lmcbm3 lmcbm4 lmcbm5 lmcbm6 lmcbm7 lmcby41 lmcby42 lmcby43 lmcby44 lmcby45 lmcby46 lmcby47 lmspm1 lmspm2 lmspm3 lmspm4 lmspm5 lmspm6 lmspm7 lmspy41 lmspy42 lmspy43 lmspy44 lmspy45 lmspy46 lmspy47 lnprnt lprnt marstat marstat_dv mastat mastat_dv mlstat mlstat_bh nchild_dv ndepchl_dv nmar nmar_bh payg_dv paygl paygu_dv paygw paygwc payn_dv paynl paynu_dv pid pidp plbornc pno ppid ppno psu qfachi qfedhi qfhigh qfhigh_dv race racel racel_bh racel_dv rach16_dv region sampst sampst_bh scend school sex sex_dv single_dv spjb spjbhr spjbot sppayg sppid sppid_bh sppno strata tenure_dv ukborn urban_dv intdatd_dv intdatm_dv intdaty_dv istrtdatd istrtdatm istrtdaty month"
 
 // These variables from the hhresp files will be included. These include some key variables as determined by us PLUS any variables requested by you. 
-local hhvars "agechy_dv country emboost fihhml fihhmngrs_dv fihhmnlabgrs_dv fihhmnlabnet_dv fihhmnnet1_dv fihhyl gor_dv grpay hhden01_xw hhden91_xw hhden99_xw hhdenub_xw hhdenui_xw hhdenus_xw hhneti hhsize hhtype hhtype_dv hhyneti hhyrlg hhyrln hid hidp hrpid hrpno ieqmoecd_dv na75pl nch02_dv nch1215_dv nch34_dv nch511_dv ncouple_dv nemp_dv netlab nkids_dv npens_dv psu region strata tenure_dv urban_dv"
+local hhvars "agechy_dv country emboost fihhml fihhmngrs_dv fihhmnlabgrs_dv fihhmnlabnet_dv fihhmnnet1_dv fihhyl gor_dv grpay hhden01_xw hhden91_xw hhden99_xw hhdenub_xw hhdenui_xw hhdenus_xw hhneti hhsize hhtype hhtype_dv hhyneti hhyrlg hhyrln hid hidp hrpid hrpno ieqmoecd_dv na75pl nch02_dv nch1215_dv nch34_dv nch511_dv ncouple_dv nemp_dv netlab nkids_dv npens_dv psu region strata tenure_dv urban_dv intdatey intdatem intdated"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Anything below this line should not be changed! Any changes to the selection of variables and waves, and location of folders, should be made above. //
@@ -107,7 +108,7 @@ foreach wave in `allWaves' {
 		// drop if (pidp == .)
 		
 		// keep only variables that were requested and exist in this wave
-		getExistingVars "pidp `wave'_hidp `wavehhvars'"
+		getExistingVars "pidp pid `wave'_hidp `wavehhvars'"
 		keep `r(existingVars)'
 		
 		// add any requested individual variables
@@ -115,7 +116,7 @@ foreach wave in `allWaves' {
 			merge 1:m `wave'_hidp using "$ukhls/`wave'_indresp"
 			drop _merge
 			// keep only variables that were requested and exist in this wave
-			getExistingVars "pidp `wave'_hidp `wavehhvars' `waveindvars'"
+			getExistingVars "pidp pid `wave'_hidp `wavehhvars' `waveindvars'"
 			keep `r(existingVars)'
 		}
 	}
@@ -160,6 +161,6 @@ foreach w in `allWaves' {
 	erase temp_`w'.dta
 }
 
-browse pidp hidp wavename age age_dv marstat_dv husits howlng hubuys hufrys huiron humops jbhrs
+browse pidp pid hidp wavename age age_dv marstat_dv husits howlng hubuys hufrys huiron humops jbhrs
 
 $syntax;

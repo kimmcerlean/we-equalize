@@ -150,11 +150,12 @@ inspect partner_id if partnered==1
 
 browse pidp wavename survey marital_status_defacto partnered partner_id ppid sppid_bh if partnered==1
 
-// okay eventually want to see if I can get this from main file, but for now, think I need the bhps id for their partners
+/* okay eventually want to see if I can get this from main file, but for now, think I need the bhps id for their partners. added this to step a
 merge m:1 pidp using "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave\xwaveid_bh.dta", keepusing(pid)
 drop if _merge==2
 tab survey _merge
 drop _merge
+*/
 
 ** DoL variables
 foreach var in howlng husits hubuys hufrys huiron humops huboss jbstat aidhh aidxhh{
@@ -295,20 +296,20 @@ replace partner_match=1 if _merge==3
 drop _merge
 
 // some exploration - are these known problems?!
-browse survey wavename pidp pid partner_id _merge if partner_id==537205 | partner_id == 14382296 // so this person still lists the below as their partner in later waves, but then that person no longer does?
-browse pidp pid wavename partner_id _merge if pidp==537205 // so this person lists the below as their partner waves 18-29, they have no presence in later waves?
-browse pidp wavename partner_id _merge if pid==52459748 // but this person lists someone else as their partner...14382296...okay this is their PID. so sometimes it is against their pid, but sometimes against pidp? ecept in this case, mostly matched?
+browse survey wavename pidp pid partner_id partner_match if partner_id==537205 | partner_id == 14382296 // so this person still lists the below as their partner in later waves, but then that person no longer does?
+browse pidp pid wavename partner_id partner_match if pidp==537205 // so this person lists the below as their partner waves 18-29, they have no presence in later waves?
+browse pidp wavename partner_id partner_match if pid==52459748 // but this person lists someone else as their partner...14382296...okay this is their PID. so sometimes it is against their pid, but sometimes against pidp? ecept in this case, mostly matched?
 
-browse survey wavename pidp pid partner_id _merge if partner_id==956765 // so waves 4-13 are master only
-browse pidp pid wavename partner_id _merge if pidp==956765 // let's look at what waves the person says they are in. so they are missing for waves 4-13.
+browse survey wavename pidp pid partner_id partner_match if partner_id==956765 // so waves 4-13 are master only
+browse pidp pid wavename partner_id partner_match if pidp==956765 // let's look at what waves the person says they are in. so they are missing for waves 4-13.
 
-browse survey wavename pidp pid partner_id _merge if partner_id==78217008 // waves 20-21 are master only	
-browse pidp pid wavename partner_id _merge if pid==78217008  // this is a pid not a pidp. so yeah, this person doesn't have records for 20-21?
+browse survey wavename pidp pid partner_id partner_match if partner_id==78217008 // waves 20-21 are master only	
+browse pidp pid wavename partner_id partner_match if pid==78217008  // this is a pid not a pidp. so yeah, this person doesn't have records for 20-21?
 
 save "$outputpath/UKHLS_matched.dta", replace
 
 browse survey wavename pidp pid partner_id hubuys hubuys_sp partner_match if partnered==1
 
 // let's make sure the matching worked
-browse pidp year hidp marital_status_defacto marr_trans partner_id partner_match
-browse pidp pid year partner_id partner_match husits husits_sp hubuys hubuys_sp age_all age_all_sp jbhrs jbhrs_sp sex sex_sp if hidp==483786010
+browse pidp wavename hidp marital_status_defacto partner_id partner_match
+browse pidp pid wavename partner_id partner_match husits husits_sp hubuys hubuys_sp age_all age_all_sp jbhrs jbhrs_sp sex sex_sp if hidp==483786010
