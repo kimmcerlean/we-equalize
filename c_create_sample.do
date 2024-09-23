@@ -159,6 +159,8 @@ browse pidp istrtdaty istrtdatm current_rel_duration current_rel_start_year curr
 * Division of Labor recodes
 ********************************************************************************
 // create DoL variables for the two continuous variables
+
+**Paid labor: no overtime
 egen paid_couple_total = rowtotal(jbhrs jbhrs_sp)
 gen paid_wife_pct=jbhrs / paid_couple_total if sex==2 & sex_sp==1
 replace paid_wife_pct=jbhrs_sp / paid_couple_total if sex==1 & sex_sp==2
@@ -179,6 +181,31 @@ tab paid_dol if age_all<=65
 label define paid_dol 1 "Shared" 2 "Husband more" 3 "Wife more" 4 "Neither works"
 label values paid_dol paid_dol
 
+**Paid labor: with overtime
+fre jbot
+recode jbot (-8=0)(-9=.)(-7/-1=.)
+recode jbot_sp (-8=0)(-9=.)(-7/-1=.)
+
+egen total_hours=rowtotal(jbhrs jbot)
+egen total_hours_sp=rowtotal(jbhrs_sp jbot_sp)
+
+egen paid_couple_total_ot = rowtotal(total_hours total_hours_sp)
+gen paid_wife_pct_ot=total_hours / paid_couple_total_ot if sex==2 & sex_sp==1
+replace paid_wife_pct_ot=total_hours_sp / paid_couple_total_ot if sex==1 & sex_sp==2
+sum paid_wife_pct
+sum paid_wife_pct_ot
+
+browse pidp year sex sex_sp total_hours total_hours_sp paid_couple_total_ot paid_wife_pct_ot
+
+gen paid_dol_ot=.
+replace paid_dol_ot = 1 if paid_wife_pct_ot>=0.400000 & paid_wife_pct_ot<=0.600000 // shared
+replace paid_dol_ot = 2 if paid_wife_pct_ot <0.400000 & paid_wife_pct_ot!=. // husband does more
+replace paid_dol_ot = 3 if paid_wife_pct_ot >0.600000 & paid_wife_pct_ot!=. // wife does more
+replace paid_dol_ot = 4 if total_hours==0 & total_hours_sp==0 // neither works
+
+label values paid_dol_ot paid_dol
+
+**Unpaid labor
 egen unpaid_couple_total = rowtotal(howlng howlng_sp)
 gen unpaid_wife_pct=howlng / unpaid_couple_total if sex==2 & sex_sp==1
 replace unpaid_wife_pct=howlng_sp / unpaid_couple_total if sex==1 & sex_sp==2
@@ -200,11 +227,86 @@ tab wavename unpaid_dol, m
 browse partner_match howlng howlng_sp unpaid_couple_total unpaid_wife_pct if unpaid_dol==. & inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31) // okay a lot of missing, even when matched. need to figure out eligibility. okay, at one point says only asked January to June? need to figure it out, because coverage looks very high in the codebook... okay, but did a lot of checks and it actually seems right...
 browse survey year wavename istrtdatm howlng if inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31)
 
-********************************************************************************
-* Create some preliminary descriptive statistics
-********************************************************************************
-// unique couples - then by marital status (married, cohab, transitioned)
+gen unpaid_flag=0
+replace unpaid_flag=1 if inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31)
+replace unpaid_flag=0 if wavename==1 & inrange(intdatem,8,12)
+tab unpaid_flag
+tab howlng unpaid_flag, m
 
-// then describe couples (age, education, race - except need to figure some of these out)
+********************************************************************************
+**# Create some preliminary descriptive statistics
+* Eventually will automate this once more things are figured out
+********************************************************************************
+tab sex if partner_match==1 & partnered==1, m // so just use women's responses because right now, have multiple records per HH, right?
+browse survey year partnered pidp partner_id hidp
+
+// unique couples - then by marital status (married, cohab, transitioned)
+unique pidp partner_id if partner_match==1 & partnered==1
+unique pidp partner_id if partner_match==1 & partnered==1 & sex==2
+unique pidp partner_id if partner_match==1 & partnered==1 & sex==2, by(marital_status_defacto)
+tab marital_status_defacto if partner_match==1 & partnered==1 & sex==2
+
+unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & unpaid_flag==1
+unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & unpaid_flag==1, by(marital_status_defacto)
+tab marital_status_defacto if partner_match==1 & partnered==1 & sex==2 & unpaid_flag==1
 
 // then DoL - but not quite sure what to do when unmatched...
+**Paid / Unpaid
+sum jbhrs if partner_match==1 & partnered==1 & sex==2, detail
+sum jbhrs_sp if partner_match==1 & partnered==1 & sex==2, detail // do these match (e.g. if spouse of woman or man himself replying?) essentially yes
+sum jbhrs if partner_match==1 & partnered==1 & sex==1, detail // do these match?
+
+sum total_hours if partner_match==1 & partnered==1 & sex==2, detail
+sum total_hours_sp if partner_match==1 & partnered==1 & sex==2, detail
+
+sum total_hours if partner_match==1 & partnered==1 & sex==2 & employed==1, detail
+sum total_hours_sp if partner_match==1 & partnered==1 & sex==2 & employed_sp==1, detail
+
+tabstat jbhrs_sp jbhrs total_hours_sp total_hours if partner_match==1 & partnered==1 & sex==2, by(marital_status_defacto)
+tabstat jbhrs_sp total_hours_sp if partner_match==1 & partnered==1 & sex==2 & employed_sp==1, by(marital_status_defacto)
+tabstat jbhrs total_hours if partner_match==1 & partnered==1 & sex==2 & employed==1, by(marital_status_defacto)
+
+tabstat paid_wife_pct_ot unpaid_wife_pct if partner_match==1 & partnered==1 & sex==2, by(marital_status_defacto)
+tab marital_status_defacto paid_dol_ot if partner_match==1 & partnered==1 & sex==2, row
+tabstat howlng howlng_sp unpaid_wife_pct if partner_match==1 & partnered==1 & sex==2, by(marital_status_defacto)
+tab marital_status_defacto unpaid_dol if partner_match==1 & partnered==1 & sex==2, row
+
+**Categorical by gender
+tab marital_status_defacto hubuys if partner_match==1 & partnered==1 & sex==2, row nofreq // women's responses
+// tab marital_status_defacto hubuys_sp if partner_match==1 & partnered==1 & sex==2, row // men's responses
+tab marital_status_defacto hubuys if partner_match==1 & partnered==1 & sex==1, row nofreq // men's responses
+
+tab marital_status_defacto hufrys if partner_match==1 & partnered==1 & sex==2, row nofreq // women's responses
+tab marital_status_defacto hufrys if partner_match==1 & partnered==1 & sex==1, row nofreq // men's responses
+
+tab marital_status_defacto huiron if partner_match==1 & partnered==1 & sex==2, row nofreq // women's responses
+tab marital_status_defacto huiron if partner_match==1 & partnered==1 & sex==1, row nofreq // men's responses
+
+tab marital_status_defacto humops if partner_match==1 & partnered==1 & sex==2, row nofreq // women's responses
+tab marital_status_defacto humops if partner_match==1 & partnered==1 & sex==1, row nofreq // men's responses
+
+tab marital_status_defacto huboss if partner_match==1 & partnered==1 & sex==2, row nofreq // women's responses
+tab marital_status_defacto huboss if partner_match==1 & partnered==1 & sex==1, row nofreq // men's responses
+
+tab marital_status_defacto husits if partner_match==1 & partnered==1 & sex==2, row nofreq // women's responses
+tab marital_status_defacto husits if partner_match==1 & partnered==1 & sex==1, row nofreq // men's responses
+
+// then describe couples (age, education, race - except need to figure some of these out, might need to get from cross-wave file)
+tabstat current_rel_duration age_all age_all_sp if partner_match==1 & partnered==1 & sex==2, by(marital_status_defacto)
+
+recode gor_dv (1/9=1)(10=2)(11=3)(12=4), gen(country_all)
+replace country_all=. if inlist(country_all,-9,13)
+label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
+label values country_all country
+
+tab marital_status_defacto country_all if partner_match==1 & partnered==1 & sex==2, row nofreq
+
+gen kids_in_hh=0
+replace kids_in_hh=1 if nkids_dv > 0 & nkids_dv!=.
+
+tab marital_status_defacto kids_in_hh if partner_match==1 & partnered==1 & sex==2, row
+
+fre hiqual_dv
+tab marital_status_defacto hiqual_dv if partner_match==1 & partnered==1 & sex==2, row nofreq // this is probably not the best education to use, but will use for now.
+tab marital_status_defacto hiqual_dv_sp if partner_match==1 & partnered==1 & sex==2, row nofreq // this is probably not the best education to use, but will use for now.
+tab marital_status_defacto hiqual_dv if partner_match==1 & partnered==1 & sex==1, row nofreq // this is probably not the best education to use, but will use for now.
