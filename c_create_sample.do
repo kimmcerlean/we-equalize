@@ -205,6 +205,56 @@ replace paid_dol_ot = 4 if total_hours==0 & total_hours_sp==0 // neither works
 
 label values paid_dol_ot paid_dol
 
+**Paid labor: earnings.
+/*
+https://www.understandingsociety.ac.uk/documentation/mainstage/user-guides/main-survey-user-guide/individual-income-variables/.
+fimnlabnet_dv // net labor (but I think only waves 1-13) . I feel like i should use this per guide, but is there a bhps equivalent?
+// this is the sum of: net usual pay (w_paynu_dv); net self-employment income (w_seearnnet_dv); net pay in second job (w_j2paynet_dv). so I only poulled in net usual pay?
+paynu_dv // usual net pay per month: current job - okay so this is all waves
+w_seearnnet_dv // okay this is only ukhls (i didn't pull this in)
+j2paynet_dv // okay also only ukhls
+fimngrs_dv // total monthly personal income gross - so more than labor
+payg_dv // gross pay per month in current job: last payment. not sure how this is diff to above? okay when it's there, quite similar, but has a lot of inapplicable
+paygu_dv // usual gross pay per month: current job. derived from above, also not sure how diff to total gross. is this because just one job not total? same here
+payn_dv // net pay per month in current job: last payment. okay yeah also not sure how diff to paynu
+paynl // takehome pay at last payment
+*/
+
+browse pidp survey year employed fimnlabgrs_dv fimnlabnet_dv paynu_dv // there are a lot of 0s in net pay where gross is not 0, which doesn't make sense.
+
+recode fimnlabgrs_dv (-9=.)(-7=.)
+recode fimnlabnet_dv (-9=.)(-1=.)
+recode paynu_dv (-9=.)(-7=.)(-8=0)
+recode fimnlabgrs_dv_sp (-9=.)(-7=.)
+recode fimnlabnet_dv_sp (-9=.)(-1=.)
+recode paynu_dv_sp (-9=.)(-7=.)(-8=0)
+
+inspect fimnlabgrs_dv // total monthly labor income gross - this would probably be second choice?
+inspect fimnlabnet_dv // total monthly labor income net - only wave 1-13, probably first choice
+inspect paynu_dv // in bhps, only component of above I think, but ukhls has more, so might be less than above
+// other option. compare the net v. gross at least for ukhls and see how much of a big deal it is?
+
+// okay actually create variable. okay will this be problematic because of negative? lol yes
+egen paid_couple_earnings = rowtotal(fimnlabgrs_dv fimnlabgrs_dv_sp)
+gen paid_earn_pct=fimnlabgrs_dv / paid_couple_earnings if sex==2 & sex_sp==1
+replace paid_earn_pct=fimnlabgrs_dv_sp / paid_couple_earnings if sex==1 & sex_sp==2
+sum paid_earn_pct
+browse pidp year employed partner_match sex sex_sp fimnlabgrs_dv fimnlabgrs_dv_sp paid_couple_earnings paid_earn_pct if paid_earn_pct < 0 | (paid_earn_pct > 1 & paid_earn_pct!=.)
+
+gen hh_earn_type=.
+replace hh_earn_type = 1 if paid_earn_pct>=0.400000 & paid_earn_pct<=0.600000 // shared
+replace hh_earn_type = 2 if paid_earn_pct <0.400000 & paid_earn_pct!=. // husband does more
+replace hh_earn_type = 3 if paid_earn_pct >0.600000 & paid_earn_pct!=. // wife does more
+replace hh_earn_type = 4 if fimnlabgrs_dv==0 & fimnlabgrs_dv_sp==0 // neither works
+replace hh_earn_type=. if paid_earn_pct < 0 | (paid_earn_pct > 1 & paid_earn_pct!=.)
+
+label values hh_earn_type paid_dol
+
+tab partner_match paid_dol, m // okay not quite sure what to do for the couples without a match...or when one partner is missing and the other is not. count as 0s? or ignore?
+browse partner_match age_all age_all_sp jbhrs jbhrs_sp employed employed_sp paid_couple_total paid_wife_pct if paid_dol==. & partner_match==1 //
+browse partner_match paid_dol age_all age_all_sp jbhrs jbhrs_sp employed employed_sp paid_couple_total paid_wife_pct // also a lot of neither works... is that concerning? so a bunch are retirement age, but also a lot are not... but should probably make an upper age limit?
+tab paid_dol if age_all<=65
+
 **Unpaid labor
 egen unpaid_couple_total = rowtotal(howlng howlng_sp)
 gen unpaid_wife_pct=howlng / unpaid_couple_total if sex==2 & sex_sp==1
@@ -266,8 +316,30 @@ browse pidp year nkids_dv nch02_dv agechy_dv had_birth had_first_birth_alt
 
 // eventually need to figure out when first birth was (if not during survey a la above) to denote in time relative to marriage
 
-// also need to figure out how to get college degree equivalent (see Musick et al 2020)
+// also need to figure out how to get college degree equivalent (see Musick et al 2020 - use the ISCED guidelines to identify bachelor's degree equivalents as the completion of tertiary education programs, excluding higher vocational programs
+
 fre hiqual_dv // think need to use the component variable of this
+tab hiqual_dv survey, m // both
+replace hiqual_dv=. if inlist(hiqual_dv,-8,-9)
+tab qfhigh_dv survey, m // this is only ukhls
+// other educations: qfachi (bhps only) qfedhi (bhps only - details) qfhigh (not v good) qfhigh_dv (ukhls details) hiqual_dv hiqualb_dv (bhps only) isced11_dv (only UKHS, but lots of missing, which is sad bc I think it's what I nee/d?) isced (bhps, might be helpful?)
+
+tab qfhigh_dv hiqual_dv
+tab isced11_dv hiqual_dv // see what bachelors in isced is considered in hiqual // okay so bachelor's / master's in degree. some of bachelor's also in "other higher degree"
+tab isced hiqual_dv // so here 5a and 6 are in degree. 5b is what is in other degree (vocational) - do I want that? I feel like Musick didn't include vocational.
+
+gen college_degree=0
+replace college_degree=1 if  hiqual_dv==1
+replace college_degree=. if hiqual_dv==.
+
+gen college_degree_sp=0
+replace college_degree_sp=1 if hiqual_dv_sp==1
+replace college_degree_sp=. if hiqual_dv_sp==.
+
+/*
+Undergraduate degrees are either level 4, 5 or 6 qualifications, with postgraduate degrees sitting at level 7 or 8. In Scotland, awards are at level 9 or 10 for an undergraduate degree, and level 11 and 12 for master's and doctorates.
+A bachelor's degree involves studying one, or sometimes two, subjects in detail. It's the most common undergraduate degree in the UK and is a level 6 qualification (level 9 or 10 in Scotland). 
+*/
 
 save "$outputpath/UKHLS_matched_cleaned.dta", replace
 

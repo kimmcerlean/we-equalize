@@ -56,30 +56,72 @@ browse pidp partner_id istrtdaty marital_status_defacto marr_trans current_rel_s
 
 // tab current_rel_start_year - okay realizing in the UK, because of the history, they might actually not all start relationships after the survey started in 1991. howver, it's like less than a few %
 
+// create couple-level education
+tab college_degree college_degree_sp
+
+gen couple_educ_gp=0
+replace couple_educ_gp = 1 if college_degree==1 | college_degree_sp==1
+replace couple_educ_gp=. if college_degree==. & college_degree_sp==.
+
 ********************************************************************************
 **# ANALYSIS
 ********************************************************************************
 // descriptive
 
+** total sample
 preserve
 
-collapse (median) paid_wife_pct_ot unpaid_wife_pct, by(duration_cohab) // oh, slight problem - kim, you didn't do EARNINGS percentage yet GAH. need to update. think that is my preference? But ask Lea?
+collapse (median) paid_wife_pct_ot paid_earn_pct unpaid_wife_pct , by(duration_cohab) 
 twoway line paid_wife_pct_ot duration_cohab if duration_cohab>=-5 & duration_cohab <=10
-twoway line paid_wife_pct_ot duration_cohab if duration_cohab>=-10 & duration_cohab <=15
+// twoway line paid_wife_pct_ot duration_cohab if duration_cohab>=-10 & duration_cohab <=15
+twoway line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10
 twoway line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10
-twoway line unpaid_wife_pct duration_cohab if duration_cohab>=-10 & duration_cohab <=15
+// twoway line unpaid_wife_pct duration_cohab if duration_cohab>=-10 & duration_cohab <=15
 
-twoway (line paid_wife_pct_ot duration_cohab if duration_cohab>=-5 & duration_cohab <=10) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10)
-twoway (line paid_wife_pct_ot duration_cohab if duration_cohab>=-5 & duration_cohab <=10) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10)
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
 
 restore
 
-collapse (median) paid_wife_pct_ot unpaid_wife_pct, by(duration_cohab kids_in_hh)  // results for kids don't make sense, because need to scale it to TIME from children, because right now, it's all muddled. so doing NO KIDS in HH to show the results has the advantage of like OKAY it's not JUST because of children, but need to more formally investigate the role of children.
+** split by presence of children
+preserve
 
-twoway (line paid_wife_pct_ot duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==0) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==0, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
+collapse (median) paid_wife_pct_ot paid_earn_pct unpaid_wife_pct, by(duration_cohab kids_in_hh)  // results for kids don't make sense, because need to scale it to TIME from children, because right now, it's all muddled. so doing NO KIDS in HH to show the results has the advantage of like OKAY it's not JUST because of children, but need to more formally investigate the role of children.
 
-twoway (line paid_wife_pct_ot duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==1) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==1, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
+twoway line paid_wife_pct_ot duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==0
+twoway line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==0
 
-twoway (line paid_wife_pct_ot duration_cohab if duration_cohab>=-5 & duration_cohab <=10) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) by(kids_in_hh, graphregion(margin(tiny)))
+twoway (line paid_wife_pct_ot duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==0) (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==0)
+
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==0) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==0, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
+
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==1) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & kids_in_hh==1, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
+
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) by(kids_in_hh, graphregion(margin(tiny)))
+
+restore
+
+** split by having a college degree (either, for now))
+preserve
+
+collapse (median) paid_wife_pct_ot paid_earn_pct unpaid_wife_pct, by(duration_cohab couple_educ_gp)
+
+line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0
+line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1
+line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0
+line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1
+
+// by type of labor
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0) (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1), legend(order(1 "No College" 2 "College") rows(1) position(6))
+twoway (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1), legend(order(1 "No College" 2 "College") rows(1) position(6))
+
+// by degree
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6))
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6))
+
+// lol is it crazy to do all? bc it's the same trend, but starting positions are different
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0, lpattern(dash)) (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0, lpattern(dash) yaxis(2)) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1, yaxis(2)), legend(order(1 "No Paid" 2 "College Paid" 3 "No Unpaid" 4 "College Unpaid") rows(1) position(6))
+
+twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0, lcolor(green)) (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1, lcolor(blue)) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0, lpattern(dash) lcolor(green)) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1, lpattern(dash) lcolor(blue)), legend(order(1 "No Paid" 2 "College Paid" 3 "No Unpaid" 4 "College Unpaid") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"% Female Contributions"')
 
 restore
