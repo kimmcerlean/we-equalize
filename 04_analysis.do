@@ -165,3 +165,8 @@ twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0, lpatt
 twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0, lcolor(green)) (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1, lcolor(blue)) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0, lpattern(dash) lcolor(green)) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1, lpattern(dash) lcolor(blue)), legend(order(1 "No Paid" 2 "College Paid" 3 "No Unpaid" 4 "College Unpaid") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"% Female Contributions"')
 
 restore
+
+// other charts
+tab dur hh_earn_type, row nofreq
+tab dur housework_bkt, row nofreq
+tab dur hours_housework, row nofreq
