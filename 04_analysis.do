@@ -69,7 +69,11 @@ Married (or pre77) |    159,316       93.69       93.69
 // should I restrict to certain years? aka to help with the cohab problem? well probably should from a time standpoint... and to match to the british one, at least do 1990+?
 tab survey_yr marital_status_updated
 tab rel_start_yr marital_status_updated, m
-keep if rel_start_yr >= 1990
+
+unique unique_id
+unique unique_id if rel_start_yr >= 1990 // nearly half of sample goes away. okay let's decide later...
+unique unique_id if rel_start_yr >= 1980 // compromise with 1980? ugh idk
+// keep if rel_start_yr >= 1990
 
 // restrict to working age?
 tab AGE_REF_ employed_ly_head, row
@@ -110,6 +114,7 @@ recode duration_cohab(-34/-11=-5)(-10/-7=-4)(-6/-5=-3)(-4/-3=-2)(-2/-1=-1)(0=0)(
 ********************************************************************************
 // descriptive
 
+** total sample
 preserve
 collapse (median) female_earn_pct female_hours_pct wife_housework_pct, by(dur)
 twoway line female_earn_pct dur if dur>=-4 & dur <=6
@@ -123,6 +128,7 @@ twoway (line female_earn_pct dur if dur>=-4 & dur <=6) (line wife_housework_pct 
 
 restore
 
+** split by presence of children
 preserve
 
 collapse (median) female_earn_pct female_hours_pct wife_housework_pct, by(dur children)
@@ -132,5 +138,30 @@ twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & children==0) (line wife_
 twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & children==1) (line wife_housework_pct dur if dur>=-4 & dur <=6 & children==1, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
 
 twoway (line female_earn_pct dur if dur>=-4 & dur <=6) (line wife_housework_pct dur if dur>=-4 & dur <=6, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) by(children)
+
+restore
+
+** split by having a college degree (either, for now))
+preserve
+
+collapse (median) female_earn_pct female_hours_pct wife_housework_pct, by(dur couple_educ_gp)
+
+line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0
+line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1
+line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0
+line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1
+
+// by type of labor
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0) (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1), legend(order(1 "No College" 2 "College") rows(1) position(6))
+twoway (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1), legend(order(1 "No College" 2 "College") rows(1) position(6))
+
+// by degree
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6))
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6))
+
+// lol is it crazy to do all? bc it's the same trend, but starting positions are different
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0, lpattern(dash)) (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0, lpattern(dash) yaxis(2)) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1, yaxis(2)), legend(order(1 "No Paid" 2 "College Paid" 3 "No Unpaid" 4 "College Unpaid") rows(1) position(6))
+
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0, lcolor(green)) (line female_earn_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1, lcolor(blue)) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==0, lpattern(dash) lcolor(green)) (line wife_housework_pct dur if dur>=-4 & dur <=6 & couple_educ_gp==1, lpattern(dash) lcolor(blue)), legend(order(1 "No Paid" 2 "College Paid" 3 "No Unpaid" 4 "College Unpaid") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"% Female Contributions"')
 
 restore
