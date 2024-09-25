@@ -242,12 +242,34 @@ replace country_all=. if inlist(country_all,-9,13)
 label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
 label values country_all country
 
-// need to figure out how to INCREMENT births
+// children
 gen kids_in_hh=0
-replace kids_in_hh=1 if nkids_dv > 0 & nkids_dv!=.
+replace kids_in_hh=1 if nkids_dv > 0 & nkids_dv!=. // binary as to whether or not they have kids currently
+
+// need to figure out how to INCREMENT births. do same I did in US - if number of kids goes up AND the age of youngest child is either 0/1 (look at codebook) - okay think it's 0 because otherwise it's inapplicable
+tab agechy_dv survey, m
+tab nch02_dv survey, m
+tab nkids_dv, m
+
+browse pidp year nkids_dv nch02_dv agechy_dv
+
+gen had_birth=0
+replace had_birth=1 if nch02_dv == nch02_dv[_n-1]+1 & agechy_dv==0 & pidp==pidp[_n-1] & year==year[_n-1]+1
+// browse pidp year nkids_dv nch02_dv agechy_dv had_birth
+
+// gen had_first_birth=0 // want to do this, but need to figure out how to get this info (not currently in file, might be in cross wave files?
+// replace had_first_birth=1 if had_birth==1 & (survey_yr==FIRST_BIRTH_YR | survey_yr==FIRST_BIRTH_YR+1) // think sometimes recorded a year late
+
+gen had_first_birth_alt=0
+replace had_first_birth_alt=1 if nkids_dv==1 & nkids_dv[_n-1]==0 & agechy_dv==0 & pidp==pidp[_n-1] & year==year[_n-1]+1 // use number of kids NOT kids under 2, because they could have older kids, so this is the most restrictive, like no kids at all prior? 
+browse pidp year nkids_dv nch02_dv agechy_dv had_birth had_first_birth_alt
+
+// eventually need to figure out when first birth was (if not during survey a la above) to denote in time relative to marriage
 
 // also need to figure out how to get college degree equivalent (see Musick et al 2020)
 fre hiqual_dv // think need to use the component variable of this
+
+save "$outputpath/UKHLS_matched_cleaned.dta", replace
 
 ********************************************************************************
 **# Create some preliminary descriptive statistics
@@ -318,5 +340,3 @@ fre hiqual_dv
 tab marital_status_defacto hiqual_dv if partner_match==1 & partnered==1 & sex==2, row nofreq // this is probably not the best education to use, but will use for now.
 tab marital_status_defacto hiqual_dv_sp if partner_match==1 & partnered==1 & sex==2, row nofreq // this is probably not the best education to use, but will use for now.
 tab marital_status_defacto hiqual_dv if partner_match==1 & partnered==1 & sex==1, row nofreq // this is probably not the best education to use, but will use for now.
-
-save "$outputpath/UKHLS_matched_cleaned.dta", replace
