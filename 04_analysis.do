@@ -69,6 +69,7 @@ Married (or pre77) |    159,316       93.69       93.69
 // should I restrict to certain years? aka to help with the cohab problem? well probably should from a time standpoint... and to match to the british one, at least do 1990+?
 tab survey_yr marital_status_updated
 tab rel_start_yr marital_status_updated, m
+keep if rel_start_yr >= 1990
 
 // restrict to working age?
 tab AGE_REF_ employed_ly_head, row
