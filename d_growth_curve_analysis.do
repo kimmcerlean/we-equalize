@@ -63,6 +63,20 @@ gen couple_educ_gp=0
 replace couple_educ_gp = 1 if college_degree==1 | college_degree_sp==1
 replace couple_educ_gp=. if college_degree==. & college_degree_sp==.
 
+//  combined indicator of paid and unpaid, using HOURS - okay currently missing for all years that housework hours are
+gen hours_housework=.
+replace hours_housework=1 if paid_dol_ot==1 & unpaid_dol==1 // dual both (egal)
+replace hours_housework=2 if paid_dol_ot==1 & unpaid_dol==2 // dual earner, female HM (second shift)
+replace hours_housework=3 if paid_dol_ot==2 & unpaid_dol==1 // male BW, dual HW (mm not sure)
+replace hours_housework=4 if paid_dol_ot==2 & unpaid_dol==2 // male BW, female HM (conventional)
+replace hours_housework=5 if paid_dol_ot==3 & unpaid_dol==1 // female BW, dual HW (gender-atypical)
+replace hours_housework=6 if paid_dol_ot==3 & unpaid_dol==2 // female BW, female HM (undoing gender)
+replace hours_housework=7 if unpaid_dol==3  // all where male does more housework (gender-atypical)
+replace hours_housework=8 if paid_dol_ot==4  // no earners
+
+label define hours_housework 1 "Egal" 2 "Second Shift" 3 "Male BW, dual HW" 4 "Conventional" 5 "Gender-atypical" 6 "Undoing gender" 7 "Male HW dominant" 8 "No Earners"
+label values hours_housework hours_housework 
+
 ********************************************************************************
 **# ANALYSIS
 ********************************************************************************
@@ -125,3 +139,8 @@ twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab
 twoway (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0, lcolor(green)) (line paid_earn_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1, lcolor(blue)) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==0, lpattern(dash) lcolor(green)) (line unpaid_wife_pct duration_cohab if duration_cohab>=-5 & duration_cohab <=10 & couple_educ_gp==1, lpattern(dash) lcolor(blue)), legend(order(1 "No Paid" 2 "College Paid" 3 "No Unpaid" 4 "College Unpaid") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"% Female Contributions"')
 
 restore
+
+// other charts
+tab duration_cohab hh_earn_type if duration_cohab>=-5 & duration_cohab <=10, row nofreq
+tab duration_cohab unpaid_dol if duration_cohab>=-5 & duration_cohab <=10, row nofreq
+tab duration_cohab hours_housework if duration_cohab>=-5 & duration_cohab <=10, row nofreq
