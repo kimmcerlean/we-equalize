@@ -10,7 +10,7 @@ global outputpath "G:\Data\UKHLS data\output data" // for EUI computer
 global temp "G:\Data\UKHLS data\temp created files"  // for EUI computer
 
 ********************************************************************************
-* Personalc omputer
+* Personal computer
 ********************************************************************************
 global input "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\input data" // Kim computer
 global outputpath "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\output data" // for Kim's computer

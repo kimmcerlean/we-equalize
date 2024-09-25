@@ -54,6 +54,8 @@ tab duration_cohab, m
 
 browse pidp partner_id istrtdaty marital_status_defacto marr_trans current_rel_start_year ever_transition year_transitioned duration_cohab current_rel_duration
 
+// tab current_rel_start_year - okay realizing in the UK, because of the history, they might actually not all start relationships after the survey started in 1991. howver, it's like less than a few %
+
 ********************************************************************************
 **# ANALYSIS
 ********************************************************************************
