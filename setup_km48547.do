@@ -1,4 +1,4 @@
-global homedir "T:" // comment this out if you are not using the PRC Remote Server
+// global homedir "T:" // comment this out if you are not using the PRC Remote Server
 
 * This is the base directory with the setup files.
 * It is the directory you should change into before executing any files

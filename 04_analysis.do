@@ -16,6 +16,7 @@
 * Import data and small final sample cleanup
 ********************************************************************************
 use "$created_data\PSID_partners_cleaned.dta", clear
+// use "G:\Other computers\My Laptop\Documents\Research Projects\Growth Curves\PAA 2025 submission\data\PSID_partners_cleaned.dta", clear
 
 tab SEX marital_status_updated if SEX_HEAD_==1
 /* need to end up with this amount of respondents after the below
@@ -65,7 +66,7 @@ Married (or pre77) |    159,316       93.69       93.69
              Total |    170,046      100.00
 */
 
-// should I restrict to certain years? aka to help with the cohab problem? well probably should from a time standpoint...
+// should I restrict to certain years? aka to help with the cohab problem? well probably should from a time standpoint... and to match to the british one, at least do 1990+?
 tab survey_yr marital_status_updated
 tab rel_start_yr marital_status_updated, m
 
@@ -116,4 +117,19 @@ twoway line wife_housework_pct dur if dur>=-4 & dur <=6
 
 twoway (line female_earn_pct dur if dur>=-4 & dur <=6) (line wife_housework_pct dur if dur>=-4 & dur <=6)
 twoway (line female_earn_pct dur if dur>=-4 & dur <=6) (line wife_housework_pct dur if dur>=-4 & dur <=6, yaxis(2))
+
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6) (line wife_housework_pct dur if dur>=-4 & dur <=6, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
+
+restore
+
+preserve
+
+collapse (median) female_earn_pct female_hours_pct wife_housework_pct, by(dur children)
+
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & children==0) (line wife_housework_pct dur if dur>=-4 & dur <=6 & children==0, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
+
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6 & children==1) (line wife_housework_pct dur if dur>=-4 & dur <=6 & children==1, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) 
+
+twoway (line female_earn_pct dur if dur>=-4 & dur <=6) (line wife_housework_pct dur if dur>=-4 & dur <=6, yaxis(2)), legend(order(1 "Paid Labor" 2 "Unpaid Labor") rows(1) position(6)) xtitle(`"Duration from Marital Transition"') ytitle(`"Paid Labor"') ylabel(, valuelabel) ytitle(`"Unpaid Labor"', axis(2)) by(children)
+
 restore
