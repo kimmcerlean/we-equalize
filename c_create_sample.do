@@ -234,6 +234,22 @@ tab unpaid_flag
 tab howlng unpaid_flag, m
 
 ********************************************************************************
+* Other recodes
+********************************************************************************
+// country
+recode gor_dv (1/9=1)(10=2)(11=3)(12=4), gen(country_all)
+replace country_all=. if inlist(country_all,-9,13)
+label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
+label values country_all country
+
+// need to figure out how to INCREMENT births
+gen kids_in_hh=0
+replace kids_in_hh=1 if nkids_dv > 0 & nkids_dv!=.
+
+// also need to figure out how to get college degree equivalent (see Musick et al 2020)
+fre hiqual_dv // think need to use the component variable of this
+
+********************************************************************************
 **# Create some preliminary descriptive statistics
 * Eventually will automate this once more things are figured out
 ********************************************************************************
@@ -294,15 +310,7 @@ tab marital_status_defacto husits if partner_match==1 & partnered==1 & sex==1, r
 // then describe couples (age, education, race - except need to figure some of these out, might need to get from cross-wave file)
 tabstat current_rel_duration age_all age_all_sp if partner_match==1 & partnered==1 & sex==2, by(marital_status_defacto)
 
-recode gor_dv (1/9=1)(10=2)(11=3)(12=4), gen(country_all)
-replace country_all=. if inlist(country_all,-9,13)
-label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
-label values country_all country
-
 tab marital_status_defacto country_all if partner_match==1 & partnered==1 & sex==2, row nofreq
-
-gen kids_in_hh=0
-replace kids_in_hh=1 if nkids_dv > 0 & nkids_dv!=.
 
 tab marital_status_defacto kids_in_hh if partner_match==1 & partnered==1 & sex==2, row
 
@@ -310,3 +318,5 @@ fre hiqual_dv
 tab marital_status_defacto hiqual_dv if partner_match==1 & partnered==1 & sex==2, row nofreq // this is probably not the best education to use, but will use for now.
 tab marital_status_defacto hiqual_dv_sp if partner_match==1 & partnered==1 & sex==2, row nofreq // this is probably not the best education to use, but will use for now.
 tab marital_status_defacto hiqual_dv if partner_match==1 & partnered==1 & sex==1, row nofreq // this is probably not the best education to use, but will use for now.
+
+save "$outputpath/UKHLS_matched_cleaned.dta", replace
