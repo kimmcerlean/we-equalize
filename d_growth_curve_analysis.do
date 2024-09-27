@@ -64,6 +64,7 @@ replace couple_educ_gp = 1 if college_degree==1 | college_degree_sp==1
 replace couple_educ_gp=. if college_degree==. & college_degree_sp==.
 
 //  combined indicator of paid and unpaid, using HOURS - okay currently missing for all years that housework hours are
+/*
 gen hours_housework=.
 replace hours_housework=1 if paid_dol_ot==1 & unpaid_dol==1 // dual both (egal)
 replace hours_housework=2 if paid_dol_ot==1 & unpaid_dol==2 // dual earner, female HM (second shift)
@@ -76,6 +77,53 @@ replace hours_housework=8 if paid_dol_ot==4  // no earners
 
 label define hours_housework 1 "Egal" 2 "Second Shift" 3 "Male BW, dual HW" 4 "Conventional" 5 "Gender-atypical" 6 "Undoing gender" 7 "Male HW dominant" 8 "No Earners"
 label values hours_housework hours_housework 
+*/
+
+gen earn_housework=.
+replace earn_housework=1 if hh_earn_type==1 & unpaid_dol==1 // dual both (egal)
+replace earn_housework=2 if hh_earn_type==1 & unpaid_dol==2 // dual earner, female HM (second shift)
+replace earn_housework=3 if hh_earn_type==2 & unpaid_dol==2 // male BW, female HM (traditional)
+replace earn_housework=4 if hh_earn_type==3 & unpaid_dol==3 // female BW, male HM (counter-traditional)
+replace earn_housework=5 if earn_housework==. & hh_earn_type!=. & unpaid_dol!=. // all others
+
+label define earn_housework 1 "Egal" 2 "Second Shift" 3 "Traditional" 4 "Counter Traditional" 5 "All others"
+label values earn_housework earn_housework 
+
+********************************************************************************
+**# Some descriptive statistics
+********************************************************************************
+
+unique pidp partner_id 
+unique pidp partner_id year_transitioned
+unique pidp partner_id  if dur==0
+
+sum duration_cohab if duration_cohab < 0 // average cohab duration
+sum duration_cohab if duration_cohab > 0 & duration_cohab !=. // average marital duration
+
+tab couple_educ_gp
+tab couple_educ_gp if dur==0
+
+tab kids_in_hh
+tab kids_in_hh if dur==0
+
+tab had_birth
+unique pidp partner_id  if had_birth==1 // use this for % experiencing a birth
+unique pidp partner_id  if had_birth==1 & duration_cohab==0
+tab had_birth if duration_cohab==0
+
+sum paid_earn_pct
+tab hh_earn_type
+sum paid_wife_pct_ot
+sum unpaid_wife_pct
+tab unpaid_dol
+tab earn_housework
+
+sum paid_earn_pct if dur==0
+tab hh_earn_type if dur==0
+sum paid_wife_pct_ot if dur==0
+sum unpaid_wife_pct if dur==0
+tab unpaid_dol if dur==0
+tab earn_housework if dur==0
 
 ********************************************************************************
 **# ANALYSIS
@@ -143,4 +191,5 @@ restore
 // other charts
 tab duration_cohab hh_earn_type if duration_cohab>=-5 & duration_cohab <=10, row nofreq
 tab duration_cohab unpaid_dol if duration_cohab>=-5 & duration_cohab <=10, row nofreq
-tab duration_cohab hours_housework if duration_cohab>=-5 & duration_cohab <=10, row nofreq
+tab duration_cohab earn_housework if duration_cohab>=-5 & duration_cohab <=10, row nofreq
+// tab duration_cohab hours_housework if duration_cohab>=-5 & duration_cohab <=10, row nofreq
