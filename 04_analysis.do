@@ -110,6 +110,43 @@ tab duration_cohab, m
 recode duration_cohab(-34/-11=-5)(-10/-7=-4)(-6/-5=-3)(-4/-3=-2)(-2/-1=-1)(0=0)(1/2=1)(3/4=2)(5/6=3)(7/8=4)(9/10=5)(11/12=6)(13/20=7)(21/40=8), gen(dur) // smoothing (bc the switch to every other year makes this wonky)
 
 ********************************************************************************
+**# Some descriptive statistics
+********************************************************************************
+browse unique_id survey_yr year_transitioned rel_start_yr // some people could have two relationships? so uniques needs to be combo of id and relation year?! oh but the cohab / marriage are off, so actually do transition year?
+unique unique_id
+unique unique_id year_transitioned
+unique unique_id rel_start_yr
+unique unique_id if dur==0
+
+sum duration_cohab if dur < 0 // average cohab duration
+sum duration_cohab if dur > 0 & dur !=. // average marital duration
+
+tab couple_educ_gp
+tab couple_educ_gp if dur==0
+
+tab children
+tab children if dur==0
+
+tab had_birth
+unique unique_id if had_birth==1 // use this for % experiencing a birth
+unique unique_id if had_birth==1 & dur==0
+tab had_birth if dur==0
+
+sum female_earn_pct
+tab hh_earn_type
+sum female_hours_pct
+sum wife_housework_pct
+tab housework_bkt
+tab earn_housework
+
+sum female_earn_pct if dur==0
+tab hh_earn_type if dur==0
+sum female_hours_pct if dur==0
+sum wife_housework_pct if dur==0
+tab housework_bkt if dur==0
+tab earn_housework if dur==0
+
+********************************************************************************
 **# ANALYSIS (finally lol)
 ********************************************************************************
 // descriptive
@@ -169,4 +206,5 @@ restore
 // other charts
 tab dur hh_earn_type, row nofreq
 tab dur housework_bkt, row nofreq
-tab dur hours_housework, row nofreq
+tab dur earn_housework, row nofreq
+// tab dur hours_housework, row nofreq

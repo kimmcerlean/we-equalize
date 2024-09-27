@@ -379,6 +379,7 @@ gen wife_hw_pct_lag=.
 replace wife_hw_pct_lag=wife_housework_pct[_n-1] if unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
 
 //  combined indicator of paid and unpaid, using HOURS - okay currently missing for all years that housework hours are
+/*
 gen hours_housework=.
 replace hours_housework=1 if hh_hours_type==1 & housework_bkt==1 // dual both (egal)
 replace hours_housework=2 if hh_hours_type==1 & housework_bkt==2 // dual earner, female HM (second shift)
@@ -391,6 +392,17 @@ replace hours_housework=8 if hh_hours_type==4  // no earners
 
 label define hours_housework 1 "Egal" 2 "Second Shift" 3 "Male BW, dual HW" 4 "Conventional" 5 "Gender-atypical" 6 "Undoing gender" 7 "Male HW dominant" 8 "No Earners"
 label values hours_housework hours_housework 
+*/
+
+gen earn_housework=.
+replace earn_housework=1 if hh_earn_type==1 & housework_bkt==1 // dual both (egal)
+replace earn_housework=2 if hh_earn_type==1 & housework_bkt==2 // dual earner, female HM (second shift)
+replace earn_housework=3 if hh_earn_type==2 & housework_bkt==2 // male BW, female HM (traditional)
+replace earn_housework=4 if hh_earn_type==3 & housework_bkt==3 // female BW, male HM (counter-traditional)
+replace earn_housework=5 if earn_housework==. & hh_earn_type!=. & housework_bkt!=. // all others
+
+label define earn_housework 1 "Egal" 2 "Second Shift" 3 "Traditional" 4 "Counter Traditional" 5 "All others"
+label values earn_housework earn_housework 
 
 // employment
 browse unique_id survey_yr EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_
