@@ -28,6 +28,14 @@ browse pidp year hidp rel_no partner_id partner1 partner2  marital_status_defact
 // okay so sometimes partners don't have the same relationship start year? should I use the one that said it was happening longest? or just stick with plan to use the female?
 keep if sex==2
 
+// want to export list to qa
+preserve
+
+collapse (count) year, by(pidp partner_id)
+browse
+
+restore
+
 // restrict to working age?
 tab age_all employed, row
 keep if (age_all>=18 & age_all<60) &  (age_all_sp>=18 & age_all_sp<60) // sort of drops off a cliff after 60?

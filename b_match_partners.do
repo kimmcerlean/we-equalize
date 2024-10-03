@@ -33,6 +33,44 @@ save "$temp\spid_lookup.dta", replace
 use "$outputpath/UKHLS_long_all.dta", clear
 drop if pidp==. // think these are HHs that didn't match?
 
+// i am dumb and right now 1-13 are ukhls and 14-31 are bhps, so the wave order doesn't make a lot of sense. These aren't perfect but will work for now.
+// okay i added interview characteristics, so use that?
+browse pidp pid wavename intdatey intdaty_dv istrtdaty // istrtdaty seems the most comprehensive. the DV one is only UKHLS
+// okay, but sometimes consecutive surveys are NOT consecutive years? 
+
+gen year=.
+replace year=2009 if wavename==1
+replace year=2010 if wavename==2
+replace year=2011 if wavename==3
+replace year=2012 if wavename==4
+replace year=2013 if wavename==5
+replace year=2014 if wavename==6
+replace year=2015 if wavename==7
+replace year=2016 if wavename==8
+replace year=2017 if wavename==9
+replace year=2018 if wavename==10
+replace year=2019 if wavename==11
+replace year=2020 if wavename==12
+replace year=2021 if wavename==13
+replace year=1991 if wavename==14
+replace year=1992 if wavename==15
+replace year=1993 if wavename==16
+replace year=1994 if wavename==17
+replace year=1995 if wavename==18
+replace year=1996 if wavename==19
+replace year=1997 if wavename==20
+replace year=1998 if wavename==21
+replace year=1999 if wavename==22
+replace year=2000 if wavename==23
+replace year=2001 if wavename==24
+replace year=2002 if wavename==25
+replace year=2003 if wavename==26
+replace year=2004 if wavename==27
+replace year=2005 if wavename==28
+replace year=2006 if wavename==29
+replace year=2007 if wavename==30
+replace year=2008 if wavename==31
+
 // key DoL variables: husits howlng hubuys hufrys huiron humops jbhrs huboss (but in less waves of the old survey)
 // key other variables: scend_dv jbstat mastat mastat_dv nchild_dv marstat age age_dv doby doby_dv qfhigh_dv hiqual_dv racel_dv ethn_dv sex sex_dv
 // key ID variables: pidp hidp pno
@@ -274,7 +312,7 @@ save "$outputpath/UKHLS_long_all_recoded.dta", replace
 // just keep necessary variables
 local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed"
 
-keep pidp pid survey wavename `partnervars'
+keep pidp pid survey wavename year `partnervars'
 
 // rename them to indicate they are for spouse
 foreach var in `partnervars'{
@@ -282,9 +320,10 @@ foreach var in `partnervars'{
 }
 
 // rename pidp to match the name I gave to partner pidp in main file to match
+generate long apidp = pidp // so this will also work to match ego alt later
 rename pidp partner_id // okay tried to update all to be pidp above - let's see if this will work
 
-browse if pidp==537205
+// browse if pidp==537205
 browse if pid==537205
 
 // think I have to use pid for BHPS, so try that

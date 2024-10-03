@@ -17,44 +17,6 @@
 ********************************************************************************
 use "$outputpath/UKHLS_matched.dta", clear
 
-// i am dumb and right now 1-13 are ukhls and 14-31 are bhps, so the wave order doesn't make a lot of sense. These aren't perfect but will work for now.
-// okay i added interview characteristics, so use that?
-browse pidp pid survey wavename intdatey intdaty_dv istrtdaty // istrtdaty seems the most comprehensive. the DV one is only UKHLS
-// okay, but sometimes consecutive surveys are NOT consecutive years? 
-
-gen year=.
-replace year=2009 if wavename==1
-replace year=2010 if wavename==2
-replace year=2011 if wavename==3
-replace year=2012 if wavename==4
-replace year=2013 if wavename==5
-replace year=2014 if wavename==6
-replace year=2015 if wavename==7
-replace year=2016 if wavename==8
-replace year=2017 if wavename==9
-replace year=2018 if wavename==10
-replace year=2019 if wavename==11
-replace year=2020 if wavename==12
-replace year=2021 if wavename==13
-replace year=1991 if wavename==14
-replace year=1992 if wavename==15
-replace year=1993 if wavename==16
-replace year=1994 if wavename==17
-replace year=1995 if wavename==18
-replace year=1996 if wavename==19
-replace year=1997 if wavename==20
-replace year=1998 if wavename==21
-replace year=1999 if wavename==22
-replace year=2000 if wavename==23
-replace year=2001 if wavename==24
-replace year=2002 if wavename==25
-replace year=2003 if wavename==26
-replace year=2004 if wavename==27
-replace year=2005 if wavename==28
-replace year=2006 if wavename==29
-replace year=2007 if wavename==30
-replace year=2008 if wavename==31
-
 ********************************************************************************
 * Relationship recodes
 ********************************************************************************

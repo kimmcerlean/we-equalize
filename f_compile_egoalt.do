@@ -177,3 +177,51 @@ unique pidp apidp if sex==2
 ********************************************************************************
 **# Try to match characteristics from other created file
 ********************************************************************************
+// use "$outputpath\UKHLS_egoalt_all.dta", clear
+
+local keepvars "sampst jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed"
+
+** First, the reference person
+merge m:1 pidp year using "$outputpath/UKHLS_long_all_recoded.dta", keepusing(`keepvars')
+drop if _merge==2 // using makes sense, bc I just have partnered people, so it's probably those not partnered
+gen ref_match=0
+replace ref_match=1 if _merge==3
+drop _merge
+
+tab survey ref_match, m row
+tab year ref_match, m row
+
+** Now, the spouse
+merge m:1 apidp year using "$temp/UKHLS_partners.dta" // feels like the same amount matched? yes, so it's like the inverse. some people just missing, so will be missing as references but also as spouse (bc I have deduplicated yet)
+drop if _merge==2 // using makes sense, bc I just have partnered people, so it's probably those not partnered
+gen sp_match=0
+replace sp_match=1 if _merge==3
+drop _merge
+
+tab survey sp_match, m row
+
+drop if sex<0
+tab ref_match sp_match
+tab sex ref_match
+tab sex sp_match
+
+gen both_match=0
+replace both_match=1 if ref_match==1 & sp_match==1
+
+gen rel_type=.
+replace rel_type=1 if inlist(relationship,1,3)
+replace rel_type=2 if relationship==2
+
+unique pidp apidp if sex ==2
+unique pidp apidp if sex ==2 & both_match==1 // okay so this is my 32,000. is it the SAME 32,000?! that is the question. I guess let's try to find out??
+unique pidp apidp if sex ==2 & both_match==1, by(rel_type)
+
+// want to export list to qa
+preserve
+
+drop if sex==1
+drop if both_match==0
+collapse (count) year, by(pidp apidp)
+browse
+
+restore
