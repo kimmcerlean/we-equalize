@@ -15,3 +15,4 @@ global temp "G:\Data\UKHLS data\temp created files"  // for EUI computer
 global input "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\input data" // Kim computer
 global outputpath "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\output data" // for Kim's computer
 global temp "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\temp data" // for Kim's computer
+global egoalt "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\egoalt (all waves)" // for Kim's computer
