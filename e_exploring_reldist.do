@@ -48,5 +48,6 @@ reldist sum howlng, by(sex)
 
 // I wanted to see a plot of the distributions by sex, but that might just be basic histogram? how to overlay? i have struggled with this...
 histogram total_hours if total_hours>0 & total_hours<100, by(sex)
-twoway (histogram total_hours if total_hours>0 & total_hours<100 & sex==1, color(blue%50)) (histogram total_hours if total_hours>0 & total_hours<100 & sex==2, color(red%50))
-twoway (histogram howlng if howlng<40 & sex==1, color(blue%50) width(3)) (histogram howlng if howlng<40 & sex==2, color(red%50) width(3))
+twoway (histogram total_hours if total_hours>0 & total_hours<100 & sex==1, color(blue%50)) (histogram total_hours if total_hours>0 & total_hours<100 & sex==2, color(red%50)), legend(order(1 "Men" 2 "Women" ) rows(1) position(6)) xtitle(`"Weekly Paid Work Hours"') // ytitle(`"% Female Contributions"')
+
+twoway (histogram howlng if howlng<40 & sex==1, color(blue%50) width(3)) (histogram howlng if howlng<40 & sex==2, color(red%50) width(3)),  legend(order(1 "Men" 2 "Women" ) rows(1) position(6)) xtitle(`"Weekly Housework Hours"') 
