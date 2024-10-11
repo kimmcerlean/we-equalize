@@ -404,6 +404,10 @@ replace earn_housework=5 if earn_housework==. & hh_earn_type!=. & housework_bkt!
 label define earn_housework 1 "Egal" 2 "Second Shift" 3 "Traditional" 4 "Counter Traditional" 5 "All others"
 label values earn_housework earn_housework 
 
+gen earn_housework_lag=.
+replace earn_housework_lag=earn_housework[_n-1] if unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
+label values earn_housework_lag earn_housework
+
 // employment
 browse unique_id survey_yr EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_
 // not numbered until 1994; 1-3 arose in 1994. codes match
