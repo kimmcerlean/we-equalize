@@ -10,7 +10,8 @@
 ********************************************************************************
 * Description
 ********************************************************************************
-* Restrict sample to just partnered, might restrict to just survey years with the unpaid labor questions
+* Restrict sample to just partnered
+* decide later if should restrict to just survey years with the unpaid labor questions
 
 ********************************************************************************
 * Import data
@@ -302,6 +303,13 @@ replace college_degree_sp=. if hiqual_dv_sp==.
 Undergraduate degrees are either level 4, 5 or 6 qualifications, with postgraduate degrees sitting at level 7 or 8. In Scotland, awards are at level 9 or 10 for an undergraduate degree, and level 11 and 12 for master's and doctorates.
 A bachelor's degree involves studying one, or sometimes two, subjects in detail. It's the most common undergraduate degree in the UK and is a level 6 qualification (level 9 or 10 in Scotland). 
 */
+
+
+********************************************************************************
+* Finally drop if no partner match or sex of each partner is unclear
+********************************************************************************
+drop if partner_match==0
+drop if sex==. | sex_sp==.
 
 save "$outputpath/UKHLS_matched_cleaned.dta", replace
 

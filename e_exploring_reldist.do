@@ -17,11 +17,7 @@ ssc install moremata, replace
 ********************************************************************************
 * Input data and restrict to matched couples
 ********************************************************************************
-use "$outputpath/UKHLS_matched_cleaned.dta", clear
-
-// first drop if there isn't a matching partner
-drop if partner_match==0
-drop if sex==. | sex_sp==.
+use "$outputpath/UKHLS_matched_cleaned.dta", clear // created in step c.
 
 // variables: all work hours - total_hours total_hours_sp paid_couple_total_ot
 // variables: housework - howlng howlng_sp unpaid_couple_total
@@ -46,7 +42,7 @@ reldist mrp howlng, by(sex) // then here positive. essentially like ratio of med
 reldist sum total_hours, by(sex)
 reldist sum howlng, by(sex)
 
-// I wanted to see a plot of the distributions by sex, but that might just be basic histogram? how to overlay? i have struggled with this...
+// I wanted to see a plot of the distributions by sex; this is just a basic histogram
 histogram total_hours if total_hours>0 & total_hours<100, by(sex)
 twoway (histogram total_hours if total_hours>0 & total_hours<100 & sex==1, color(blue%50)) (histogram total_hours if total_hours>0 & total_hours<100 & sex==2, color(red%50)), legend(order(1 "Men" 2 "Women" ) rows(1) position(6)) xtitle(`"Weekly Paid Work Hours"') // ytitle(`"% Female Contributions"')
 

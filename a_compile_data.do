@@ -16,7 +16,8 @@
 * (will work on a separate macro specific file to make this easier)
 
 ********************************************************************************
-* Note: this code has been adapted from UKHLS code creator
+* Note: this code has been adapted from UKHLS code creator (available when you
+* add variables to your cart here: https://www.understandingsociety.ac.uk/documentation/mainstage/variables/)
 * Sample Code for your request:  2d16f6ee0ebf4c37a54bb709c012e475
 ********************************************************************************
 
@@ -164,4 +165,4 @@ foreach w in `allWaves' {
 
 browse pidp pid hidp wavename age age_dv marstat_dv husits howlng hubuys hufrys huiron humops jbhrs
 
-$syntax;
+// $syntax;

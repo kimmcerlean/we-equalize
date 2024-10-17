@@ -12,11 +12,10 @@
 ********************************************************************************
 * This file uses partner ID to match partner data (where relevant) for our key
 * variables of interest.
-* NOTE: you should run the macros in file a for this to work. 
-* (will work on a separate macro specific file to make this easier)
+* NOTE: you should run the macros in the setup file for this to work. 
 
 ********************************************************************************
-* Going to try to first update spouse id for BHPS so it's pidp NOT pid, I don't know if this will work
+* Going to try to first update spouse id for BHPS so it's pidp NOT pid
 ********************************************************************************
 use "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave\xwaveid_bh.dta"
 
@@ -33,7 +32,7 @@ save "$temp\spid_lookup.dta", replace
 use "$outputpath/UKHLS_long_all.dta", clear
 drop if pidp==. // think these are HHs that didn't match?
 
-// i am dumb and right now 1-13 are ukhls and 14-31 are bhps, so the wave order doesn't make a lot of sense. These aren't perfect but will work for now.
+// Right now 1-13 are ukhls and 14-31 are bhps, so the wave order doesn't make a lot of sense. These aren't perfect but will work for now.
 // okay i added interview characteristics, so use that?
 browse pidp pid wavename intdatey intdaty_dv istrtdaty // istrtdaty seems the most comprehensive. the DV one is only UKHLS
 // okay, but sometimes consecutive surveys are NOT consecutive years? 
@@ -183,7 +182,7 @@ gen partnered=0
 replace partnered=1 if inlist(marital_status_defacto,1,2)
 
 inspect ppid
-inspect ppid if partnered==1 // worried this is only ukhls GAH
+inspect ppid if partnered==1 // this is only ukhls
 inspect sppid if partnered==1 // okay this is also only ukhls and is just spouses
 inspect sppid_bh if partnered==1 // okay this is bhps but includes spouses and partners
 
@@ -206,13 +205,6 @@ inspect partner_id
 inspect partner_id if partnered==1
 
 browse pidp wavename survey marital_status_defacto partnered partner_id ppid partner_pidp_bh sppid_bh if partnered==1
-
-/* okay eventually want to see if I can get this from main file, but for now, think I need the bhps id for their partners. added this to step a
-merge m:1 pidp using "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave\xwaveid_bh.dta", keepusing(pid)
-drop if _merge==2
-tab survey _merge
-drop _merge
-*/
 
 ** DoL variables
 /*
@@ -295,7 +287,7 @@ browse nchild_dv nchild_015 nch02_dv nch34_dv nch511_dv nch1215_dv
 tab husits if partnered==1, m
 tab husits if nchild_dv!=0, m
 tab wavename husits if nchild_dv!=0, m // still a lot of missing..oh, well, i guess they could have child AND not be partnered DUH
-tab wavename husits if nchild_dv!=0 & partnered==1, m // still a lot of missing..oh, well, i guess they could have child AND not be partnered. okay still a lot of missing, idk...might be proxy surveys
+tab wavename husits if nchild_dv!=0 & partnered==1, m // still a lot of missing..oh, well, i guess they could have child AND not be partnered. okay still a lot of missing, might be proxy surveys
 tab hubuys if partnered==1, m
 tab hufrys if partnered==1, m
 tab huiron if partnered==1, m
@@ -353,7 +345,7 @@ merge m:1 partner_id wavename using "$temp/UKHLS_partners.dta" // okay it feels 
 drop if _merge==2
 tab survey _merge, m
 tab survey partnered, m // so, there are more people partnered than matched...
-inspect partner_id if _merge==1 & partnered==1 // so there are a bunch with partner ids, so WHY aren't they matching?
+inspect partner_id if _merge==1 & partnered==1 // so there are a bunch with partner ids, so WHY aren't they matching? okay, confirmed it is just partner non-response for a specific wave
 inspect partner_id if _merge==1 & partnered==1 & survey==1 //
 inspect partner_id if _merge==1 & partnered==1 & survey==2 //
 
@@ -363,7 +355,9 @@ gen partner_match=0
 replace partner_match=1 if _merge==3
 drop _merge
 
-// some exploration - are these known problems?!
+/*
+some exploration to QA partners - but this is just due to non-response, I have confirmed
+
 browse survey wavename pidp pid partner_id partner_match if partner_id==537205 | partner_id == 14382296 // so this person still lists the below as their partner in later waves, but then that person no longer does?
 browse pidp pid wavename partner_id partner_match if pidp==537205 // so this person lists the below as their partner waves 18-29, they have no presence in later waves?
 browse pidp wavename partner_id partner_match if pid==52459748 // but this person lists someone else as their partner...14382296...okay this is their PID. so sometimes it is against their pid, but sometimes against pidp? ecept in this case, mostly matched?
@@ -373,6 +367,7 @@ browse pidp pid wavename partner_id partner_match if pidp==956765 // let's look 
 
 browse survey wavename pidp pid partner_id partner_match if partner_id==78217008 // waves 20-21 are master only	
 browse pidp pid wavename partner_id partner_match if pid==78217008  // this is a pid not a pidp. so yeah, this person doesn't have records for 20-21?
+*/
 
 ********************************************************************************
 **# Okay, let's add on marital history as well, so I can use this to get duration / relationship order?
