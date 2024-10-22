@@ -85,27 +85,6 @@ Married (or pre77) |    163,239       93.45       93.45
 
 */
 
-
-// should I restrict to certain years? aka to help with the cohab problem? well probably should from a time standpoint... and to match to the british one, at least do 1990+?
-tab survey_yr marital_status_updated
-tab rel_start_yr marital_status_updated, m
-
-unique unique_id
-unique unique_id if rel_start_yr >= 1990 // nearly half of sample goes away. okay let's decide later...
-unique unique_id if rel_start_yr >= 1980 // compromise with 1980? ugh idk
-* we want to keep people who started after 1990, who we observed their start, and who started before 2011, so we have 10 years of observations
-* first, min and max duration
-bysort unique_id partner_id: egen min_dur = min(dur)
-bysort unique_id partner_id: egen max_dur = max(dur)
-
-browse unique_id partner_id survey_yr rel_start_yr relationship_duration min_dur max_dur
-keep if rel_start_yr >= 1990 & inlist(min_dur,0,1)
-keep if rel_start_yr <= 2011
-
-// restrict to working age?
-tab AGE_REF_ employed_ly_head, row
-keep if (AGE_REF_>=18 & AGE_REF_<=60) &  (AGE_SPOUSE_>=18 & AGE_SPOUSE_<=60) // sort of drops off a cliff after 60?
-
 // think I need to fix duration because for some, I think clock might start again when they transition to cohabitation? get minimum year within a couple as main start date?
 sort unique_id partner_id survey_yr
 browse unique_id partner_id survey_yr rel_start_yr marital_status_updated relationship_duration
@@ -118,10 +97,38 @@ tab dur, m
 tab relationship_duration, m
 unique unique_id partner_id, by(marital_status_updated)
 
+// should I restrict to certain years? aka to help with the cohab problem? well probably should from a time standpoint... and to match to the british one, at least do 1990+?
+tab survey_yr marital_status_updated
+tab rel_start_yr marital_status_updated, m
+
+unique unique_id
+unique unique_id if rel_start_yr >= 1990 // nearly half of sample goes away. okay let's decide later...
+unique unique_id if rel_start_all >= 1990 // nearly half of sample goes away. okay let's decide later...
+unique unique_id if rel_start_yr >= 1980 // compromise with 1980? ugh idk
+* we want to keep people who started after 1990, who we observed their start, and who started before 2011, so we have 10 years of observations
+* first, min and max duration
+bysort unique_id partner_id: egen min_dur = min(dur)
+bysort unique_id partner_id: egen max_dur = max(dur)
+bysort unique_id partner_id: egen last_yr_observed = max(survey_yr)
+
+browse unique_id partner_id survey_yr rel_start_all rel_end_yr relationship_duration min_dur max_dur
+keep if rel_start_all >= 1990 & inlist(min_dur,0,1)
+keep if rel_start_all <= 2011
+
+// restrict to working age?
+tab AGE_REF_ employed_ly_head, row
+keep if (AGE_REF_>=18 & AGE_REF_<=60) &  (AGE_SPOUSE_>=18 & AGE_SPOUSE_<=60) // sort of drops off a cliff after 60?
+
+// did i observe it end?
+bysort unique_id partner_id: egen ended = max(rel_end_pre)
+sort unique_id partner_id survey_yr
+
+browse unique_id partner_id survey_yr rel_start_all rel_end_yr last_yr_observed rel_status ended relationship_duration min_dur max_dur // these rel_end rel_status only cover marriage not cohab bc from marital history
+
 // get deduped list of couples to match their info on later
 preserve
 
-collapse (first) rel_start_yr min_dur max_dur, by(unique_id partner_id)
+collapse (first) rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended, by(unique_id partner_id)
 
 save "$created_data\couple_list.dta", replace
 
@@ -130,8 +137,281 @@ restore
 ********************************************************************************
 **# Now get survey history for these couples from main file
 ********************************************************************************
+use "$PSID\PSID_full_renamed.dta", clear
+rename X1968_PERSON_NUM_1968 main_per_id
+
+gen unique_id = (main_per_id*1000) + INTERVIEW_NUM_1968 // (ER30001 * 1000) + ER30002
+browse main_per_id INTERVIEW_NUM_1968 unique_id
+
+// figure out what variables i need / can help me figure this out - need indicator of a. in survey and b. relationship status (easy for non-heads) - so need to be INDIVIDUAL, not family variables, right?!
+browse unique_id SEQ_NUMBER_1995 SEQ_NUMBER_1996 MARITAL_PAIRS_1995 MARITAL_PAIRS_1996 RELATION_1995 RELATION_1996
+
+forvalues y=1969/1997{
+	gen in_sample_`y'=.
+	replace in_sample_`y'=0 if SEQ_NUMBER_`y'==0 | inrange(SEQ_NUMBER_`y',60,90)
+	replace in_sample_`y'=1 if inrange(SEQ_NUMBER_`y',1,59)
+}
+
+forvalues y=1999(2)2021{
+	gen in_sample_`y'=.
+	replace in_sample_`y'=0 if SEQ_NUMBER_`y'==0 | inrange(SEQ_NUMBER_`y',60,90)
+	replace in_sample_`y'=1 if inrange(SEQ_NUMBER_`y',1,59)	
+}
+
+forvalues y=1969/1997{
+	gen relationship_`y'=.
+	replace relationship_`y'=0 if RELATION_`y'==0
+	replace relationship_`y'=1 if inlist(RELATION_`y',1,10)
+	replace relationship_`y'=2 if inlist(RELATION_`y',2,20,22,88)
+	replace relationship_`y'=3 if inrange(RELATION_`y',23,87) | inrange(RELATION_`y',90,98) | inrange(RELATION_`y',3,9)
+}
+
+forvalues y=1999(2)2021{
+	gen relationship_`y'=.
+	replace relationship_`y'=0 if RELATION_`y'==0
+	replace relationship_`y'=1 if inlist(RELATION_`y',1,10)
+	replace relationship_`y'=2 if inlist(RELATION_`y',2,20,22,88)
+	replace relationship_`y'=3 if inrange(RELATION_`y',23,87) | inrange(RELATION_`y',90,98) | inrange(RELATION_`y',3,9)
+}
+
+keep unique_id in_sample_* relationship_* MARITAL_PAIRS_*
+gen partner_id = unique_id
+
+forvalues y=1969/1997{
+	gen in_sample_sp_`y' = in_sample_`y'
+	gen relationship_sp_`y' = relationship_`y'
+	gen MARITAL_PAIRS_sp_`y' = MARITAL_PAIRS_`y'
+}
+
+forvalues y=1999(2)2021{
+	gen in_sample_sp_`y' = in_sample_`y'
+	gen relationship_sp_`y' = relationship_`y'
+	gen MARITAL_PAIRS_sp_`y' = MARITAL_PAIRS_`y'
+}
+
+forvalues y=1969/1987{ // let's keep a few years to see if we have ANY data for people before they were observed
+	drop in_sample_`y'
+	drop in_sample_sp_`y'
+	drop relationship_`y'
+	drop relationship_sp_`y'
+	drop MARITAL_PAIRS_`y'
+	drop MARITAL_PAIRS_sp_`y'
+}
+
+drop *_1968
+
+save "$temp\partner_sample_info.dta", replace
+
+********************************************************************************
+**# Now match couples to survey data and try to figure out how long we can track, especially post-breakup
+********************************************************************************
+use "$created_data\couple_list.dta", clear
+
+merge m:1 unique_id using "$temp\partner_sample_info.dta"
+drop if _merge==2
+drop _merge
+
+drop *_sp_*
+
+merge m:1 partner_id using  "$temp\partner_sample_info.dta", keepusing(*_sp_*)
+drop if _merge==2
+drop _merge
+
+browse unique_id partner_id rel_start_all last_yr_observed in_sample*
+
+save "$temp\couple_sample_details_wide.dta", replace
+
+reshape long MARITAL_PAIRS_ in_sample_ relationship_ MARITAL_PAIRS_sp_ in_sample_sp_ relationship_sp_ , ///
+ i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended) j(survey_yr)
+ 
+browse unique_id partner_id in_sample_ in_sample_sp MARITAL_PAIRS_  MARITAL_PAIRS_sp_
+tab MARITAL_PAIRS_ if in_sample_==1 & in_sample_sp_==1 // what to do if both in sample, but not identified as spouse? this isn't just married is it? I don't think tso? oh is it bc of FIRST yr cohabitors?
+tab MARITAL_PAIRS_sp_ if in_sample_==1 & in_sample_sp_==1 // what to do if both in sample, but not identified as spouse? this isn't just married is it? I don't think tso?
+ 
+gen coupled_in_sample = 0
+replace coupled_in_sample = 1 if in_sample_==1 & in_sample_sp_==1 & inrange(MARITAL_PAIRS_,1,3) & inrange(MARITAL_PAIRS_sp_,1,3)
+
+gen single_in_sample_ref = 0
+replace single_in_sample_ref = 1 if in_sample_==1 & in_sample_sp_==0
+
+gen single_in_sample_sp = 0
+replace single_in_sample_sp = 1 if in_sample_==0 & in_sample_sp_==1
+
+gen single_in_sample_both=0
+replace single_in_sample_both = 1 if in_sample_==1 & in_sample_sp_==1 & (survey_yr < rel_start_all | survey_yr > last_yr_observed)
+
+gen not_in_sample=0
+replace not_in_sample=1 if in_sample_==0 & in_sample_sp_ ==0
+
+gen status=.
+replace status=1 if coupled_in_sample==1
+replace status=2 if single_in_sample_ref==1
+replace status=3 if single_in_sample_sp==1
+replace status=4 if single_in_sample_both==1
+replace status=0 if not_in_sample==1
+replace status=1 if in_sample_==1 & in_sample_sp==1 & status==.
+
+label define status 1 "coupled" 2 "single: ref" 3 "single: spouse" 4 "single:both" 0 "missing"
+label values status status
+tab status, m
+
+gen pair=MARITAL_PAIRS_
+gen pair_sp=MARITAL_PAIRS_sp_
+
+// browse unique_id partner_id survey_yr rel_start_all last_yr_observed in_sample_ in_sample_sp_  relationship_ relationship_sp_ pair pair_sp if status==.
+
+gen duration = survey_yr - rel_start_all
+browse unique_id partner_id survey_yr rel_start_all duration last_yr_observed in_sample_ in_sample_sp_  relationship_ relationship_sp_ pair pair_sp
+
+// want to reshape on duration. 
+tab duration, m
+keep if duration >=-5 // keep up to 5 years prior, jic
+keep if duration <=22 // up to 20 for now - but adding two extra years so I can do the lookups below and still retain up to 20
+
+gen duration_rec=duration  // negatives won't work in reshape
+replace duration_rec = 95 if duration==-5
+replace duration_rec = 96 if duration==-4
+replace duration_rec = 97 if duration==-3
+replace duration_rec = 98 if duration==-2
+replace duration_rec = 99 if duration==-1
+
+drop MARITAL_PAIRS_ MARITAL_PAIRS_sp_ survey_yr duration
+
+reshape wide coupled_in_sample single_in_sample_ref single_in_sample_sp single_in_sample_both not_in_sample status in_sample_ relationship_ in_sample_sp_ relationship_sp_ pair pair_sp, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended) j(duration_rec)
+
+browse unique_id partner_id rel_start_all last_yr_observed status*
+browse in_sample_15 in_sample_sp_15 status15
+
+forvalues s=0/22{
+	replace status`s'=5 if status`s'==.
+}
+
+forvalues s=95/99{
+	replace status`s'=5 if status`s'==.
+}
+
+label define status_gp 0 "True Missing" 1 "Coupled" 2 "Single" 3 "Off year" 4 "Censored"
+
+forvalues s=0/22{
+	gen status_gp`s'=.
+	replace status_gp`s'=0 if status`s'==0
+	replace status_gp`s'=1 if status`s'==1
+	replace status_gp`s'=2 if inlist(status`s',2,3,4)
+	replace status_gp`s'=3 if status`s'==5
+	label values status_gp`s' status_gp
+}
+
+forvalues s=95/99{
+	gen status_gp`s'=.
+	replace status_gp`s'=0 if status`s'==0
+	replace status_gp`s'=1 if status`s'==1
+	replace status_gp`s'=2 if inlist(status`s',2,3,4)
+	replace status_gp`s'=3 if status`s'==5
+	label values status_gp`s' status_gp
+}
+
+gen duration=last_yr_observed-rel_start_all
+browse unique_id partner_id rel_start_all last_yr_observed duration status_gp*
+browse unique_id partner_id rel_start_all last_yr_observed duration status*
+
+forvalues b=1/21{
+	local a = `b'-1
+	local c = `b'+1
+	replace status_gp`b' = 0 if status_gp`a'==0 & status_gp`c'==0 & status_gp`b'==3
+}
+
+forvalues b=1/21{
+	local a = `b'-1
+	local c = `b'+1
+	replace status_gp`b' = 4 if status_gp`a'==3 & status_gp`c'==3 & status_gp`b'==3
+}
+
+forvalues b=1/21{
+	local a = `b'-1
+	local c = `b'+1
+	replace status_gp`b' = 4 if status_gp`a'==4 & status_gp`c'==4 & status_gp`b'==3
+}
+
+save "$created_data\couple_duration_matrix.dta", replace
+
+********************************************************************************
+**# attempt to export data
+********************************************************************************
+putexcel set "$results/sample_matrix", replace
+putexcel B1 = "True Missing"
+putexcel C1 = "Coupled"
+putexcel D1 = "Single"
+putexcel E1 = "Off-year"
+putexcel F1 = "Censored"
+
+// Means
+putexcel A2 = "Duration 0"
+putexcel A3 = "Duration 1"
+putexcel A4 = "Duration 2"
+putexcel A5 = "Duration 3"
+putexcel A6 = "Duration 4"
+putexcel A7 = "Duration 5"
+putexcel A8 = "Duration 6"
+putexcel A9 = "Duration 7"
+putexcel A10 = "Duration 8"
+putexcel A11 = "Duration 9"
+putexcel A12 = "Duration 10"
+putexcel A13 = "Duration 11"
+putexcel A14 = "Duration 12"
+putexcel A15 = "Duration 13"
+putexcel A16 = "Duration 14"
+putexcel A17 = "Duration 15"
+putexcel A18 = "Duration 16"
+putexcel A19 = "Duration 17"
+putexcel A20 = "Duration 18"
+putexcel A21 = "Duration 19"
+putexcel A22 = "Duration 20"
+putexcel A23 = "Duration -5"
+putexcel A24 = "Duration -4"
+putexcel A25 = "Duration -3"
+putexcel A26 = "Duration -2"
+putexcel A27 = "Duration -1"
+
+local colu "B C D E F"
+
+forvalues s=0/11{
+	local row = `s' + 2
+	tab status_gp`s', gen(s`s'_)
+	forvalues x=1/4{ // censor doesn't appear until 12
+		local col: word `x' of `colu'
+		mean s`s'_`x'
+		matrix s`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(s`s'_`x'), nformat(#.#%)
+	}
+}
+
+forvalues s=12/20{
+	local row = `s' + 2
+	tab status_gp`s', gen(s`s'_)
+	forvalues x=1/5{
+		local col: word `x' of `colu'
+		mean s`s'_`x'
+		matrix s`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(s`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "B D E"
+
+forvalues s=95/99{
+	local row = `s' - 72
+	tab status_gp`s', gen(s`s'_)
+	forvalues x=1/3{
+		local col: word `x' of `colu'
+		mean s`s'_`x'
+		matrix s`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(s`s'_`x'), nformat(#.#%)
+	}
+}
 
 
+
+/* Come back to this - prior way of looking for couples
 ********************************************************************************
 **# How many observations / couples do we have?
 ********************************************************************************
@@ -338,3 +618,4 @@ forvalues w=1/41{
 	matrix t`var'= e(b)
 	putexcel F`row' = matrix(t`var'), nformat(#.#%)
 }
+*/
