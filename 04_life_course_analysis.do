@@ -39,15 +39,17 @@ sort unique_id survey_yr
 
 // now restrict to one record per HH
 tab SEX marital_status_updated if SEX_HEAD_==1
+// tab SEX marital_status_updated if SEX_HEAD_==1 & survey_yr < 2021 // validate it matches
+
 /* need to end up with this amount of respondents after the below
-           | marital_status_update
-    SEX OF |           d
+
 INDIVIDUAL | Married (  Partnered |     Total
 -----------+----------------------+----------
-      Male |   159,508     10,819 |   170,327 
-    Female |   159,508     10,803 |   170,311 
+      Male |   163,449     11,543 |   174,992 
+    Female |   163,429     11,499 |   174,928 
 -----------+----------------------+----------
-     Total |   319,016     21,622 |   340,638 
+     Total |   326,878     23,042 |   349,920 
+
 */
 
 drop if SEX_HEAD_!=1
@@ -76,13 +78,11 @@ keep if per_id==1
 tab marital_status_updated
 /* k pretty close
 
-marital_status_upd |
-              ated |      Freq.     Percent        Cum.
 -------------------+-----------------------------------
-Married (or pre77) |    159,316       93.69       93.69
-         Partnered |     10,730        6.31      100.00
+Married (or pre77) |    163,239       93.45       93.45
+         Partnered |     11,435        6.55      100.00
 -------------------+-----------------------------------
-             Total |    170,046      100.00
+
 */
 
 
@@ -93,7 +93,14 @@ tab rel_start_yr marital_status_updated, m
 unique unique_id
 unique unique_id if rel_start_yr >= 1990 // nearly half of sample goes away. okay let's decide later...
 unique unique_id if rel_start_yr >= 1980 // compromise with 1980? ugh idk
-// keep if rel_start_yr >= 1990
+* we want to keep people who started after 1990, who we observed their start, and who started before 2011, so we have 10 years of observations
+* first, min and max duration
+bysort unique_id partner_id: egen min_dur = min(dur)
+bysort unique_id partner_id: egen max_dur = max(dur)
+
+browse unique_id partner_id survey_yr rel_start_yr relationship_duration min_dur max_dur
+keep if rel_start_yr >= 1990 & inlist(min_dur,0,1)
+keep if rel_start_yr <= 2011
 
 // restrict to working age?
 tab AGE_REF_ employed_ly_head, row
@@ -109,12 +116,25 @@ browse unique_id partner_id survey_yr rel_start_all rel_start_yr marital_status_
 
 tab dur, m
 tab relationship_duration, m
+unique unique_id partner_id, by(marital_status_updated)
+
+// get deduped list of couples to match their info on later
+preserve
+
+collapse (first) rel_start_yr min_dur max_dur, by(unique_id partner_id)
+
+save "$created_data\couple_list.dta", replace
+
+restore
+
+********************************************************************************
+**# Now get survey history for these couples from main file
+********************************************************************************
+
 
 ********************************************************************************
 **# How many observations / couples do we have?
 ********************************************************************************
-// first, max duration
-bysort unique_id partner_id: egen max_dur = max(dur)
 
 // did i observe it end?
 bysort unique_id partner_id: egen ended = max(rel_end_pre)
