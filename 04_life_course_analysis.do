@@ -1,4 +1,4 @@
-also, didn't observe dissolution?
+
 ********************************************************************************
 * Project: Relationship Growth Curves
 * Owner: Kimberly McErlean
@@ -31,7 +31,7 @@ sort unique_id survey_yr
 browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr RELATION_ id_ref id_wife
 
 gen partner_id=.
-replace partner_id = id_ref if inlist(RELATION_,2,20,22)  // so need opposite idalso, didn't observe dissolution?
+replace partner_id = id_ref if inlist(RELATION_,2,20,22)  // so need opposite id
 replace partner_id = id_wife if inlist(RELATION_,1,10)
 
 browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr RELATION_ partner_id id_ref id_wife
