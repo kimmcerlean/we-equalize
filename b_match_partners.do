@@ -26,6 +26,17 @@ rename pidp partner_pidp_bh
 save "$temp\spid_lookup.dta", replace
 
 ********************************************************************************
+* Prep partner history file for later
+********************************************************************************
+use "$input/phistory_wide.dta", clear
+
+foreach var in status* partner* starty* startm* endy* endm* divorcey* divorcem* mrgend* cohend* ongoing* ttl_spells ttl_married ttl_civil_partnership ttl_cohabit ever_married ever_civil_partnership ever_cohabit lastintdate lastinty lastintm hhorig{
+	rename `var' mh_`var' // renaming for ease of finding later, especially when matching partner info
+}
+
+save "$temp\partner_history_tomatch.dta", replace
+
+********************************************************************************
 * Import data (created in step a) and do some data cleaning / recoding before creating a file to match partners
 ********************************************************************************
 
@@ -107,11 +118,26 @@ replace dob_year = doby_dv if survey==1
 replace dob_year = . if inrange(dob_year,-9,-1)
 tab dob_year, m
 
+// also need to figure out how to get college degree equivalent (see Musick et al 2020 - use the ISCED guidelines to identify bachelor's degree equivalents as the completion of tertiary education programs, excluding higher vocational programs
+
+fre hiqual_dv // think need to use the component variable of this
 tab hiqual_dv survey, m // both
 replace hiqual_dv=. if inlist(hiqual_dv,-8,-9)
 tab qfhigh_dv survey, m // this is only ukhls
-// education coding from Musick et al: In the BHPS and SOEP, we use the 1997 International Standard Classification of Education (ISCED) guidelines to identify bachelor's degree equivalents as the completion of tertiary education programs, excluding higher vocational programs (UNESCO Institute for Statistics [1997] 2006). 
-// other educations: qfachi (bhps only) qfedhi (bhps only - details) qfhigh (not v good) qfhigh_dv (ukhls details) hiqual_dv hiqualb_dv (bhps only)
+// other educations: qfachi (bhps only) qfedhi (bhps only - details) qfhigh (not v good) qfhigh_dv (ukhls details) hiqual_dv hiqualb_dv (bhps only) isced11_dv (only UKHS, but lots of missing, which is sad bc I think it's what I nee/d?) isced (bhps, might be helpful?)
+
+tab qfhigh_dv hiqual_dv
+tab isced11_dv hiqual_dv // see what bachelors in isced is considered in hiqual // okay so bachelor's / master's in degree. some of bachelor's also in "other higher degree"
+tab isced hiqual_dv // so here 5a and 6 are in degree. 5b is what is in other degree (vocational) - do I want that? I feel like Musick didn't include vocational.
+
+gen college_degree=0
+replace college_degree=1 if  hiqual_dv==1
+replace college_degree=. if hiqual_dv==.
+
+/*
+Undergraduate degrees are either level 4, 5 or 6 qualifications, with postgraduate degrees sitting at level 7 or 8. In Scotland, awards are at level 9 or 10 for an undergraduate degree, and level 11 and 12 for master's and doctorates.
+A bachelor's degree involves studying one, or sometimes two, subjects in detail. It's the most common undergraduate degree in the UK and is a level 6 qualification (level 9 or 10 in Scotland). 
+*/
 
 tab racel survey, m
 tab racel_dv survey, m // ukhls - but one the survey says to use I think
@@ -119,6 +145,34 @@ tab race survey, m // not helpful
 tab racel_bh survey, m // this doesn't feel helpful either
 tab ethn_dv survey, m // okay, need to figure out a bhps race variable...
 // might need to combine these two: race (BH01-12) racel_bh (BH13-18) or get racel_dv_all from xwavedat
+
+browse survey year racel_dv race racel_bh
+gen race_use = .
+replace race_use = 1 if inrange(racel_dv,1,4) & survey==1
+replace race_use = 1 if race==1 & survey==2 & inrange(year,1991,2002)
+replace race_use = 1 if inrange(racel_bh,1,5) & survey==2 & inrange(year,2003,2008)
+replace race_use = 2 if inrange(racel_dv,14,16) & survey==1
+replace race_use = 2 if inrange(race,2,4) & survey==2 & inrange(year,1991,2002)
+replace race_use = 2 if inrange(racel_bh,14,16) & survey==2 & inrange(year,2003,2008)
+replace race_use = 3 if inrange(racel_dv,9,13) & survey==1
+replace race_use = 3 if inrange(race,5,8) & survey==2 & inrange(year,1991,2002)
+replace race_use = 3 if inrange(racel_bh,10,13) & survey==2 & inrange(year,2003,2008)
+replace race_use = 4 if inrange(racel_dv,5,8) & survey==1
+replace race_use = 4 if inrange(racel_bh,6,9) & survey==2 & inrange(year,2003,2008)
+replace race_use = 5 if inrange(racel_dv,17,97) & survey==1
+replace race_use = 5 if race==9 & survey==2 & inrange(year,1991,2002)
+replace race_use = 5 if racel_bh==18 & survey==2 & inrange(year,2003,2008)
+replace race_use = -8 if race==-8 & survey==2 & inrange(year,1991,2002)
+replace race_use = -8 if racel_bh==-8 & survey==2 & inrange(year,2003,2008)
+
+label define race_use 1 "White" 2 "Black" 3 "Asian" 4 "Mixed" 5 "Other" -8 "Get"
+label values race_use race_use
+
+// country
+recode gor_dv (1/9=1)(10=2)(11=3)(12=4), gen(country_all)
+replace country_all=. if inlist(country_all,-9,13)
+label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
+label values country_all country
 
 // so many marital statuses STILL
 tab mlstat survey, m // present legal marital status - has a lot of inapplicable, so doesn't seem right - think only for new people?
@@ -206,7 +260,9 @@ inspect partner_id if partnered==1
 
 browse pidp wavename survey marital_status_defacto partnered partner_id ppid partner_pidp_bh sppid_bh if partnered==1
 
+********************************************************************************
 ** DoL variables
+********************************************************************************
 /*
 attempting to QA howlng here - coverage feels low in next file, want to see if that is actually true. do before all recodes.
 tab howlng if wavename==6, m
@@ -218,11 +274,17 @@ foreach var in howlng husits hubuys hufrys huiron humops huboss jbstat aidhh aid
 	recode `var' (-10/-1=.)
 }
 
+// some better employment variables
 fre jbstat
 gen employed=0
 replace employed=1 if inlist(jbstat,1,2)
 
 recode jbhrs (-8=0)(-9=.)(-7/-1=.)
+
+fre jbot
+recode jbot (-8=0)(-9=.)(-7/-1=.)
+
+egen total_hours=rowtotal(jbhrs jbot)
 
 sum howlng, detail
 sum jbhrs, detail
@@ -230,6 +292,11 @@ sum jbhrs if employed==1, detail
 tab husits, m
 fre husits
 
+recode fimnlabgrs_dv (-9=.)(-7=.)
+recode fimnlabnet_dv (-9=.)(-1=.)
+recode paynu_dv (-9=.)(-7=.)(-8=0)
+
+// unpaid labor variables
 tab hubuys, m
 tab hubuys if wavename==12 // why did this coding change?
 gen hubuys_v0 = hubuys
@@ -296,13 +363,23 @@ tab huboss if partnered==1, m
 
 browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng hubuys hufrys huiron humops jbhrs
 
+********************************************************************************
+* Okay, let's add on marital history as well, so I can use this to get duration / relationship order?
+* Doing here (used to be later, just for reference person) so I can get gendered versions for later
+********************************************************************************
+
+merge m:1 pidp using "$temp\partner_history_tomatch.dta", keepusing(mh_*)
+tab marital_status_defacto _merge, row // so def some missing that shouldn't be... but not a lot
+drop if _merge==2
+drop _merge
+
 save "$outputpath/UKHLS_long_all_recoded.dta", replace
 
 ********************************************************************************
 **# Now create temporary copy of the data to use to match partner characteristics
 ********************************************************************************
 // just keep necessary variables
-local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed"
+local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata indinub_xw indinus_xw indinus_lw indinub_lw mh_*"
 
 keep pidp pid survey wavename year `partnervars'
 
@@ -368,14 +445,6 @@ browse pidp pid wavename partner_id partner_match if pidp==956765 // let's look 
 browse survey wavename pidp pid partner_id partner_match if partner_id==78217008 // waves 20-21 are master only	
 browse pidp pid wavename partner_id partner_match if pid==78217008  // this is a pid not a pidp. so yeah, this person doesn't have records for 20-21?
 */
-
-********************************************************************************
-**# Okay, let's add on marital history as well, so I can use this to get duration / relationship order?
-********************************************************************************
-merge m:1 pidp using "$input/phistory_wide.dta", keepusing(status* partner* starty* startm* endy* endm* divorcey* divorcem* mrgend* cohend* ongoing* ttl_spells ttl_married ttl_civil_partnership ttl_cohabit ever_married ever_civil_partnership ever_cohabit lastintdate lastinty lastintm)
-tab marital_status_defacto _merge, row // so def some missing that shouldn't be...
-drop if _merge==2
-drop _merge
 
 save "$outputpath/UKHLS_matched.dta", replace
 

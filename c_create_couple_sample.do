@@ -3,7 +3,7 @@
 * Project: Relative Density Approach - UK
 * Code owner: Kimberly McErlean
 * Started: September 2024
-* File name: c_create_sample.do
+* File name: c_create_couple_sample.do
 ********************************************************************************
 ********************************************************************************
 
@@ -145,13 +145,6 @@ label define paid_dol 1 "Shared" 2 "Husband more" 3 "Wife more" 4 "Neither works
 label values paid_dol paid_dol
 
 **Paid labor: with overtime
-fre jbot
-recode jbot (-8=0)(-9=.)(-7/-1=.)
-recode jbot_sp (-8=0)(-9=.)(-7/-1=.)
-
-egen total_hours=rowtotal(jbhrs jbot)
-egen total_hours_sp=rowtotal(jbhrs_sp jbot_sp)
-
 egen paid_couple_total_ot = rowtotal(total_hours total_hours_sp)
 gen paid_wife_pct_ot=total_hours / paid_couple_total_ot if sex==2 & sex_sp==1
 replace paid_wife_pct_ot=total_hours_sp / paid_couple_total_ot if sex==1 & sex_sp==2
@@ -184,13 +177,6 @@ paynl // takehome pay at last payment
 */
 
 browse pidp survey year employed fimnlabgrs_dv fimnlabnet_dv paynu_dv // there are a lot of 0s in net pay where gross is not 0, which doesn't make sense.
-
-recode fimnlabgrs_dv (-9=.)(-7=.)
-recode fimnlabnet_dv (-9=.)(-1=.)
-recode paynu_dv (-9=.)(-7=.)(-8=0)
-recode fimnlabgrs_dv_sp (-9=.)(-7=.)
-recode fimnlabnet_dv_sp (-9=.)(-1=.)
-recode paynu_dv_sp (-9=.)(-7=.)(-8=0)
 
 inspect fimnlabgrs_dv // total monthly labor income gross - this would probably be second choice?
 inspect fimnlabnet_dv // total monthly labor income net - only wave 1-13, probably first choice
@@ -249,12 +235,6 @@ tab howlng unpaid_flag, m
 ********************************************************************************
 * Other recodes
 ********************************************************************************
-// country
-recode gor_dv (1/9=1)(10=2)(11=3)(12=4), gen(country_all)
-replace country_all=. if inlist(country_all,-9,13)
-label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
-label values country_all country
-
 // children
 gen kids_in_hh=0
 replace kids_in_hh=1 if nkids_dv > 0 & nkids_dv!=. // binary as to whether or not they have kids currently
@@ -278,31 +258,6 @@ replace had_first_birth_alt=1 if nkids_dv==1 & nkids_dv[_n-1]==0 & agechy_dv==0 
 browse pidp year nkids_dv nch02_dv agechy_dv had_birth had_first_birth_alt
 
 // eventually need to figure out when first birth was (if not during survey a la above) to denote in time relative to marriage
-
-// also need to figure out how to get college degree equivalent (see Musick et al 2020 - use the ISCED guidelines to identify bachelor's degree equivalents as the completion of tertiary education programs, excluding higher vocational programs
-
-fre hiqual_dv // think need to use the component variable of this
-tab hiqual_dv survey, m // both
-replace hiqual_dv=. if inlist(hiqual_dv,-8,-9)
-tab qfhigh_dv survey, m // this is only ukhls
-// other educations: qfachi (bhps only) qfedhi (bhps only - details) qfhigh (not v good) qfhigh_dv (ukhls details) hiqual_dv hiqualb_dv (bhps only) isced11_dv (only UKHS, but lots of missing, which is sad bc I think it's what I nee/d?) isced (bhps, might be helpful?)
-
-tab qfhigh_dv hiqual_dv
-tab isced11_dv hiqual_dv // see what bachelors in isced is considered in hiqual // okay so bachelor's / master's in degree. some of bachelor's also in "other higher degree"
-tab isced hiqual_dv // so here 5a and 6 are in degree. 5b is what is in other degree (vocational) - do I want that? I feel like Musick didn't include vocational.
-
-gen college_degree=0
-replace college_degree=1 if  hiqual_dv==1
-replace college_degree=. if hiqual_dv==.
-
-gen college_degree_sp=0
-replace college_degree_sp=1 if hiqual_dv_sp==1
-replace college_degree_sp=. if hiqual_dv_sp==.
-
-/*
-Undergraduate degrees are either level 4, 5 or 6 qualifications, with postgraduate degrees sitting at level 7 or 8. In Scotland, awards are at level 9 or 10 for an undergraduate degree, and level 11 and 12 for master's and doctorates.
-A bachelor's degree involves studying one, or sometimes two, subjects in detail. It's the most common undergraduate degree in the UK and is a level 6 qualification (level 9 or 10 in Scotland). 
-*/
 
 
 ********************************************************************************
