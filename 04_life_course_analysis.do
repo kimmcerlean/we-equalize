@@ -174,7 +174,8 @@ forvalues y=1999(2)2021{
 	replace relationship_`y'=3 if inrange(RELATION_`y',23,87) | inrange(RELATION_`y',90,98) | inrange(RELATION_`y',3,9)
 }
 
-keep unique_id in_sample_* relationship_* MARITAL_PAIRS_*
+// browse unique_id in_sample_* relationship_* MARITAL_PAIRS_* HOUSEWORK_WIFE_* HOUSEWORK_HEAD_*
+keep unique_id in_sample_* relationship_* MARITAL_PAIRS_* SEX
 gen partner_id = unique_id
 
 forvalues y=1969/1997{
@@ -188,6 +189,8 @@ forvalues y=1999(2)2021{
 	gen relationship_sp_`y' = relationship_`y'
 	gen MARITAL_PAIRS_sp_`y' = MARITAL_PAIRS_`y'
 }
+
+gen SEX_sp = SEX
 
 forvalues y=1969/1987{ // let's keep a few years to see if we have ANY data for people before they were observed
 	drop in_sample_`y'
@@ -212,30 +215,35 @@ drop if _merge==2
 drop _merge
 
 drop *_sp_*
+drop SEX_sp
 
-merge m:1 partner_id using  "$temp\partner_sample_info.dta", keepusing(*_sp_*)
+merge m:1 partner_id using  "$temp\partner_sample_info.dta", keepusing(*_sp_* SEX_sp)
 drop if _merge==2
 drop _merge
 
-browse unique_id partner_id rel_start_all last_yr_observed in_sample*
+browse unique_id partner_id rel_start_all last_yr_observed SEX* in_sample*
 
 save "$temp\couple_sample_details_wide.dta", replace
 
 reshape long MARITAL_PAIRS_ in_sample_ relationship_ MARITAL_PAIRS_sp_ in_sample_sp_ relationship_sp_ , ///
- i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended) j(survey_yr)
+ i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX SEX_sp) j(survey_yr)
+
+label values SEX_sp ER32000L
  
-browse unique_id partner_id in_sample_ in_sample_sp MARITAL_PAIRS_  MARITAL_PAIRS_sp_
+browse unique_id partner_id SEX SEX_sp in_sample_ in_sample_sp MARITAL_PAIRS_  MARITAL_PAIRS_sp_
 tab MARITAL_PAIRS_ if in_sample_==1 & in_sample_sp_==1 // what to do if both in sample, but not identified as spouse? this isn't just married is it? I don't think tso? oh is it bc of FIRST yr cohabitors?
 tab MARITAL_PAIRS_sp_ if in_sample_==1 & in_sample_sp_==1 // what to do if both in sample, but not identified as spouse? this isn't just married is it? I don't think tso?
  
 gen coupled_in_sample = 0
 replace coupled_in_sample = 1 if in_sample_==1 & in_sample_sp_==1 & inrange(MARITAL_PAIRS_,1,3) & inrange(MARITAL_PAIRS_sp_,1,3)
 
-gen single_in_sample_ref = 0
-replace single_in_sample_ref = 1 if in_sample_==1 & in_sample_sp_==0
+gen single_in_sample_wom = 0
+replace single_in_sample_wom = 1 if in_sample_==1 & in_sample_sp_==0 & SEX ==2 // so main person is in sample and is a woman
+replace single_in_sample_wom = 1 if in_sample_==0 & in_sample_sp_==1 & SEX_sp ==2 // so partner is in sample and is a woman
 
-gen single_in_sample_sp = 0
-replace single_in_sample_sp = 1 if in_sample_==0 & in_sample_sp_==1
+gen single_in_sample_man = 0
+replace single_in_sample_man = 1 if in_sample_==1 & in_sample_sp_==0 & SEX ==1
+replace single_in_sample_man = 1 if in_sample_==0 & in_sample_sp_==1 & SEX_sp ==1
 
 gen single_in_sample_both=0
 replace single_in_sample_both = 1 if in_sample_==1 & in_sample_sp_==1 & (survey_yr < rel_start_all | survey_yr > last_yr_observed)
@@ -245,13 +253,13 @@ replace not_in_sample=1 if in_sample_==0 & in_sample_sp_ ==0
 
 gen status=.
 replace status=1 if coupled_in_sample==1
-replace status=2 if single_in_sample_ref==1
-replace status=3 if single_in_sample_sp==1
+replace status=2 if single_in_sample_wom==1
+replace status=3 if single_in_sample_man==1
 replace status=4 if single_in_sample_both==1
 replace status=0 if not_in_sample==1
 replace status=1 if in_sample_==1 & in_sample_sp==1 & status==.
 
-label define status 1 "coupled" 2 "single: ref" 3 "single: spouse" 4 "single:both" 0 "missing"
+label define status 1 "coupled" 2 "single: woman" 3 "single: man" 4 "single:both" 0 "missing"
 label values status status
 tab status, m
 
@@ -268,116 +276,164 @@ tab duration, m
 keep if duration >=-5 // keep up to 5 years prior, jic
 keep if duration <=22 // up to 20 for now - but adding two extra years so I can do the lookups below and still retain up to 20
 
-gen duration_rec=duration  // negatives won't work in reshape
+gen duration_rec=duration+5  // negatives won't work in reshape - so make -5 0
+/*
 replace duration_rec = 95 if duration==-5
 replace duration_rec = 96 if duration==-4
 replace duration_rec = 97 if duration==-3
 replace duration_rec = 98 if duration==-2
 replace duration_rec = 99 if duration==-1
+*/
 
 drop MARITAL_PAIRS_ MARITAL_PAIRS_sp_ survey_yr duration
 
-reshape wide coupled_in_sample single_in_sample_ref single_in_sample_sp single_in_sample_both not_in_sample status in_sample_ relationship_ in_sample_sp_ relationship_sp_ pair pair_sp, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended) j(duration_rec)
+reshape wide coupled_in_sample single_in_sample_wom single_in_sample_man single_in_sample_both not_in_sample status in_sample_ relationship_ in_sample_sp_ relationship_sp_ pair pair_sp, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX SEX_sp) j(duration_rec)
 
 browse unique_id partner_id rel_start_all last_yr_observed status*
 browse in_sample_15 in_sample_sp_15 status15
 
-forvalues s=0/22{
+forvalues s=0/27{
 	replace status`s'=5 if status`s'==.
 }
 
-forvalues s=95/99{
-	replace status`s'=5 if status`s'==.
-}
+label define status_x 0 "True Missing" 1 "Coupled" 2 "Single Woman" 3 "Single Man Only" 4 "Off year" 5 "Censored" // put both in women heree. will make this better in another variable.
 
-label define status_gp 0 "True Missing" 1 "Coupled" 2 "Single" 3 "Off year" 4 "Censored"
-
-forvalues s=0/22{
-	gen status_gp`s'=.
-	replace status_gp`s'=0 if status`s'==0
-	replace status_gp`s'=1 if status`s'==1
-	replace status_gp`s'=2 if inlist(status`s',2,3,4)
-	replace status_gp`s'=3 if status`s'==5
-	label values status_gp`s' status_gp
-}
-
-forvalues s=95/99{
-	gen status_gp`s'=.
-	replace status_gp`s'=0 if status`s'==0
-	replace status_gp`s'=1 if status`s'==1
-	replace status_gp`s'=2 if inlist(status`s',2,3,4)
-	replace status_gp`s'=3 if status`s'==5
-	label values status_gp`s' status_gp
+forvalues s=0/27{
+	gen status_x`s'=.
+	replace status_x`s'=0 if status`s'==0
+	replace status_x`s'=1 if status`s'==1
+	replace status_x`s'=2 if inlist(status`s',2,4)
+	replace status_x`s'=3 if status`s'==3
+	replace status_x`s'=4 if status`s'==5
+	label values status_x`s' status_x
 }
 
 gen duration=last_yr_observed-rel_start_all
+browse unique_id partner_id rel_start_all last_yr_observed duration status_x*
+
+// just replacing the missings
+
+forvalues b=1/26{
+	local a = `b'-1
+	local c = `b'+1
+	replace status_x`b' = 0 if status_x`a'==0 & status_x`c'==0 & status_x`b'==4 // so is status is off year, but both sides are missing, call this missing
+}
+
+forvalues b=1/26{
+	local a = `b'-1
+	local c = `b'+1
+	replace status_x`b' = 5 if status_x`a'==4 & status_x`c'==4 & status_x`b'==4 // so if it becomes all off-years, this actually means censored.
+}
+
+forvalues b=1/26{
+	local a = `b'-1
+	local c = `b'+1
+	replace status_x`b' = 5 if status_x`a'==5 & status_x`c'==5 & status_x`b'==4 // not working for all so if off-year till surrounded by censored, this is censored
+}
+
+// now let's attempt to fill in all of the off-year data, create new variable for reference
+forvalues s=0/27{
+	gen status_gp`s'=status_x`s'
+	label values status_gp`s' status_x
+}
+
+forvalues b=1/26{
+	local a = `b'-1
+	local c = `b'+1
+	replace status_gp`b' = 1 if status_x`b'==4 & status_x`a'==1 & status_x`c'==1 // replace off-year with coupled if both years around are coupled
+	replace status_gp`b' = 2 if status_x`b'==4 & status_x`a'==2 & status_x`c'==2 // repeat for all
+	replace status_gp`b' = 3 if status_x`b'==4 & status_x`a'==3 & status_x`c'==3 // repeat for all
+}
+
+rename status_gp0 status_gp_neg5
+rename status_gp1 status_gp_neg4
+rename status_gp2 status_gp_neg3
+rename status_gp3 status_gp_neg2
+rename status_gp4 status_gp_neg1
+
+forvalues s=5/27{ // okay, I think I need to do some duration finagling, so need to reset these
+	local a = `s'-5
+	rename status_gp`s' status_gp`a'
+}
+
 browse unique_id partner_id rel_start_all last_yr_observed duration status_gp*
-browse unique_id partner_id rel_start_all last_yr_observed duration status*
 
-forvalues b=1/21{
-	local a = `b'-1
+forvalues b=0/21{
 	local c = `b'+1
-	replace status_gp`b' = 0 if status_gp`a'==0 & status_gp`c'==0 & status_gp`b'==3
-}
-
-forvalues b=1/21{
-	local a = `b'-1
-	local c = `b'+1
-	replace status_gp`b' = 4 if status_gp`a'==3 & status_gp`c'==3 & status_gp`b'==3
-}
-
-forvalues b=1/21{
-	local a = `b'-1
-	local c = `b'+1
-	replace status_gp`b' = 4 if status_gp`a'==4 & status_gp`c'==4 & status_gp`b'==3
+	replace status_gp`b' = status_gp`c' if duration < `b' & status_gp`b'==4
 }
 
 save "$created_data\couple_duration_matrix.dta", replace
 
+// want to do some data checks
+egen coupled_years = anycount(status_gp*), values(1)
+browse unique_id partner_id rel_start_all last_yr_observed duration coupled_years status_gp*
+gen percent_tracked = coupled_years / (duration+1)
+
+gen match=0
+replace match=1 if percent_tracked==1
+
+gen match_x=0
+replace match_x=1 if percent_tracked>=0.75000 & percent_tracked!=.
+
+sum percent_tracked, detail
+
+gen duration_10=0
+replace duration_10=1 if duration>=9
+
+sum percent_tracked if duration_10==1, detail
+tab match if duration_10==1
+tab match_x if duration_10==1
+
+sum duration
+
 ********************************************************************************
 **# attempt to export data
 ********************************************************************************
-putexcel set "$results/sample_matrix", replace
+// detailed
+putexcel set "$results/sample_matrix", sheet(detailed) replace
 putexcel B1 = "True Missing"
 putexcel C1 = "Coupled"
-putexcel D1 = "Single"
-putexcel E1 = "Off-year"
-putexcel F1 = "Censored"
+putexcel D1 = "Single Woman"
+putexcel E1 = "Single Man Only"
+putexcel F1 = "Off-year"
+putexcel G1 = "Censored"
 
 // Means
-putexcel A2 = "Duration 0"
-putexcel A3 = "Duration 1"
-putexcel A4 = "Duration 2"
-putexcel A5 = "Duration 3"
-putexcel A6 = "Duration 4"
-putexcel A7 = "Duration 5"
-putexcel A8 = "Duration 6"
-putexcel A9 = "Duration 7"
-putexcel A10 = "Duration 8"
-putexcel A11 = "Duration 9"
-putexcel A12 = "Duration 10"
-putexcel A13 = "Duration 11"
-putexcel A14 = "Duration 12"
-putexcel A15 = "Duration 13"
-putexcel A16 = "Duration 14"
-putexcel A17 = "Duration 15"
-putexcel A18 = "Duration 16"
-putexcel A19 = "Duration 17"
-putexcel A20 = "Duration 18"
-putexcel A21 = "Duration 19"
-putexcel A22 = "Duration 20"
-putexcel A23 = "Duration -5"
-putexcel A24 = "Duration -4"
-putexcel A25 = "Duration -3"
-putexcel A26 = "Duration -2"
-putexcel A27 = "Duration -1"
+putexcel A2 = "Duration -5"
+putexcel A3 = "Duration -4"
+putexcel A4 = "Duration -3"
+putexcel A5 = "Duration -2"
+putexcel A6 = "Duration -1"
+putexcel A7 = "Duration 0"
+putexcel A8 = "Duration 1"
+putexcel A9 = "Duration 2"
+putexcel A10 = "Duration 3"
+putexcel A11 = "Duration 4"
+putexcel A12 = "Duration 5"
+putexcel A13 = "Duration 6"
+putexcel A14 = "Duration 7"
+putexcel A15 = "Duration 8"
+putexcel A16 = "Duration 9"
+putexcel A17 = "Duration 10"
+putexcel A18 = "Duration 11"
+putexcel A19 = "Duration 12"
+putexcel A20 = "Duration 13"
+putexcel A21 = "Duration 14"
+putexcel A22 = "Duration 15"
+putexcel A23 = "Duration 16"
+putexcel A24 = "Duration 17"
+putexcel A25 = "Duration 18"
+putexcel A26 = "Duration 19"
+putexcel A27 = "Duration 20"
 
-local colu "B C D E F"
 
-forvalues s=0/11{
+local colu "B D E F" // can't be single or coupled in first years
+
+forvalues s=0/4{
 	local row = `s' + 2
-	tab status_gp`s', gen(s`s'_)
-	forvalues x=1/4{ // censor doesn't appear until 12
+	tab status_x`s', gen(s`s'_)
+	forvalues x=1/4{
 		local col: word `x' of `colu'
 		mean s`s'_`x'
 		matrix s`s'_`x'= e(b)
@@ -385,10 +441,12 @@ forvalues s=0/11{
 	}
 }
 
-forvalues s=12/20{
+local colu "B C D E F G"
+
+forvalues s=5/16{
 	local row = `s' + 2
-	tab status_gp`s', gen(s`s'_)
-	forvalues x=1/5{
+	tab status_x`s', gen(s`s'_)
+	forvalues x=1/5{ // censor doesn't appear until 12 (aka 17)
 		local col: word `x' of `colu'
 		mean s`s'_`x'
 		matrix s`s'_`x'= e(b)
@@ -396,12 +454,10 @@ forvalues s=12/20{
 	}
 }
 
-local colu "B D E"
-
-forvalues s=95/99{
-	local row = `s' - 72
-	tab status_gp`s', gen(s`s'_)
-	forvalues x=1/3{
+forvalues s=17/25{
+	local row = `s' + 2
+	tab status_x`s', gen(s`s'_)
+	forvalues x=1/6{
 		local col: word `x' of `colu'
 		mean s`s'_`x'
 		matrix s`s'_`x'= e(b)
@@ -409,7 +465,79 @@ forvalues s=95/99{
 	}
 }
 
+// cleaned up
+putexcel set "$results/sample_matrix", sheet(cleaned) modify
+putexcel B1 = "True Missing"
+putexcel C1 = "Coupled"
+putexcel D1 = "Single Woman"
+putexcel E1 = "Single Man Only"
+putexcel F1 = "Off-year"
+putexcel G1 = "Censored"
 
+// Means
+putexcel A2 = "Duration -1"
+putexcel A3 = "Duration -2"
+putexcel A4 = "Duration -3"
+putexcel A5 = "Duration -4"
+putexcel A6 = "Duration -5"
+putexcel A7 = "Duration 0"
+putexcel A8 = "Duration 1"
+putexcel A9 = "Duration 2"
+putexcel A10 = "Duration 3"
+putexcel A11 = "Duration 4"
+putexcel A12 = "Duration 5"
+putexcel A13 = "Duration 6"
+putexcel A14 = "Duration 7"
+putexcel A15 = "Duration 8"
+putexcel A16 = "Duration 9"
+putexcel A17 = "Duration 10"
+putexcel A18 = "Duration 11"
+putexcel A19 = "Duration 12"
+putexcel A20 = "Duration 13"
+putexcel A21 = "Duration 14"
+putexcel A22 = "Duration 15"
+putexcel A23 = "Duration 16"
+putexcel A24 = "Duration 17"
+putexcel A25 = "Duration 18"
+putexcel A26 = "Duration 19"
+putexcel A27 = "Duration 20"
+
+local colu "B D E F" // can't be single or coupled in first years
+
+forvalues s=1/5{
+	local row = `s' + 1
+	tab status_gp_neg`s', gen(sneg`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean sneg`s'_`x'
+		matrix sneg`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(sneg`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "B C D E F G"
+
+forvalues s=0/10{
+	local row = `s' + 7
+	tab status_gp`s', gen(sg`s'_)
+	forvalues x=1/5{ 
+		local col: word `x' of `colu'
+		mean sg`s'_`x'
+		matrix sg`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(sg`s'_`x'), nformat(#.#%)
+	}
+}
+
+forvalues s=11/20{
+	local row = `s' + 7
+	tab status_gp`s', gen(sg`s'_)
+	forvalues x=1/6{
+		local col: word `x' of `colu'
+		mean sg`s'_`x'
+		matrix sg`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(sg`s'_`x'), nformat(#.#%)
+	}
+}
 
 /* Come back to this - prior way of looking for couples
 ********************************************************************************
