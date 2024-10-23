@@ -134,6 +134,22 @@ save "$created_data\couple_list.dta", replace
 
 restore
 
+// do some QA checks using this couple information to compare to below
+unique unique_id partner_id, by(max_dur) // okay this exactly matches
+unique unique_id partner_id if rel_end_pre, by(max_dur) 
+
+gen observation_20=0
+replace observation_20=1 if inrange(dur,0,20)
+
+bysort unique_id partner_id: egen num_observations_20 = sum(observation_20)
+sort unique_id partner_id survey_yr
+browse unique_id partner_id dur max_dur num_observations_20
+
+gen percent_tracked = num_observations_20 / max_dur if max_dur < 21
+sum percent_tracked, detail // but this won't be 100% because not imputed, so 50% is good
+
+tab dur ended, row
+
 ********************************************************************************
 **# Now get survey history for these couples from main file
 ********************************************************************************
