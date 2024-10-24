@@ -98,6 +98,11 @@ tab wavename survey, m
 tab sex, m
 recode sex (-9/-1=.)
 
+// going to see if I can fill in missing sex variables
+browse pidp year sex hgsex
+replace sex=hgsex if sex==. & hgsex!=.
+replace sex=sex_dv if sex==. & sex_dv!=.
+
 tab age if survey==2, m
 tab age_dv if survey==1, m
 
