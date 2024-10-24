@@ -378,13 +378,80 @@ tab marital_status_defacto _merge, row // so def some missing that shouldn't be.
 drop if _merge==2
 drop _merge
 
+browse pidp sex marital_status_defacto partner_id mh_partner1 mh_status1 mh_partner2 mh_status2 mh_partner3 mh_status3 mh_partner4 mh_status4
+
+label define status_new 1 "Marriage" 2 "Cohab"
+foreach var in mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6 mh_status7 mh_status8 mh_status9 mh_status10 mh_status11 mh_status12 mh_status13 mh_status14{
+	gen x_`var' = `var'
+	replace `var' = 1 if inlist(`var',2,3)
+	replace `var' = 2 if `var'==10
+	label values `var' .
+	label values `var' status_new
+}
+
+gen rel_no=. // add this to get lookup for current relationship start and end dates
+forvalues r=1/14{
+	replace rel_no = `r' if mh_status`r' == marital_status_defacto & mh_partner`r' == partner_id & partner_id!=.
+}
+
+tab rel_no if inlist(marital_status_defacto,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
+
+// I am going to create individual level versions of these variables for now and then check in next file against partners to make sure they match.
+gen current_rel_start_year=.
+gen current_rel_start_month=.
+gen current_rel_end_year=.
+gen current_rel_end_month=.
+gen current_rel_ongoing=.
+// gen current_rel_how_end=.
+gen current_rel_marr_end=.
+gen current_rel_coh_end=.
+
+forvalues r=1/14{
+	replace current_rel_start_year = mh_starty`r' if rel_no==`r'
+	replace current_rel_start_month = mh_startm`r' if rel_no==`r'
+	replace current_rel_end_year = mh_endy`r' if rel_no==`r'
+	replace current_rel_end_month = mh_endm`r' if rel_no==`r'
+	replace current_rel_ongoing = mh_ongoing`r' if rel_no==`r'
+	// replace current_rel_how_end = mrgend`r' if rel_no==`r' & status`r'==1 // if marriage - okay this actually won't work because the codes are different between marriage and cohab
+	// replace current_rel_how_end = cohend`r' if rel_no==`r' & status`r'==2 // if cohab
+	replace current_rel_marr_end = mh_mrgend`r' if rel_no==`r'
+	replace current_rel_coh_end = mh_cohend`r' if rel_no==`r'
+}
+
+replace current_rel_start_year=. if current_rel_start_year==-9
+replace current_rel_start_month=. if current_rel_start_month==-9
+replace current_rel_end_year=. if current_rel_end_year==-9
+replace current_rel_end_month=. if current_rel_end_month==-9
+
+label values current_rel_ongoing ongoing
+label values current_rel_marr_end mrgend
+label values current_rel_coh_end cohend
+
+browse pidp marital_status_defacto partner_id rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
+
+// for those with missing, maybe if only 1 spell, use that info? as long as the status matches and the interview date is within the confines of the spell?
+browse pidp istrtdaty istrtdatm marital_status_defacto partner_id rel_no mh_ttl_spells mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
+
+replace current_rel_start_year = mh_starty1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
+replace current_rel_start_month = mh_startm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
+replace current_rel_end_year = mh_endy1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
+replace current_rel_end_month = mh_endm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
+replace current_rel_ongoing = mh_ongoing1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
+gen rel_no_orig=rel_no
+replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1 // okay this actually didn't add that many more that is fine.
+
 save "$outputpath/UKHLS_long_all_recoded.dta", replace
+
+unique pidp // 109651, 772472 total py
+unique pidp partner_id // 126305	
+unique pidp, by(sex) // 52397 m, 57362 w
+unique pidp, by(partnered) // 55858 0, 68410 1
 
 ********************************************************************************
 **# Now create temporary copy of the data to use to match partner characteristics
 ********************************************************************************
 // just keep necessary variables
-local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata indinub_xw indinus_xw indinus_lw indinub_lw mh_*"
+local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata indinub_xw indinus_xw indinus_lw indinub_lw mh_* rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end"
 
 keep pidp pid survey wavename year `partnervars'
 
@@ -425,6 +492,7 @@ use "$outputpath/UKHLS_long_all_recoded.dta", clear
 
 merge m:1 partner_id wavename using "$temp/UKHLS_partners.dta" // okay it feels like switching to pidp left me with the same number of matches...
 drop if _merge==2
+
 tab survey _merge, m
 tab survey partnered, m // so, there are more people partnered than matched...
 inspect partner_id if _merge==1 & partnered==1 // so there are a bunch with partner ids, so WHY aren't they matching? okay, confirmed it is just partner non-response for a specific wave

@@ -49,12 +49,12 @@ drop if sex==sex_sp
 // okay want to try to figure out things like relationship duration and relationship order, as some might have married prior to entering the survey. not sure if I have to merge partner history.
 tab nmar survey, m // ukhls, but a lot of inapplicable? I think this variable is only for new entrants?! is there one maybe in the cross-wave file, then?!
 tab nmar_bh survey, m // same with bhps
-tab ttl_spells survey, m
+tab mh_ttl_spells survey, m
 
-browse pidp marital_status_defacto partner_id partner1 status1 partner2 status2 partner3 status3 partner4 status4
+browse pidp marital_status_defacto partner_id partner1 mh_status1 partner2 mh_status2 partner3 mh_status3 partner4 mh_status4
 
 label define status_new 1 "Marriage" 2 "Cohab"
-foreach var in status1 status2 status3 status4 status5 status6 status7 status8 status9 status10 status11 status12 status13 status14{
+foreach var in mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6 mh_status7 mh_status8 mh_status9 mh_status10 mh_status11 mh_status12 mh_status13 mh_status14{
 	gen x_`var' = `var'
 	replace `var' = 1 if inlist(`var',2,3)
 	replace `var' = 2 if `var'==10
@@ -64,8 +64,9 @@ foreach var in status1 status2 status3 status4 status5 status6 status7 status8 s
 
 gen rel_no=. // add this to get lookup for current relationship start and end dates
 forvalues r=1/14{
-	replace rel_no = `r' if status`r' == marital_status_defacto & partner`r' == partner_id
+	replace rel_no = `r' if mh_status`r' == marital_status_defacto & mh_partner`r' == partner_id
 }
+
 tab rel_no if inlist(marital_status_defacto,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
 browse pidp marital_status_defacto partner_id rel_no partner1 status1 partner2 status2 partner3 status3 partner4 status4
 browse pidp marital_status_defacto partner_id rel_no partner1 status1 starty1 startm1 endy1 endm1 divorcey1 divorcem1 mrgend1 cohend1 ongoing1 // if separated, then divorced, end date is seapration date, and divorce date is against divorcey.
