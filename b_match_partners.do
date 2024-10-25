@@ -17,7 +17,8 @@
 ********************************************************************************
 * Going to try to first update spouse id for BHPS so it's pidp NOT pid
 ********************************************************************************
-use "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave\xwaveid_bh.dta"
+// use "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave\xwaveid_bh.dta"
+use "$ukhls\xwaveid_bh.dta"
 
 keep pidp pid
 rename pid sppid_bh
@@ -443,8 +444,7 @@ replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,
 save "$outputpath/UKHLS_long_all_recoded.dta", replace
 
 unique pidp // 109651, 772472 total py
-unique pidp partner
-_id // 126305	
+unique pidp partner_id // 126305	
 unique pidp, by(sex) // 52397 m, 57362 w
 unique pidp, by(partnered) // 55858 0, 68410 1
 

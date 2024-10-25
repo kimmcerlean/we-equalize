@@ -25,10 +25,11 @@ clear all
 set more off
 
 // Replace "where" with the filepath of the working folder (where any temporary files created by this programme will be stored)   eg:  c:\ukhls\temp
-cd "G:\Data\UKHLS data\temp created files" 
+cd "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\projects\UK Relative Density\temp created files" 
 
+/* moving these to setup file to make it easier
 // Replace "where" with the folderpath where the data has been downloaded and unzipped   eg:   c:\ukhls_data\UKDA-6614-stata\stata\stata13_se\ukhls
-global ukhls "G:\Data\UKHLS data\UKDA-6614-stata\stata\stata13_se" // EUI computer
+global ukhls "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\datasets\UKHLS\UKDA-6614-stata\stata\stata13_se" // EUI computer
 // global input "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\input data" // Kim computer
 
 // Replace "where" with the filepath of the folder where you want to store the final dataset produced by this programme.  eg:  c:\ukhls\results
@@ -37,6 +38,7 @@ global outputpath "G:\Data\UKHLS data\output data" // for EUI computer
 
 // global temp "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\temp data" // for Kim's computer
 global temp "G:\Data\UKHLS data\temp created files"  // for EUI computer
+*/
 
 // The file produced by this programme will be named as below. If you want to change the name do it here.
 local outputfilename "UKHLS_long_all"
