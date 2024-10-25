@@ -443,7 +443,8 @@ replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,
 save "$outputpath/UKHLS_long_all_recoded.dta", replace
 
 unique pidp // 109651, 772472 total py
-unique pidp partner_id // 126305	
+unique pidp partner
+_id // 126305	
 unique pidp, by(sex) // 52397 m, 57362 w
 unique pidp, by(partnered) // 55858 0, 68410 1
 
@@ -451,7 +452,7 @@ unique pidp, by(partnered) // 55858 0, 68410 1
 **# Now create temporary copy of the data to use to match partner characteristics
 ********************************************************************************
 // just keep necessary variables
-local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata indinub_xw indinus_xw indinus_lw indinub_lw mh_* rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end"
+local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata istrtdaty indinub_xw indinus_xw indinus_lw indinub_lw mh_* rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end"
 
 keep pidp pid survey wavename year `partnervars'
 
@@ -504,6 +505,9 @@ browse survey wavename pidp pid partner_id hubuys _merge
 gen partner_match=0
 replace partner_match=1 if _merge==3
 drop _merge
+
+rename istrtdaty int_year
+rename istrtdaty_sp int_year_sp
 
 /*
 some exploration to QA partners - but this is just due to non-response, I have confirmed
