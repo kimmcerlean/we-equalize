@@ -302,5 +302,10 @@ keep if inlist(per_id,0,1,3,5,7) // 0 = individual records, 1 = first couple rec
 save "$outputpath/UKHLS_full_sample_deduped.dta", replace
 
 // should be cut in half?
-unique pidp partner_id if partner_match==1 // 64360 438156 -- now 32304 219092
-unique pidp, by(partner_match) // 67831 0, 62448 1 -- now 31566
+unique pidp partner_id if partner_match==1 // 64360 438156 -- now 32,304 219,092. AND the abstract for PAA said 32,174 / 218,652 so this feels v close and right, but we will check
+unique pidp, by(partner_match) // 67831 0, 62448 1 -- now 31,566
+
+// compare to previous
+preserve
+collapse (first) current_rel_start_year if partner_match==1, by(pidp partner_id)
+restore
