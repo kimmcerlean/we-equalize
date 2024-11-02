@@ -8,7 +8,7 @@ global CPS "/data/CPS"
 global GSOEP "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\datasets\GSOEP\Stata"
 
 ********************************************************************************
-** Personal Computer
+** Personal Computer and PRC (just the homedir differs)
 ********************************************************************************
 
 * Note that these directories will contain all "created" files - including intermediate data, results, and log files.
