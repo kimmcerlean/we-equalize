@@ -744,7 +744,7 @@ drop *_neg*
 drop hh_earn_type11 hh_earn_type12 hh_hours_type11 hh_hours_type12 housework_bkt11 housework_bkt12 earn_housework11 earn_housework12
 
 // all
-putexcel set "$results/life course dol", sheet(all) replace
+putexcel set "$results/psid_life course dol", sheet(all) replace
 putexcel A2 = "Duration"
 putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
 putexcel F1:I1 = "Hours DoL", merge border(bottom) hcenter bold
@@ -837,7 +837,7 @@ forvalues s=0/10{
 // just 10 years +
 drop if duration_10==0
 
-putexcel set "$results/life course dol", sheet(10yrs) modify
+putexcel set "$results/psid_life course dol", sheet(10yrs) modify
 putexcel A2 = "Duration"
 putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
 putexcel F1:I1 = "Hours DoL", merge border(bottom) hcenter bold
