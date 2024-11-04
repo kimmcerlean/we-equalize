@@ -12,8 +12,13 @@ global input "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\datase
 ********************************************************************************
 * Personal computer
 ********************************************************************************
+// relative density
+
 global input "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\input data" // Kim computer
 global outputpath "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\output data" // for Kim's computer
 global temp "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Paper 1 - Relative Density Approach\temp data" // for Kim's computer
 global egoalt "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\egoalt (all waves)" // for Kim's computer
 global ukhls "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave" // revisit this
+
+// growth curves
+global results "G:\Other computers\My Laptop\Documents\Research Projects\Growth Curves\results & output" // for Kim's computer
