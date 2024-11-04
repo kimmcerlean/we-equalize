@@ -46,6 +46,12 @@ tab age_all employed, row
 tab age_all_sp employed_sp, row
 keep if (age_all>=18 & age_all<=60) &  (age_all_sp>=18 & age_all_sp<=60) // sort of drops off a cliff after 60?
 
+// education variable (never created)
+tab college_degree college_degree_sp, m
+
+gen couple_educ_gp=0
+replace couple_educ_gp=1 if college_degree==1 | college_degree_sp==1
+
 // wait, do I currently have two records per HH? yes, I think, so need to delete one? or just restrict to women, for now?
 sort hidp pidp year
 browse hidp pidp partner_id year
@@ -72,9 +78,9 @@ tab duration unpaid_dol, row nofreq
 tab duration unpaid_dol if max_dur>=10, row nofreq
 
 // okay let's reshape and maybe try to fill in the off years of unpaid dol. right now, keeping the bare minimum, but will add more later
-keep pidp partner_id rel_start_all min_dur max_dur last_yr_observed sex sex_sp hidp psu strata duration hhsize nkids_dv nchild_015 agechy_dv marital_status_defacto hubuys hufrys humops huiron husits huboss hufrys_sp humops_sp huiron_sp husits_sp huboss_sp age_all age_all_sp survey employed employed_sp current_rel_end_year marr_trans current_rel_ongoing paid_couple_total paid_wife_pct paid_dol total_hours total_hours_sp paid_couple_total_ot paid_wife_pct_ot paid_dol_ot paid_couple_earnings paid_earn_pct hh_earn_type unpaid_couple_total unpaid_wife_pct unpaid_dol unpaid_flag kids_in_hh had_birth had_first_birth_alt college_degree college_degree_sp country_all wavename
+keep pidp partner_id rel_start_all min_dur max_dur last_yr_observed sex sex_sp hidp psu strata duration hhsize nkids_dv nchild_015 agechy_dv marital_status_defacto hubuys hufrys humops huiron husits huboss hufrys_sp humops_sp huiron_sp husits_sp huboss_sp age_all age_all_sp survey employed employed_sp current_rel_end_year marr_trans current_rel_ongoing paid_couple_total paid_wife_pct paid_dol total_hours total_hours_sp paid_couple_total_ot paid_wife_pct_ot paid_dol_ot paid_couple_earnings paid_earn_pct hh_earn_type unpaid_couple_total unpaid_wife_pct unpaid_dol unpaid_flag kids_in_hh had_birth had_first_birth_alt college_degree college_degree_sp couple_educ_gp country_all wavename
 
-reshape wide hidp psu strata hhsize nkids_dv nchild_015 agechy_dv marital_status_defacto hubuys hufrys humops huiron husits huboss hufrys_sp humops_sp huiron_sp husits_sp huboss_sp age_all age_all_sp survey employed employed_sp current_rel_end_year marr_trans current_rel_ongoing paid_couple_total paid_wife_pct paid_dol total_hours total_hours_sp paid_couple_total_ot paid_wife_pct_ot paid_dol_ot paid_couple_earnings paid_earn_pct hh_earn_type unpaid_couple_total unpaid_wife_pct unpaid_dol unpaid_flag kids_in_hh had_birth had_first_birth_alt college_degree college_degree_sp country_all wavename, i(pidp partner_id rel_start_all min_dur max_dur last_yr_observed sex sex_sp) j(duration)
+reshape wide hidp psu strata hhsize nkids_dv nchild_015 agechy_dv marital_status_defacto hubuys hufrys humops huiron husits huboss hufrys_sp humops_sp huiron_sp husits_sp huboss_sp age_all age_all_sp survey employed employed_sp current_rel_end_year marr_trans current_rel_ongoing paid_couple_total paid_wife_pct paid_dol total_hours total_hours_sp paid_couple_total_ot paid_wife_pct_ot paid_dol_ot paid_couple_earnings paid_earn_pct hh_earn_type unpaid_couple_total unpaid_wife_pct unpaid_dol unpaid_flag kids_in_hh had_birth had_first_birth_alt college_degree college_degree_sp couple_educ_gp country_all wavename, i(pidp partner_id rel_start_all min_dur max_dur last_yr_observed sex sex_sp) j(duration)
 
 unique pidp partner_id
 unique pidp partner_id if max_dur>=10 // so this will cut it down some
@@ -583,3 +589,185 @@ forvalues s=0/10{
 	}
 }
 
+**# 10 years - education (no college)
+putexcel set "$results/ukhls_life course dol", sheet(nocollege) modify
+putexcel A2 = "Duration"
+putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
+putexcel F1:I1 = "Hours DoL", merge border(bottom) hcenter bold
+putexcel J1:M1 = "Housework DoL", merge border(bottom) hcenter bold
+putexcel N1:R1 = "Combo", merge border(bottom) hcenter bold
+putexcel B2 = "Dual"
+putexcel C2 = "Male BW"
+putexcel D2 = "Female BW"
+putexcel E2 = "No Earners"
+putexcel F2 = "Dual"
+putexcel G2 = "Male BW"
+putexcel H2 = "Female BW"
+putexcel I2 = "No Earners"
+putexcel J2 = "Dual"
+putexcel K2 = "Female HW"
+putexcel L2 = "Male HW"
+putexcel M2 = "No Earners"
+putexcel N2 = "Egal"
+putexcel O2 = "Second shift"
+putexcel P2 = "Traditional"
+putexcel Q2 = "Counter-Traditional"
+putexcel R2 = "Other"
+
+// Means
+putexcel A3 = "Duration 0"
+putexcel A4 = "Duration 1"
+putexcel A5 = "Duration 2"
+putexcel A6 = "Duration 3"
+putexcel A7 = "Duration 4"
+putexcel A8 = "Duration 5"
+putexcel A9 = "Duration 6"
+putexcel A10 = "Duration 7"
+putexcel A11 = "Duration 8"
+putexcel A12 = "Duration 9"
+putexcel A13 = "Duration 10"
+
+
+local colu "B C D E"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab hh_earn_type`s', gen(earn`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean earn`s'_`x' if couple_educ_gp`s'==0
+		matrix earn`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(earn`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "F G H I"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab paid_dol_ot`s', gen(hours`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean hours`s'_`x' if couple_educ_gp`s'==0
+		matrix hours`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(hours`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "J K L M"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab unpaid_dol`s', gen(hw`s'_)
+	forvalues x=1/3{ 
+		local col: word `x' of `colu'
+		mean hw`s'_`x' if couple_educ_gp`s'==0
+		matrix hw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(hw`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "N O P Q R"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab earn_housework`s', gen(earn_hw`s'_)
+	forvalues x=1/5{ 
+		local col: word `x' of `colu'
+		mean earn_hw`s'_`x' if couple_educ_gp`s'==0
+		matrix earn_hw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(earn_hw`s'_`x'), nformat(#.#%)
+	}
+}
+
+
+**# 10 years - education (college)
+putexcel set "$results/ukhls_life course dol", sheet(college) modify
+putexcel A2 = "Duration"
+putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
+putexcel F1:I1 = "Hours DoL", merge border(bottom) hcenter bold
+putexcel J1:M1 = "Housework DoL", merge border(bottom) hcenter bold
+putexcel N1:R1 = "Combo", merge border(bottom) hcenter bold
+putexcel B2 = "Dual"
+putexcel C2 = "Male BW"
+putexcel D2 = "Female BW"
+putexcel E2 = "No Earners"
+putexcel F2 = "Dual"
+putexcel G2 = "Male BW"
+putexcel H2 = "Female BW"
+putexcel I2 = "No Earners"
+putexcel J2 = "Dual"
+putexcel K2 = "Female HW"
+putexcel L2 = "Male HW"
+putexcel M2 = "No Earners"
+putexcel N2 = "Egal"
+putexcel O2 = "Second shift"
+putexcel P2 = "Traditional"
+putexcel Q2 = "Counter-Traditional"
+putexcel R2 = "Other"
+
+// Means
+putexcel A3 = "Duration 0"
+putexcel A4 = "Duration 1"
+putexcel A5 = "Duration 2"
+putexcel A6 = "Duration 3"
+putexcel A7 = "Duration 4"
+putexcel A8 = "Duration 5"
+putexcel A9 = "Duration 6"
+putexcel A10 = "Duration 7"
+putexcel A11 = "Duration 8"
+putexcel A12 = "Duration 9"
+putexcel A13 = "Duration 10"
+
+
+local colu "B C D E"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab hh_earn_type`s', gen(earn`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean earn`s'_`x' if couple_educ_gp`s'==1
+		matrix earn`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(earn`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "F G H I"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab paid_dol_ot`s', gen(hours`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean hours`s'_`x' if couple_educ_gp`s'==1
+		matrix hours`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(hours`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "J K L M"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab unpaid_dol`s', gen(hw`s'_)
+	forvalues x=1/3{ 
+		local col: word `x' of `colu'
+		mean hw`s'_`x' if couple_educ_gp`s'==1
+		matrix hw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(hw`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "N O P Q R"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab earn_housework`s', gen(earn_hw`s'_)
+	forvalues x=1/5{ 
+		local col: word `x' of `colu'
+		mean earn_hw`s'_`x' if couple_educ_gp`s'==1
+		matrix earn_hw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(earn_hw`s'_`x'), nformat(#.#%)
+	}
+}
