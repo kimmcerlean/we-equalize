@@ -150,7 +150,7 @@ save "$temp\ukhls_couple_data_wide.dta", replace
 ********************************************************************************
 // use "$temp\ukhls_couple_data_wide.dta", clear
 
-// all
+**# all
 putexcel set "$results/ukhls_life course dol", sheet(all) replace
 putexcel A2 = "Duration"
 putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
@@ -241,7 +241,7 @@ forvalues s=0/10{
 	}
 }
 
-// just 10 years +
+**# just 10 years +
 drop if duration_10==0
 
 putexcel set "$results/ukhls_life course dol", sheet(10yrs) modify
@@ -334,7 +334,7 @@ forvalues s=0/10{
 	}
 }
 
-// 10 years - no kids
+**# 10 years - no kids
 putexcel set "$results/ukhls_life course dol", sheet(nokids) modify
 putexcel A2 = "Duration"
 putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
@@ -426,7 +426,7 @@ forvalues s=0/10{
 }
 
 
-// 10 years - kids
+**# 10 years - kids
 putexcel set "$results/ukhls_life course dol", sheet(kids) modify
 putexcel A2 = "Duration"
 putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
@@ -517,7 +517,7 @@ forvalues s=0/10{
 	}
 }
 
-// combined parent view
+**# combined parent view
 putexcel set "$results/ukhls_life course dol", sheet(parental_status) modify
 putexcel A3 = "Duration"
 putexcel B1:I1 = "Hours DoL", merge border(bottom) hcenter bold
