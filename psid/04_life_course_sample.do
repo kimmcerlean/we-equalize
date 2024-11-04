@@ -733,6 +733,39 @@ replace duration_10=1 if duration>=9
 
 browse unique_id partner_id rel_start_all last_yr_observed duration status_gp* hh_earn_type* housework_bkt* if duration_10==1
 
+// want to merge info on kid status PLUS dol - let's just do for hours of paid labor and unpaid labor separately
+label define parent_paid_type 1 "no kids, dual" 2 "no kids, male BW" 3 "no kids, female BW" 4 "no kids, no earners" 5 "kids, dual" 6 "kids, male BW" 7 "kids, female BW" 8 "kids, no earners" 
+
+forvalues d=0/12{
+	gen parent_paid_type`d'=.
+	replace parent_paid_type`d'=1 if children`d'==0 & hh_hours_type`d'==1 // no kids, dual
+	replace parent_paid_type`d'=2 if children`d'==0 & hh_hours_type`d'==2 // no kids, male BW
+	replace parent_paid_type`d'=3 if children`d'==0 & hh_hours_type`d'==3 // no kids, female BW
+	replace parent_paid_type`d'=4 if children`d'==0 & hh_hours_type`d'==4 // no kids, no earners
+
+	replace parent_paid_type`d'=5 if children`d'==1 & hh_hours_type`d'==1 // kids, dual
+	replace parent_paid_type`d'=6 if children`d'==1 & hh_hours_type`d'==2 // kids, male BW
+	replace parent_paid_type`d'=7 if children`d'==1 & hh_hours_type`d'==3 // kids, female BW
+	replace parent_paid_type`d'=8 if children`d'==1 & hh_hours_type`d'==4 // kids, no earners
+	
+	label values parent_paid_type`d' parent_paid_type 
+}
+
+label define parent_unpaid_type 1 "no kids, dual" 2 "no kids, female HW" 3 "no kids, male HW" 4 "kids, dual" 5 "kids, female HW" 6 "kids, male HW"
+
+forvalues d=0/12{
+	gen parent_unpaid_type`d'=.
+	replace parent_unpaid_type`d'=1 if children`d'==0 & housework_bkt`d'==1 // no kids, dual
+	replace parent_unpaid_type`d'=2 if children`d'==0 & housework_bkt`d'==2 // no kids, female HW
+	replace parent_unpaid_type`d'=3 if children`d'==0 & housework_bkt`d'==3 // no kids, male HW
+
+	replace parent_unpaid_type`d'=4 if children`d'==1 & housework_bkt`d'==1 // kids, dual
+	replace parent_unpaid_type`d'=5 if children`d'==1 & housework_bkt`d'==2 // kids, female HW
+	replace parent_unpaid_type`d'=6 if children`d'==1 & housework_bkt`d'==3 // kids, male HW
+
+	label values parent_unpaid_type`d' parent_unpaid_type 
+}
+
 save "$temp\compiled_couple_data_wide.dta", replace
 
 ********************************************************************************
@@ -834,7 +867,7 @@ forvalues s=0/10{
 	}
 }
 
-// just 10 years +
+**# just 10 years +
 drop if duration_10==0
 
 putexcel set "$results/psid_life course dol", sheet(10yrs) modify
@@ -926,3 +959,253 @@ forvalues s=0/10{
 		putexcel `col'`row' = matrix(earn_hw`s'_`x'), nformat(#.#%)
 	}
 }
+
+**# just 10 yrs + kid status (no kids)
+putexcel set "$results/psid_life course dol", sheet(nokids) modify
+putexcel A2 = "Duration"
+putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
+putexcel F1:I1 = "Hours DoL", merge border(bottom) hcenter bold
+putexcel J1:M1 = "Housework DoL", merge border(bottom) hcenter bold
+putexcel N1:R1 = "Combo", merge border(bottom) hcenter bold
+putexcel B2 = "Dual"
+putexcel C2 = "Male BW"
+putexcel D2 = "Female BW"
+putexcel E2 = "No Earners"
+putexcel F2 = "Dual"
+putexcel G2 = "Male BW"
+putexcel H2 = "Female BW"
+putexcel I2 = "No Earners"
+putexcel J2 = "Dual"
+putexcel K2 = "Female HW"
+putexcel L2 = "Male HW"
+putexcel M2 = "No Earners"
+putexcel N2 = "Egal"
+putexcel O2 = "Second shift"
+putexcel P2 = "Traditional"
+putexcel Q2 = "Counter-Traditional"
+putexcel R2 = "Other"
+
+// Means
+putexcel A3 = "Duration 0"
+putexcel A4 = "Duration 1"
+putexcel A5 = "Duration 2"
+putexcel A6 = "Duration 3"
+putexcel A7 = "Duration 4"
+putexcel A8 = "Duration 5"
+putexcel A9 = "Duration 6"
+putexcel A10 = "Duration 7"
+putexcel A11 = "Duration 8"
+putexcel A12 = "Duration 9"
+putexcel A13 = "Duration 10"
+
+
+local colu "B C D E"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab hh_earn_type`s', gen(earn`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean earn`s'_`x' if children`s'==0
+		matrix earn`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(earn`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "F G H I"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab hh_hours_type`s', gen(hours`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean hours`s'_`x' if children`s'==0
+		matrix hours`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(hours`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "J K L M"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab housework_bkt`s', gen(hw`s'_)
+	forvalues x=1/3{ 
+		local col: word `x' of `colu'
+		mean hw`s'_`x' if children`s'==0
+		matrix hw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(hw`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "N O P Q R"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab earn_housework`s', gen(earn_hw`s'_)
+	forvalues x=1/5{ 
+		local col: word `x' of `colu'
+		mean earn_hw`s'_`x' if children`s'==0
+		matrix earn_hw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(earn_hw`s'_`x'), nformat(#.#%)
+	}
+}
+
+**# just 10 yrs + kid status (has kids)
+putexcel set "$results/psid_life course dol", sheet(kids) modify
+putexcel A2 = "Duration"
+putexcel B1:E1 = "Earnings DoL", merge border(bottom) hcenter bold
+putexcel F1:I1 = "Hours DoL", merge border(bottom) hcenter bold
+putexcel J1:M1 = "Housework DoL", merge border(bottom) hcenter bold
+putexcel N1:R1 = "Combo", merge border(bottom) hcenter bold
+putexcel B2 = "Dual"
+putexcel C2 = "Male BW"
+putexcel D2 = "Female BW"
+putexcel E2 = "No Earners"
+putexcel F2 = "Dual"
+putexcel G2 = "Male BW"
+putexcel H2 = "Female BW"
+putexcel I2 = "No Earners"
+putexcel J2 = "Dual"
+putexcel K2 = "Female HW"
+putexcel L2 = "Male HW"
+putexcel M2 = "No Earners"
+putexcel N2 = "Egal"
+putexcel O2 = "Second shift"
+putexcel P2 = "Traditional"
+putexcel Q2 = "Counter-Traditional"
+putexcel R2 = "Other"
+
+// Means
+putexcel A3 = "Duration 0"
+putexcel A4 = "Duration 1"
+putexcel A5 = "Duration 2"
+putexcel A6 = "Duration 3"
+putexcel A7 = "Duration 4"
+putexcel A8 = "Duration 5"
+putexcel A9 = "Duration 6"
+putexcel A10 = "Duration 7"
+putexcel A11 = "Duration 8"
+putexcel A12 = "Duration 9"
+putexcel A13 = "Duration 10"
+
+
+local colu "B C D E"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab hh_earn_type`s', gen(earn`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean earn`s'_`x' if children`s'==1
+		matrix earn`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(earn`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "F G H I"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab hh_hours_type`s', gen(hours`s'_)
+	forvalues x=1/4{ 
+		local col: word `x' of `colu'
+		mean hours`s'_`x' if children`s'==1
+		matrix hours`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(hours`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "J K L M"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab housework_bkt`s', gen(hw`s'_)
+	forvalues x=1/3{ 
+		local col: word `x' of `colu'
+		mean hw`s'_`x' if children`s'==1
+		matrix hw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(hw`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "N O P Q R"
+
+forvalues s=0/10{
+	local row = `s' + 3
+//	tab earn_housework`s', gen(earn_hw`s'_)
+	forvalues x=1/5{ 
+		local col: word `x' of `colu'
+		mean earn_hw`s'_`x' if children`s'==1
+		matrix earn_hw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(earn_hw`s'_`x'), nformat(#.#%)
+	}
+}
+
+
+**# combined parent view
+putexcel set "$results/psid_life course dol", sheet(parental_status) modify
+putexcel A3 = "Duration"
+putexcel B1:I1 = "Hours DoL", merge border(bottom) hcenter bold
+putexcel J1:O1 = "Housework DoL", merge border(bottom) hcenter bold
+putexcel B2:E2 = "No Kids", merge border(bottom) hcenter bold
+putexcel F2:I2 = "Kids", merge border(bottom) hcenter bold
+putexcel J2:L2 = "No Kids", merge border(bottom) hcenter bold
+putexcel M2:O2 = "Kids", merge border(bottom) hcenter bold
+
+putexcel B3 = "Dual"
+putexcel C3 = "Male BW"
+putexcel D3 = "Female BW"
+putexcel E3 = "No Earners"
+putexcel F3 = "Dual"
+putexcel G3 = "Male BW"
+putexcel H3 = "Female BW"
+putexcel I3 = "No Earners"
+putexcel J3 = "Dual"
+putexcel K3 = "Female HW"
+putexcel L3 = "Male HW"
+putexcel M3 = "Dual"
+putexcel N3 = "Female HW"
+putexcel O3 = "Male HW"
+
+
+// Means
+putexcel A4 = "Duration 0"
+putexcel A5 = "Duration 1"
+putexcel A6 = "Duration 2"
+putexcel A7 = "Duration 3"
+putexcel A8 = "Duration 4"
+putexcel A9 = "Duration 5"
+putexcel A10 = "Duration 6"
+putexcel A11 = "Duration 7"
+putexcel A12 = "Duration 8"
+putexcel A13 = "Duration 9"
+putexcel A14 = "Duration 10"
+
+
+local colu "B C D E F G H I"
+
+forvalues s=0/10{
+	local row = `s' + 4
+	tab parent_paid_type`s', gen(kidpaid`s'_)
+	forvalues x=1/8{ 
+		local col: word `x' of `colu'
+		mean kidpaid`s'_`x'
+		matrix kidpaid`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(kidpaid`s'_`x'), nformat(#.#%)
+	}
+}
+
+local colu "J K L M N O"
+
+forvalues s=0/10{
+	local row = `s' + 4
+	tab parent_unpaid_type`s', gen(kidhw`s'_)
+	forvalues x=1/6{ 
+		local col: word `x' of `colu'
+		mean kidhw`s'_`x'
+		matrix kidhw`s'_`x'= e(b)
+		putexcel `col'`row' = matrix(kidhw`s'_`x'), nformat(#.#%)
+	}
+}
+
