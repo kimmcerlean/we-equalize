@@ -783,6 +783,60 @@ forvalues d=0/12{
 save "$temp\compiled_couple_data_wide.dta", replace
 
 ********************************************************************************
+**# Some descriptive statistics - remember this is WIDE, so this will create problems for the "total" analysis
+********************************************************************************
+// use "$temp\compiled_couple_data_wide.dta",clear
+
+// so this will be for times 1 and 10
+unique pidp partner_id 
+unique pidp partner_id  if duration_10==1
+
+sum max_dur if duration_10==1  // average marital duration
+sum duration  if duration_10==1 // average marital duration
+
+tab couple_educ_gp1 if duration_10==1 // time 1
+tab couple_educ_gp10 if duration_10==1 // time 10
+
+tab kids_in_hh1 if duration_10==1 // time 1
+tab kids_in_hh10 if duration_10==1 // time 10
+
+sum paid_wife_pct_ot1 if duration_10==1 
+sum paid_wife_pct_ot10 if duration_10==1 
+tab paid_dol_ot1 if duration_10==1 
+tab paid_dol_ot10 if duration_10==1 
+sum unpaid_wife_pct1 if duration_10==1 
+sum unpaid_wife_pct10 if duration_10==1 
+tab unpaid_dol1 if duration_10==1 
+tab unpaid_dol10 if duration_10==1 
+tab earn_housework1 if duration_10==1 
+tab earn_housework10 if duration_10==1 
+
+// do I need to RESHAPE to get all?
+drop duration
+
+reshape long hidp psu strata hhsize nkids_dv nchild_015 agechy_dv marital_status_defacto hubuys hufrys humops huiron husits huboss hufrys_sp humops_sp huiron_sp husits_sp huboss_sp age_all age_all_sp survey employed employed_sp current_rel_end_year marr_trans current_rel_ongoing paid_couple_total paid_wife_pct paid_dol total_hours total_hours_sp paid_couple_total_ot paid_wife_pct_ot paid_dol_ot paid_couple_earnings paid_earn_pct hh_earn_type unpaid_couple_total unpaid_wife_pct unpaid_dol unpaid_flag kids_in_hh had_birth had_first_birth_alt college_degree college_degree_sp couple_educ_gp country_all wavename earn_housework, i(pidp partner_id rel_start_all min_dur max_dur last_yr_observed sex sex_sp duration_10) j(duration)
+
+tab duration_10
+unique pidp partner_id
+drop if duration_10==0
+unique pidp partner_id
+drop if duration>10
+
+tab paid_dol_ot if duration==1 // validate match
+tab paid_dol_ot if duration==10 // validate match
+
+tab couple_educ_gp
+tab kids_in_hh
+sum paid_wife_pct_ot
+tab paid_dol_ot
+sum unpaid_wife_pct
+tab unpaid_dol
+tab earn_housework 
+
+tab had_birth
+unique pidp partner_id  if had_birth==1 // use this for % experiencing a birth
+
+********************************************************************************
 **# attempt to summarize data
 ********************************************************************************
 use "$temp\compiled_couple_data_wide.dta", clear
