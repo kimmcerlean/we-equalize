@@ -16,7 +16,7 @@
 ********************************************************************************
 * Import data and small final sample cleanup
 ********************************************************************************
-use "$created_data\PSID_partners_cleaned.dta", clear
+use "$created_data_psid\PSID_partners_cleaned.dta", clear
 // use "G:\Other computers\My Laptop\Documents\Research Projects\Growth Curves\PAA 2025 submission\data\PSID_partners_cleaned.dta", clear
 
 // first create partner ids before I drop partners

@@ -13,7 +13,7 @@ global code "$homedir/github/we-equalize/data-creation/psid"
 global PSID "$homedir/data/PSID"
 
 * created data files
-global created_data "$homedir/WeEqualize (Postdoc)/Compiled Data/PSID"
+global created_data_psid "$homedir/WeEqualize (Postdoc)/Compiled Data/PSID"
 
 * temporary data files (they get deleted without a second thought)
-global temp "$homedir/WeEqualize (Postdoc)/Temp Data/PSID"
+global temp_psid "$homedir/WeEqualize (Postdoc)/Temp Data/PSID"
