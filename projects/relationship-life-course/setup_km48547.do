@@ -1,8 +1,8 @@
 ********************************************************************************
 ** Set home directory
 ********************************************************************************
-// global homedir "G:\Other computers\My Laptop\Documents"
-global homedir "T:" // comment this out if you are not using the PRC Remote Server
+global homedir "G:\Other computers\My Laptop\Documents"
+// global homedir "T:" // comment this out if you are not using the PRC Remote Server
 
 ********************************************************************************
 ** Original / base data
