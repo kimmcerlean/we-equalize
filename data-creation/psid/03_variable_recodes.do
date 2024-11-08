@@ -69,15 +69,15 @@ rename mh_unique_id unique_id
 rename mh_year_birth year_birth 
 rename mh_INTERVIEW_NUM_1968 INTERVIEW_NUM_1968
 
-save "$temp\marital_history_wide.dta", replace
+save "$temp_psid\marital_history_wide.dta", replace
 
 ********************************************************************************
 **# import orig data, merge to marital history, and create nec relationship variables
 ********************************************************************************
-use "$created_data\PSID_partners.dta", clear
+use "$created_data_psid\PSID_partners.dta", clear
 
 // merge on marital history
-merge m:1 unique_id using "$temp\marital_history_wide.dta"
+merge m:1 unique_id using "$temp_psid\marital_history_wide.dta"
 drop if _merge==2
 
 gen in_marital_history=0
@@ -188,8 +188,8 @@ browse unique_id survey_yr marital_status_updated rel_start_yr relationship_dura
 * A lot of this code repurposed from union dissolution work - file 01a
 ********************************************************************************
 // education
-browse unique_id survey_yr  SEX  EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_ YRS_EDUCATION_ // can also use yrs education but this is individual not HH, so need to match to appropriate person
-tabstat YRS_EDUCATION_, by(survey_yr) // is that asked in all years? Can i also fill in wife info this way? so seems like 1969 and 1974 missing?
+browse unique_id survey_yr  SEX  EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_ YRS_EDUCATION_INDV // can also use yrs education but this is individual not HH, so need to match to appropriate person
+tabstat YRS_EDUCATION_INDV, by(survey_yr) // is that asked in all years? Can i also fill in wife info this way? so seems like 1969 and 1974 missing?
 
 /*
 educ1 until 1990, but educ started 1975, okay but then a gap until 1991? wife not asked 1969-1971 - might be able to fill in if she is in sample either 1968 or 1972? (match to the id)
@@ -212,7 +212,7 @@ recode EDUC1_WIFE_ (0/3=1)(4/5=2)(6=3)(7/8=4)(9=.), gen(educ_wife_early)
 recode EDUC1_HEAD_ (0/3=1)(4/5=2)(6=3)(7/8=4)(9=.), gen(educ_head_early)
 recode EDUC_WIFE_ (0/11=1) (12=2) (13/15=3) (16/17=4) (99=.), gen(educ_wife_1975)
 recode EDUC_HEAD_ (0/11=1) (12=2) (13/15=3) (16/17=4) (99=.), gen(educ_head_1975)
-recode YRS_EDUCATION_ (0/11=1) (12=2) (13/15=3) (16/17=4) (98/99=.), gen(educ_completed) // okay no, can't use this, because I guess it's not actually comparable? because head / wife ONLY recorded against those specific ones.
+recode YRS_EDUCATION_INDV (0/11=1) (12=2) (13/15=3) (16/17=4) (98/99=.), gen(educ_completed) // okay no, can't use this, because I guess it's not actually comparable? because head / wife ONLY recorded against those specific ones.
 
 label define educ 1 "LTHS" 2 "HS" 3 "Some College" 4 "College"
 label values educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 educ_completed educ
@@ -255,23 +255,23 @@ label define educ_type 1 "Hyper" 2 "Hypo" 3 "Homo"
 label values educ_type educ_type
 
 // income and division of paid labor
-browse unique_id survey_yr FAMILY_INTERVIEW_NUM_ TAXABLE_HEAD_WIFE_ TOTAL_FAMILY_INCOME_ LABOR_INCOME_HEAD_ WAGES_HEAD_  LABOR_INCOME_WIFE_ WAGES_WIFE_ 
+browse unique_id survey_yr FAMILY_INTERVIEW_NUM_ TAXABLE_T1_HEAD_WIFE TOTAL_INCOME_T1_FAMILY LABOR_INCOME_T1_HEAD WAGES_ALT_T1_HEAD WAGES_T1_HEAD LABOR_INCOME_T2_HEAD LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_  LABOR_INCOME_T2_WIFE_
 
 	// to use: WAGES_HEAD_ WAGES_WIFE_ -- wife not asked until 1993? okay labor income??
 	// wages and labor income asked for head whole time. labor income wife 1968-1993, wages for wife, 1993 onwards
 
 gen earnings_wife=.
-replace earnings_wife = LABOR_INCOME_WIFE_ if inrange(survey_yr,1968,1993)
-replace earnings_wife = WAGES_WIFE_ if inrange(survey_yr,1994,2021)
+replace earnings_wife = LABOR_INCOME_T1_WIFE_ if inrange(survey_yr,1968,1993)
+replace earnings_wife = WAGES_T1_WIFE_ if inrange(survey_yr,1994,2021)
 replace earnings_wife=. if earnings_wife== 9999999
 
 gen earnings_head=.
-replace earnings_head = LABOR_INCOME_HEAD_ if inrange(survey_yr,1968,1993)
-replace earnings_head = WAGES_HEAD_ if inrange(survey_yr,1994,2021)
+replace earnings_head = LABOR_INCOME_T1_HEAD if inrange(survey_yr,1968,1993)
+replace earnings_head = WAGES_T1_HEAD if inrange(survey_yr,1994,2021)
 replace earnings_head=. if earnings_head== 9999999
 
 egen couple_earnings = rowtotal(earnings_wife earnings_head)
-browse unique_id survey_yr TAXABLE_HEAD_WIFE_ couple_earnings earnings_wife earnings_head
+browse unique_id survey_yr TAXABLE_T1_HEAD_WIFE couple_earnings earnings_wife earnings_head
 	
 gen female_earn_pct = earnings_wife/(couple_earnings)
 
@@ -296,34 +296,34 @@ replace female_earn_pct_lag=female_earn_pct[_n-1] if unique_id==unique_id[_n-1] 
 browse unique_id survey_yr wave earnings_head earnings_wife hh_earn_type hh_earn_type_lag female_earn_pct female_earn_pct_lag
 
 // hours instead of earnings	
-browse unique_id survey_yr WEEKLY_HRS1_WIFE_ WEEKLY_HRS_WIFE_ WEEKLY_HRS1_HEAD_ WEEKLY_HRS_HEAD_
+browse unique_id survey_yr WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_
 
 gen weekly_hrs_wife = .
-replace weekly_hrs_wife = WEEKLY_HRS1_WIFE_ if survey_yr > 1969 & survey_yr <1994
-replace weekly_hrs_wife = WEEKLY_HRS_WIFE_ if survey_yr >=1994
-replace weekly_hrs_wife = 0 if inrange(survey_yr,1968,1969) & inlist(WEEKLY_HRS1_WIFE_,9,0)
-replace weekly_hrs_wife = 10 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_WIFE_ ==1
-replace weekly_hrs_wife = 27 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_WIFE_ ==2
-replace weekly_hrs_wife = 35 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_WIFE_ ==3
-replace weekly_hrs_wife = 40 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_WIFE_ ==4
-replace weekly_hrs_wife = 45 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_WIFE_ ==5
-replace weekly_hrs_wife = 48 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_WIFE_ ==6
-replace weekly_hrs_wife = 55 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_WIFE_ ==7
-replace weekly_hrs_wife = 60 if inrange(survey_yr,1968,1969)  & WEEKLY_HRS1_WIFE_ ==8
+replace weekly_hrs_wife = WEEKLY_HRS1_T1_WIFE_ if survey_yr > 1969 & survey_yr <1994
+replace weekly_hrs_wife = WEEKLY_HRS_T1_WIFE_ if survey_yr >=1994
+replace weekly_hrs_wife = 0 if inrange(survey_yr,1968,1969) & inlist(WEEKLY_HRS1_T1_WIFE_,9,0)
+replace weekly_hrs_wife = 10 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_WIFE_ ==1
+replace weekly_hrs_wife = 27 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_WIFE_ ==2
+replace weekly_hrs_wife = 35 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_WIFE_ ==3
+replace weekly_hrs_wife = 40 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_WIFE_ ==4
+replace weekly_hrs_wife = 45 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_WIFE_ ==5
+replace weekly_hrs_wife = 48 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_WIFE_ ==6
+replace weekly_hrs_wife = 55 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_WIFE_ ==7
+replace weekly_hrs_wife = 60 if inrange(survey_yr,1968,1969)  & WEEKLY_HRS1_T1_WIFE_ ==8
 replace weekly_hrs_wife=. if weekly_hrs_wife==999
 
 gen weekly_hrs_head = .
-replace weekly_hrs_head = WEEKLY_HRS1_HEAD_ if survey_yr > 1969 & survey_yr <1994
-replace weekly_hrs_head = WEEKLY_HRS_HEAD_ if survey_yr >=1994
-replace weekly_hrs_head = 0 if inrange(survey_yr,1968,1969) & inlist(WEEKLY_HRS1_HEAD_,9,0)
-replace weekly_hrs_head = 10 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_HEAD_ ==1
-replace weekly_hrs_head = 27 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_HEAD_ ==2
-replace weekly_hrs_head = 35 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_HEAD_ ==3
-replace weekly_hrs_head = 40 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_HEAD_ ==4
-replace weekly_hrs_head = 45 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_HEAD_ ==5
-replace weekly_hrs_head = 48 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_HEAD_ ==6
-replace weekly_hrs_head = 55 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_HEAD_ ==7
-replace weekly_hrs_head = 60 if inrange(survey_yr,1968,1969)  & WEEKLY_HRS1_HEAD_ ==8
+replace weekly_hrs_head = WEEKLY_HRS1_T1_HEAD_ if survey_yr > 1969 & survey_yr <1994
+replace weekly_hrs_head = WEEKLY_HRS_T1_HEAD_ if survey_yr >=1994
+replace weekly_hrs_head = 0 if inrange(survey_yr,1968,1969) & inlist(WEEKLY_HRS1_T1_HEAD_,9,0)
+replace weekly_hrs_head = 10 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_HEAD_ ==1
+replace weekly_hrs_head = 27 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_HEAD_ ==2
+replace weekly_hrs_head = 35 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_HEAD_ ==3
+replace weekly_hrs_head = 40 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_HEAD_ ==4
+replace weekly_hrs_head = 45 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_HEAD_ ==5
+replace weekly_hrs_head = 48 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_HEAD_ ==6
+replace weekly_hrs_head = 55 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1_HEAD_ ==7
+replace weekly_hrs_head = 60 if inrange(survey_yr,1968,1969)  & WEEKLY_HRS1_T1_HEAD_ ==8
 replace weekly_hrs_head=. if weekly_hrs_head==999
 
 egen couple_hours = rowtotal(weekly_hrs_wife weekly_hrs_head)
@@ -346,7 +346,7 @@ gen female_hours_pct_lag=.
 replace female_hours_pct_lag=female_hours_pct[_n-1] if unique_id==unique_id[_n-1]  & wave==wave[_n-1]+1
 
 // housework hours - not totally sure if accurate prior to 1976 (asked annually not weekly). missing head/wife specific in 1968, 1975, 1982
-browse unique_id survey_yr HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_HW_ MOST_HOUSEWORK_ // total and most HW stopped after 1974
+browse unique_id survey_yr HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 // total and most HW stopped after 1974
 
 gen housework_head = HOUSEWORK_HEAD_
 replace housework_head = (HOUSEWORK_HEAD_/52) if inrange(survey_yr,1968,1974)
@@ -354,10 +354,10 @@ replace housework_head=. if inlist(housework_head,998,999)
 gen housework_wife = HOUSEWORK_WIFE_
 replace housework_wife = (HOUSEWORK_WIFE_/52) if inrange(survey_yr,1968,1974)
 replace housework_wife=. if inlist(housework_wife,998,999)
-gen total_housework_weekly = TOTAL_HOUSEWORK_HW_ / 52
+gen total_housework_weekly = TOTAL_HOUSEWORK_T1_HW / 52
 
 egen couple_housework = rowtotal (housework_wife housework_head)
-browse id survey_yr housework_head housework_wife couple_housework total_housework_weekly TOTAL_HOUSEWORK_HW_ MOST_HOUSEWORK_
+browse id survey_yr housework_head housework_wife couple_housework total_housework_weekly TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1
 
 gen wife_housework_pct = housework_wife / couple_housework
 
@@ -436,30 +436,30 @@ egen employed_wife=rowtotal(employ_wife employ1_wife employ2_wife employ3_wife)
 browse id survey_yr employed_head employed_wife employ_head employ1_head employ_wife employ1_wife
 
 // problem is this employment is NOW not last year. I want last year? use if wages = employ=yes, then no? (or hours)
-gen employed_ly_head=0
-replace employed_ly_head=1 if earnings_head > 0 & earnings_head!=.
+gen employed_t1_head=0
+replace employed_t1_head=1 if earnings_head > 0 & earnings_head!=.
 
-gen employed_ly_wife=0
-replace employed_ly_wife=1 if earnings_wife > 0 & earnings_wife!=.
+gen employed_t1_wife=0
+replace employed_t1_wife=1 if earnings_wife > 0 & earnings_wife!=.
 
-gen ft_pt_head=.
-replace ft_pt_head = 0 if weekly_hrs_head==0
-replace ft_pt_head = 1 if weekly_hrs_head > 0 & weekly_hrs_head<=35
-replace ft_pt_head = 2 if weekly_hrs_head > 35 & weekly_hrs_head < 999
+gen ft_pt_t1_head=.
+replace ft_pt_t1_head = 0 if weekly_hrs_head==0
+replace ft_pt_t1_head = 1 if weekly_hrs_head > 0 & weekly_hrs_head<=35
+replace ft_pt_t1_head = 2 if weekly_hrs_head > 35 & weekly_hrs_head < 999
 
-gen ft_pt_wife=.
-replace ft_pt_wife = 0 if weekly_hrs_wife==0
-replace ft_pt_wife = 1 if weekly_hrs_wife > 0 & weekly_hrs_wife<=35
-replace ft_pt_wife = 2 if weekly_hrs_wife > 35 & weekly_hrs_wife < 999
+gen ft_pt_t1_wife=.
+replace ft_pt_t1_wife = 0 if weekly_hrs_wife==0
+replace ft_pt_t1_wife = 1 if weekly_hrs_wife > 0 & weekly_hrs_wife<=35
+replace ft_pt_t1_wife = 2 if weekly_hrs_wife > 35 & weekly_hrs_wife < 999
 
 label define ft_pt 0 "Not Employed" 1 "PT" 2 "FT"
-label values ft_pt_head ft_pt_wife ft_pt
+label values ft_pt_t1_head ft_pt_t1_wife ft_pt
 
-gen ft_head=0
-replace ft_head=1 if ft_pt_head==2
+gen ft_t1_head=0
+replace ft_t1_head=1 if ft_pt_t1_head==2
 
-gen ft_wife=0
-replace ft_wife=1 if ft_pt_wife==2
+gen ft_t1_wife=0
+replace ft_t1_wife=1 if ft_pt_t1_wife==2
 
 // adding other controls right now
 gen either_enrolled=0
@@ -558,12 +558,12 @@ replace children_ever=1 if children_ever>0
 
 // use incremental births? okay come back to this with childbirth history
 recode NUM_BIRTHS(98/99=.) // okay this doesn't increment GAH. it must be ever?
-recode BIRTHS_BOTH_(8/9=.)
-recode BIRTHS_REF_(8/9=.)
-recode BIRTHS_BOTH_(8/9=.)
+recode BIRTHS_T1_BOTH_(8/9=.)
+recode BIRTHS_T1_HEAD_(8/9=.)
+recode BIRTHS_T1_WIFE_(8/9=.)
 // or if num children goes up AND age of youngest child is 1 (lol it is coded 1 for newborn up to second birthday in most years) aka unique_id 1003 in 1973?!
 
-browse unique_id survey_yr SEX NUM_CHILDREN_ AGE_YOUNG_CHILD_  BIRTHS_BOTH_ BIRTHS_REF_ BIRTH_SPOUSE_  NUM_BIRTHS // okay so these are new births in last year, but not asksed until 1986 GAH
+browse unique_id survey_yr SEX NUM_CHILDREN_ AGE_YOUNG_CHILD_  BIRTHS_T1_BOTH_ BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_  NUM_BIRTHS // okay so these are new births in last year, but not asksed until 1986 GAH
 
 gen had_birth=0
 replace had_birth=1 if NUM_CHILDREN_ == NUM_CHILDREN_[_n-1]+1 & AGE_YOUNG_CHILD_==1 & unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
@@ -578,13 +578,13 @@ browse unique_id survey_yr SEX NUM_CHILDREN_ AGE_YOUNG_CHILD_  had_birth had_fir
 // also use FIRST_BIRTH_YR to say whether pre / post marital
 
 // some age things
-browse unique_id survey_yr SEX year_birth  AGE_ AGE_REF_ AGE_SPOUSE_
+browse unique_id survey_yr SEX year_birth  AGE_INDV AGE_HEAD_ AGE_WIFE_
 
-gen yr_born_head = survey_yr - AGE_REF_
-gen yr_born_wife = survey_yr- AGE_SPOUSE_
+gen yr_born_head = survey_yr - AGE_HEAD_
+gen yr_born_wife = survey_yr- AGE_WIFE_
 
 gen age_mar_head = rel_start_yr -  yr_born_head
 gen age_mar_wife = rel_start_yr -  yr_born_wife
-browse unique_id survey_yr SEX year_birth yr_born_head  yr_born_wife AGE_ AGE_REF_ AGE_SPOUSE_ rel_start_yr age_mar_head age_mar_wife
+browse unique_id survey_yr SEX year_birth yr_born_head  yr_born_wife   AGE_INDV AGE_HEAD_ AGE_WIFE_ rel_start_yr age_mar_head age_mar_wife
 
-save "$created_data\PSID_partners_cleaned.dta", replace
+save "$created_data_psid\PSID_partners_cleaned.dta", replace

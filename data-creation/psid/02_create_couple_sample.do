@@ -24,7 +24,7 @@ Prior to 1983, the Relationship to Head ('Reference Person' starting in the 2017
 ********************************************************************************
 * import data and clean up sample
 ********************************************************************************
-use "$temp\PSID_full_long.dta", clear
+use "$temp_psid\PSID_full_long.dta", clear
 
 sort unique_id survey_yr
 
@@ -63,13 +63,13 @@ browse survey_yr RELATION_ RELATION_TO_HEAD_
 // marital status head - has always been asked, treats cohabitors as married I think? (see v5650)
 
 label define marr_defacto 1 "Partnered" 2 "Single" 3 "Widowed" 4 "Divorced" 5 "Separated"
-label values MARITAL_STATUS_HEAD_ marr_defacto
+label values MARST_DEFACTO_HEAD_ marr_defacto
 
 label define marr_legal 1 "Married" 2 "Single" 3 "Widowed" 4 "Divorced" 5 "Separated"
-label values MARITAL_STATUS_REF_ marr_legal
+label values MARST_LEGAL_HEAD_ marr_legal
 
 label define couple_status 1 "Married" 2 "Partnered" 3 "Uncooperative" 4 "FY Partnered" 5 "Unpartnered"
-label values COUPLE_STATUS_REF_ couple_status
+label values COUPLE_STATUS_HEAD_ couple_status
 
 gen person=0
 replace person=1 if RELATION_==1 & survey_yr<1983
@@ -79,24 +79,25 @@ replace person=2 if inlist(RELATION_,20,22) & survey_yr>=1983
 
 tab MARITAL_PAIRS_ person, m
 gen cohab_est=0
-replace cohab_est=1 if MARITAL_STATUS_HEAD_==1 & inlist(MARITAL_STATUS_REF_,2,3,4,5) // will only apply after 1977
+replace cohab_est=1 if MARST_DEFACTO_HEAD_==1 & inlist(MARST_LEGAL_HEAD_,2,3,4,5) // will only apply after 1977
 tab RELATION_ cohab_est if survey_yr>=1977
-tab MARITAL_STATUS_HEAD_ cohab_est
+tab MARST_DEFACTO_HEAD_ cohab_est
+tab MARST_LEGAL_HEAD_ cohab_est
 
 gen marital_status_updated=.
-replace marital_status_updated=1 if MARITAL_STATUS_HEAD_==1 & cohab_est==0
-replace marital_status_updated=2 if MARITAL_STATUS_HEAD_==1 & cohab_est==1
-replace marital_status_updated=3 if MARITAL_STATUS_HEAD_==2
-replace marital_status_updated=4 if MARITAL_STATUS_HEAD_==3
-replace marital_status_updated=5 if MARITAL_STATUS_HEAD_==4
-replace marital_status_updated=6 if MARITAL_STATUS_HEAD_==5
+replace marital_status_updated=1 if MARST_DEFACTO_HEAD_==1 & cohab_est==0
+replace marital_status_updated=2 if MARST_DEFACTO_HEAD_==1 & cohab_est==1
+replace marital_status_updated=3 if MARST_DEFACTO_HEAD_==2
+replace marital_status_updated=4 if MARST_DEFACTO_HEAD_==3
+replace marital_status_updated=5 if MARST_DEFACTO_HEAD_==4
+replace marital_status_updated=6 if MARST_DEFACTO_HEAD_==5
 
 label define marital_status_updated 1 "Married (or pre77)" 2 "Partnered" 3 "Single" 4 "Widowed" 5 "Divorced" 6 "Separated"
 label values marital_status_updated marital_status_updated
 
 tab survey_yr marital_status_updated, row
 
-browse unique_id survey_yr person RELATION_ COUPLE_STATUS_REF_ MARITAL_PAIRS_  marital_status_updated if inlist(person,1,2) // so after 1977 (aka 1977-1983) can perhaps identify cohabitors if husband is not legally married? and validate in 1983 when actually tracked?
+browse unique_id survey_yr person RELATION_ COUPLE_STATUS_HEAD_ MARITAL_PAIRS_  marital_status_updated if inlist(person,1,2) // so after 1977 (aka 1977-1983) can perhaps identify cohabitors if husband is not legally married? and validate in 1983 when actually tracked?
 
 // Identify relationship transitions
 sort unique_id survey_yr
@@ -117,7 +118,7 @@ replace rel_end_pre=1 if (inlist(marital_status_updated,1,2) & inlist(marital_st
 gen marr_trans=0
 replace marr_trans=1 if (marital_status_updated==1 & marital_status_updated[_n-1]==2) & unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
 
-browse unique_id survey_yr person RELATION_ AGE_ marital_status_updated MARITAL_PAIRS_ COUPLE_STATUS_REF_ rel_start rel_end rel_end_pre marr_trans
+browse unique_id survey_yr person RELATION_ AGE_INDV_ marital_status_updated MARITAL_PAIRS_ COUPLE_STATUS_HEAD_ rel_start rel_end rel_end_pre marr_trans
 
 // drop non-partnered = BUT i think this is household level, so need to also drop the specific individuals not partnered?
 keep if inlist(marital_status_updated,1,2) | rel_start==1 | marr_trans==1 | rel_end==1
@@ -135,4 +136,4 @@ tab survey_yr marr_trans
 
 // okay how to get duration?! next problem GAH
 
-save "$created_data\PSID_partners.dta", replace
+save "$created_data_psid\PSID_partners.dta", replace
