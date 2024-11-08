@@ -713,11 +713,17 @@ rename children0 children_neg4
 rename children1 children_neg3
 rename children2 children_neg2
 rename children3 children_neg1
-
 rename couple_educ_gp0 couple_educ_gp_neg4
 rename couple_educ_gp1 couple_educ_gp_neg3
 rename couple_educ_gp2 couple_educ_gp_neg2
 rename couple_educ_gp3 couple_educ_gp_neg1
+
+foreach var in female_hours_pct wife_housework_pct female_earn_pct{
+	rename `var'0 `var'_neg4
+	rename `var'1 `var'_neg3
+	rename `var'2 `var'_neg2
+	rename `var'3 `var'_neg1	
+}
 
 forvalues s=4/16{ // okay, I think I need to do some duration finagling, so need to reset these
 	local a = `s'-4
@@ -728,6 +734,9 @@ forvalues s=4/16{ // okay, I think I need to do some duration finagling, so need
 	rename either_head`s' either_head`a'
 	rename children`s' children`a'
 	rename couple_educ_gp`s' couple_educ_gp`a'
+	rename female_hours_pct`s' female_hours_pct`a'
+	rename wife_housework_pct`s' wife_housework_pct`a'
+	rename female_earn_pct`s' female_earn_pct`a'
 }
 
 browse unique_id partner_id rel_start_all last_yr_observed duration status_gp* hh_earn_type* either_head*
@@ -740,6 +749,9 @@ forvalues b=0/11{
 	replace earn_housework`b' = earn_housework`c' if earn_housework`b'==. & earn_housework`c'!=. & status_gp`b'==1 & status_gp`c'==1 & (either_head`b'==1 | either_head`c'==1)
 	replace children`b' = children`c' if children`b'==. & children`c'!=. & status_gp`b'==1 & status_gp`c'==1 & (either_head`b'==1 | either_head`c'==1)
 	replace couple_educ_gp`b' = couple_educ_gp`c' if couple_educ_gp`b'==. & couple_educ_gp`c'!=. & status_gp`b'==1 & status_gp`c'==1 & (either_head`b'==1 | either_head`c'==1)
+	replace female_hours_pct`b' = female_hours_pct`c' if female_hours_pct`b'==. & female_hours_pct`c'!=. & status_gp`b'==1 & status_gp`c'==1 & (either_head`b'==1 | either_head`c'==1)
+	replace wife_housework_pct`b' = wife_housework_pct`c' if wife_housework_pct`b'==. & wife_housework_pct`c'!=. & status_gp`b'==1 & status_gp`c'==1 & (either_head`b'==1 | either_head`c'==1)
+	replace female_earn_pct`b' = female_earn_pct`c' if female_earn_pct`b'==. & female_earn_pct`c'!=. & status_gp`b'==1 & status_gp`c'==1 & (either_head`b'==1 | either_head`c'==1)
 }
 
 gen duration_10=0
@@ -788,8 +800,8 @@ save "$temp\compiled_couple_data_wide.dta", replace
 // use "$temp\compiled_couple_data_wide.dta",clear
 
 // so this will be for times 1 and 10
-unique pidp partner_id 
-unique pidp partner_id  if duration_10==1
+unique unique_id partner_id 
+unique unique_id partner_id  if duration_10==1
 
 sum max_dur if duration_10==1  // average marital duration
 sum duration  if duration_10==1 // average marital duration
@@ -797,44 +809,44 @@ sum duration  if duration_10==1 // average marital duration
 tab couple_educ_gp1 if duration_10==1 // time 1
 tab couple_educ_gp10 if duration_10==1 // time 10
 
-tab kids_in_hh1 if duration_10==1 // time 1
-tab kids_in_hh10 if duration_10==1 // time 10
+tab children1 if duration_10==1 // time 1
+tab children10 if duration_10==1 // time 10
 
-sum paid_wife_pct_ot1 if duration_10==1 
-sum paid_wife_pct_ot10 if duration_10==1 
-tab paid_dol_ot1 if duration_10==1 
-tab paid_dol_ot10 if duration_10==1 
-sum unpaid_wife_pct1 if duration_10==1 
-sum unpaid_wife_pct10 if duration_10==1 
-tab unpaid_dol1 if duration_10==1 
-tab unpaid_dol10 if duration_10==1 
+sum female_hours_pct1 if duration_10==1 
+sum female_hours_pct10 if duration_10==1 
+tab hh_hours_type1 if duration_10==1 
+tab hh_hours_type10 if duration_10==1 
+sum wife_housework_pct1 if duration_10==1 
+sum wife_housework_pct10 if duration_10==1 
+tab housework_bkt1 if duration_10==1 
+tab housework_bkt10 if duration_10==1 
 tab earn_housework1 if duration_10==1 
 tab earn_housework10 if duration_10==1 
 
 // do I need to RESHAPE to get all?
 drop duration
 
-reshape long hidp psu strata hhsize nkids_dv nchild_015 agechy_dv marital_status_defacto hubuys hufrys humops huiron husits huboss hufrys_sp humops_sp huiron_sp husits_sp huboss_sp age_all age_all_sp survey employed employed_sp current_rel_end_year marr_trans current_rel_ongoing paid_couple_total paid_wife_pct paid_dol total_hours total_hours_sp paid_couple_total_ot paid_wife_pct_ot paid_dol_ot paid_couple_earnings paid_earn_pct hh_earn_type unpaid_couple_total unpaid_wife_pct unpaid_dol unpaid_flag kids_in_hh had_birth had_first_birth_alt college_degree college_degree_sp couple_educ_gp country_all wavename earn_housework, i(pidp partner_id rel_start_all min_dur max_dur last_yr_observed sex sex_sp duration_10) j(duration)
+reshape long coupled_in_sample single_in_sample_wom single_in_sample_man single_in_sample_both not_in_sample status in_sample_ relationship_ in_sample_sp_ relationship_sp_ pair pair_sp housework_head housework_wife total_housework_weekly couple_housework wife_housework_pct housework_bkt earn_housework educ_wife educ_head college_complete_wife college_complete_head couple_educ_gp educ_type earnings_wife earnings_head couple_earnings female_earn_pct hh_earn_type weekly_hrs_wife weekly_hrs_head couple_hours female_hours_pct hh_hours_type employed_head employed_wife employed_ly_head employed_ly_wife ft_pt_head ft_pt_wife ft_head ft_wife children children_ever had_birth had_first_birth had_first_birth_alt yr_born_head yr_born_wife age_mar_head age_mar_wife either_head AGE_REF_ AGE_SPOUSE_ FAMILY_INTERVIEW_NUM_, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended duration_10) j(duration)
 
 tab duration_10
-unique pidp partner_id
+unique unique_id partner_id
 drop if duration_10==0
-unique pidp partner_id
+unique unique_id partner_id
 drop if duration>10
 
-tab paid_dol_ot if duration==1 // validate match
-tab paid_dol_ot if duration==10 // validate match
+tab hh_hours_type if duration==1 // validate match
+tab hh_hours_type if duration==10 // validate match
 
 tab couple_educ_gp
-tab kids_in_hh
-sum paid_wife_pct_ot
-tab paid_dol_ot
-sum unpaid_wife_pct
-tab unpaid_dol
+tab children
+sum female_hours_pct
+tab hh_hours_type
+sum wife_housework_pct
+tab housework_bkt
 tab earn_housework 
 
 tab had_birth
-unique pidp partner_id  if had_birth==1 // use this for % experiencing a birth
+unique unique_id partner_id  if had_birth==1 // use this for % experiencing a birth
 
 ********************************************************************************
 **# attempt to summarize data
