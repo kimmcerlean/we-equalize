@@ -13,6 +13,9 @@
 * This files uses the individual level data from the coules to impute base data
 * necessary for final analysis.
 
+** INSTALL THIS FIRST
+ssc install sq
+
 ********************************************************************************
 **# First get survey responses for each individual in couple from main file
 ********************************************************************************
@@ -462,8 +465,10 @@ drop LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD WAGES_T1_HEAD WEE
 save "$temp\inidividual_vars_imputation_long.dta", replace
 
 ********************************************************************************
-**# now reshape back to wide to fill in the off years where possible
+**# now reshape back to wide to fill in the off years where possible (with t-2 data)
 ********************************************************************************
+// use "$temp\inidividual_vars_imputation_long.dta", clear
+
 drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave
 
 reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ FIRST_BIRTH_YR TOTAL_INCOME_T1_FAMILY_ ///
@@ -516,7 +521,50 @@ keep if duration <=12 // up to 10/11 for now - but adding a few extra years so I
 
 browse unique_id survey_yr rel_start_all duration min_dur max_dur relationship_ in_sample_ weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
 
-gen duration_rec=duration+4 // negatives won't work in reshape - so make -4 0
+**# Here the data is now long, by duration
+save "$created_data\individs_by_duration_wide.dta", replace
+
+unique unique_id partner_id
+egen couple_id = group(unique_id partner_id)
+browse couple_id unique_id partner_id duration SEX
+
+fillin couple_id duration
+tab duration
+unique couple_id
+
+bysort couple_id (SEX): replace SEX=SEX[1] if SEX==.
+
+gen duration_rec=duration+4 // negatives won't work in reshape or with sq commands - so make -4 0
+
+sort couple_id duration
+browse couple_id duration weekly_hrs_t1_focal housework_focal _fillin
+
+replace weekly_hrs_t1_focal=. if weekly_hrs_t1_focal>900 & weekly_hrs_t1_focal!=.
+
+// just to get a better sense of the data instead of plotting by the continuous variable
+gen hours_type_t1=.
+replace hours_type_t1=0 if weekly_hrs_t1_focal==0
+replace hours_type_t1=1 if weekly_hrs_t1_focal>0 & weekly_hrs_t1_focal<35
+replace hours_type_t1=2 if weekly_hrs_t1_focal>=35 & weekly_hrs_t1_focal!=.
+
+sqset hours_type_t1 couple_id duration_rec
+sqindexplot, gapinclude
+sqindexplot, gapinclude by(SEX)
+
+
+// just to get a better sense of the data instead of plotting by the continuous variable
+gen hw_hours_gp=.
+replace hw_hours_gp=0 if housework_focal==0
+replace hw_hours_gp=1 if housework_focal>0 & housework_focal<10
+replace hw_hours_gp=2 if housework_focal>=10 & housework_focal!=.
+
+sqset hw_hours_gp couple_id duration_rec
+sqindexplot, gapinclude
+sqindexplot, gapinclude by(SEX)
+
+********************************************************************************
+* reshaping wide
+********************************************************************************
 
 drop survey_yr duration
 
@@ -524,9 +572,13 @@ reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earning
 , i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(duration_rec)
 
 
+**# Here the data is now reshaped wide, by duration
 save "$created_data\individs_by_duration_wide.dta", replace
+
+// first, let's just get a sense of missings
 
 unique unique_id
 unique unique_id partner_id
 
 browse unique_id weekly_hrs_t1_focal*
+browse unique_id housework_focal*
