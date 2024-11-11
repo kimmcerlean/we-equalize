@@ -120,7 +120,8 @@ reshape long MARITAL_PAIRS_ in_sample_ relationship_ FAMILY_INTERVIEW_NUM_ AGE_I
 egen wave = group(survey_yr)
 
 ********************************************************************************
-**# Now that it's long, recode core variables. JUST for individuals; not doing any couple-level
+**# Now that it's long, recode core variables.
+* JUST for individuals; not doing any couple-level
 ********************************************************************************
 // t-1 income
 browse unique_id survey_yr FAMILY_INTERVIEW_NUM_ TAXABLE_T1_HEAD_WIFE TOTAL_INCOME_T1_FAMILY LABOR_INCOME_T1_HEAD WAGES_T1_HEAD LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ 
@@ -169,6 +170,11 @@ replace weekly_hrs_t1_head = 55 if inrange(survey_yr,1968,1969) & WEEKLY_HRS1_T1
 replace weekly_hrs_t1_head = 60 if inrange(survey_yr,1968,1969)  & WEEKLY_HRS1_T1_HEAD_ ==8
 replace weekly_hrs_t1_head=. if weekly_hrs_t1_head==999
 
+// create individual variable using annual version? no but that's not helpful either, because only through 1993? I guess better than nothing
+browse unique_id survey_yr relationship_ ANNUAL_HOURS_T1_INDV
+gen weekly_hrs_t1_indv = ANNUAL_HOURS_T1_INDV / 52
+browse unique_id survey_yr relationship_ weekly_hrs_t1_indv weekly_hrs_t1_head weekly_hrs_t1_wife ANNUAL_HOURS_T1_INDV
+
 // current employment
 browse unique_id survey_yr EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_
 // not numbered until 1994; 1-3 arose in 1994. codes match
@@ -183,6 +189,7 @@ replace employ2_head=1 if EMPLOY_STATUS2_HEAD_==1
 gen employ3_head=0
 replace employ3_head=1 if EMPLOY_STATUS3_HEAD_==1
 egen employed_head=rowtotal(employ_head employ1_head employ2_head employ3_head)
+replace employed_head=1 if employed_head==2
 
 gen employ_wife=0
 replace employ_wife=1 if EMPLOY_STATUS_WIFE_==1
@@ -193,8 +200,14 @@ replace employ2_wife=1 if EMPLOY_STATUS2_WIFE_==1
 gen employ3_wife=0
 replace employ3_wife=1 if EMPLOY_STATUS3_WIFE_==1
 egen employed_wife=rowtotal(employ_wife employ1_wife employ2_wife employ3_wife)
+replace employed_wife=1 if employed_wife==2
 
 browse unique_id survey_yr employed_head employed_wife employ_head employ1_head employ_wife employ1_wife
+
+browse unique_id survey_yr  EMPLOYMENT_INDV
+gen employed_indv=.
+replace employed_indv=0 if inrange(EMPLOYMENT_INDV,2,9)
+replace employed_indv=1 if EMPLOYMENT_INDV==1
 
 // t-1 employment (need to create based on earnings)
 gen employed_t1_head=0
@@ -202,6 +215,9 @@ replace employed_t1_head=1 if earnings_t1_head > 0 & earnings_t1_head!=.
 
 gen employed_t1_wife=0
 replace employed_t1_wife=1 if earnings_t1_wife > 0 & earnings_t1_wife!=.
+
+gen employed_t1_indv=0
+replace employed_t1_indv=1 if LABOR_INCOME_T1_INDV > 0 & LABOR_INCOME_T1_INDV!=.
 
 gen ft_pt_t1_head=.
 replace ft_pt_t1_head = 0 if weekly_hrs_t1_head==0
@@ -254,11 +270,11 @@ early educ:
 later educ: years of education
 */
 
-recode EDUC1_WIFE_ (0/3=1)(4/5=2)(6=3)(7/8=4)(9=.), gen(educ_wife_early)
+recode EDUC1_WIFE_ (1/3=1)(4/5=2)(6=3)(7/8=4)(9=.)(0=.), gen(educ_wife_early)
 recode EDUC1_HEAD_ (0/3=1)(4/5=2)(6=3)(7/8=4)(9=.), gen(educ_head_early)
-recode EDUC_WIFE_ (0/11=1) (12=2) (13/15=3) (16/17=4) (99=.), gen(educ_wife_1975)
+recode EDUC_WIFE_ (1/11=1) (12=2) (13/15=3) (16/17=4) (99=.)(0=.), gen(educ_wife_1975)
 recode EDUC_HEAD_ (0/11=1) (12=2) (13/15=3) (16/17=4) (99=.), gen(educ_head_1975)
-recode YRS_EDUCATION_INDV (0/11=1) (12=2) (13/15=3) (16/17=4) (98/99=.), gen(educ_completed) // okay no, can't use this, because I guess it's not actually comparable? because head / wife ONLY recorded against those specific ones.
+recode YRS_EDUCATION_INDV (1/11=1) (12=2) (13/15=3) (16/17=4) (98/99=.)(0=.), gen(educ_completed) // okay no, can't use this, because I guess it's not actually comparable? because head / wife ONLY recorded against those specific ones.
 
 label define educ 1 "LTHS" 2 "HS" 3 "Some College" 4 "College"
 label values educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 educ_completed educ
@@ -277,22 +293,240 @@ label values educ_wife educ_head educ
 	// trying to fill in missing wife years when possible
 	browse unique_id survey_yr educ_wife
 	bysort unique_id (educ_wife): replace educ_wife=educ_wife[1] if educ_wife==.
+	replace educ_wife=. if relationship_==0
 	// can I also use years of education? okay no.
 
 sort unique_id survey_yr
 
-gen college_complete_wife=0
+gen college_complete_wife=.
+replace college_complete_wife=0 if inrange(educ_wife,1,3)
 replace college_complete_wife=1 if educ_wife==4
-gen college_complete_head=0
+
+gen college_complete_head=.
+replace college_complete_head=0 if inrange(educ_head,1,3)
 replace college_complete_head=1 if educ_head==4
+
+gen college_complete_indv=.
+replace college_complete_indv=0 if inrange(educ_completed,1,3)
+replace college_complete_indv=1 if educ_completed==4
 
 // number of children
 gen children=0
 replace children=1 if NUM_CHILDREN_>=1
 
-save "$temp\inidividual_vars_imputation_long.dta", replace
+********************************************************************************
+**# now need to allocate variables to individual based on relationship
+* so that we have FOCAL variables, not head / sex versions
+********************************************************************************
+
+* Let's start with t-1 variables
+// weekly hours
+browse unique_id survey_yr relationship  weekly_hrs_t1_head weekly_hrs_t1_wife weekly_hrs_t1_indv
+gen weekly_hrs_t1_focal=.
+replace weekly_hrs_t1_focal=weekly_hrs_t1_head if relationship_==1
+replace weekly_hrs_t1_focal=weekly_hrs_t1_wife if relationship_==2
+replace weekly_hrs_t1_focal=weekly_hrs_t1_indv if relationship_==3
+
+// annual earnings
+browse unique_id survey_yr relationship earnings_t1_head earnings_t1_wife LABOR_INCOME_T1_INDV
+gen earnings_t1_focal=.
+replace earnings_t1_focal=earnings_t1_head if relationship_==1
+replace earnings_t1_focal=earnings_t1_wife if relationship_==2
+replace earnings_t1_focal=LABOR_INCOME_T1_INDV if relationship_==3
+
+* t variables
+// weekly HW hours
+browse unique_id survey_yr relationship housework_head housework_wife
+gen housework_focal=.
+replace housework_focal=housework_head if relationship_==1
+replace housework_focal=housework_wife if relationship_==2
+replace housework_focal=. if relationship_==3
+
+// Current employment status
+browse unique_id survey_yr relationship_ employed_head employed_wife employed_indv
+gen employed_focal=.
+replace employed_focal=employed_head if relationship_==1
+replace employed_focal=employed_wife if relationship_==2
+replace employed_focal=employed_indv if relationship_==3
+
+// Education
+browse unique_id survey_yr relationship_ educ_head educ_wife educ_completed college_*
+gen educ_focal=.
+replace educ_focal=educ_head if relationship_==1
+replace educ_focal=educ_wife if relationship_==2
+replace educ_focal=educ_completed if relationship_==3
+
+gen college_focal=.
+replace college_focal = 0 if inrange(educ_focal,1,3)
+replace college_focal = 1 if educ_focal==4
+
+// Age
+browse unique_id survey_yr relationship_ AGE_*
+gen age_focal = AGE_INDV
+
+* t-2 variables
+// weekly hours
+browse unique_id survey_yr relationship_ WEEKLY_HRS_T2_HEAD WEEKLY_HRS_T2_WIFE WEEKLY_HRS_T2_INDV
+
+gen weekly_hrs_t2_focal=.
+replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_INDV if inrange(survey_yr,1999,2001)
+replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_HEAD if relationship_==1 & inrange(survey_yr,2003,2021)
+replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_WIFE if relationship_==2 & inrange(survey_yr,2003,2021)
+replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_INDV if relationship_==3 & inrange(survey_yr,2003,2021)
+browse unique_id survey_yr relationship_ weekly_hrs_t2_focal WEEKLY_HRS_T2_HEAD WEEKLY_HRS_T2_WIFE WEEKLY_HRS_T2_INDV
+
+// annual earnings
+browse unique_id survey_yr relationship_ LABOR_INCOME_T2_HEAD_ LABOR_INCOME_T2_WIFE_ LABOR_INCOME_T2_INDV_
+
+gen long earnings_t2_focal=.
+replace earnings_t2_focal=LABOR_INCOME_T2_INDV_ if inrange(survey_yr,1999,2001)
+replace earnings_t2_focal=LABOR_INCOME_T2_HEAD_ if relationship_==1 & inrange(survey_yr,2003,2021)
+replace earnings_t2_focal=LABOR_INCOME_T2_WIFE_ if relationship_==2 & inrange(survey_yr,2003,2021)
+replace earnings_t2_focal=LABOR_INCOME_T2_INDV_ if relationship_==3 & inrange(survey_yr,2003,2021)
+replace earnings_t2_focal=. if earnings_t2_focal==9999999 | earnings_t2_focal==99999999
+browse unique_id survey_yr relationship_ earnings_t2_focal LABOR_INCOME_T2_HEAD_ LABOR_INCOME_T2_WIFE_ LABOR_INCOME_T2_INDV_
+
+// employment status
+gen employed_t2_head=.
+replace employed_t2_head=0 if EMPLOY_STATUS_T2_HEAD==5
+replace employed_t2_head=1 if EMPLOY_STATUS_T2_HEAD==1
+
+gen employed_t2_wife=.
+replace employed_t2_wife=0 if EMPLOY_STATUS_T2_WIFE==5
+replace employed_t2_wife=1 if EMPLOY_STATUS_T2_WIFE==1
+
+gen employed_t2_focal=.
+replace employed_t2_focal=employed_t2_head if relationship_==1
+replace employed_t2_focal=employed_t2_wife if relationship_==2
+replace employed_t2_focal=1 if inrange(survey_yr,1999,2001) & WEEKLY_HRS_T2_INDV>0 & WEEKLY_HRS_T2_INDV!=.
+replace employed_t2_focal=0 if inrange(survey_yr,1999,2001) & WEEKLY_HRS_T2_INDV==0
+
+browse unique_id survey_yr relationship_ employed_t2_focal employed_t2_head WEEKLY_HRS_T2_HEAD WEEKLY_HRS_T2_INDV // can I use hours to fill in the gaps?
+
+* employment history to fill the gaps
+sum START_YR_CURRENT_HEAD, detail
+replace START_YR_CURRENT_HEAD=. if inrange(START_YR_CURRENT_HEAD,9000,9999)
+replace START_YR_CURRENT_HEAD=. if START_YR_CURRENT_HEAD==0
+tabstat START_YR_CURRENT_HEAD, by(survey_yr)
+replace START_YR_CURRENT_HEAD=1900+START_YR_CURRENT_HEAD if START_YR_CURRENT_HEAD<100
+
+sum START_YR_PREV_HEAD, detail
+replace START_YR_PREV_HEAD=. if inrange(START_YR_PREV_HEAD,9000,9999)
+replace START_YR_PREV_HEAD=. if START_YR_PREV_HEAD==0
+tabstat START_YR_PREV_HEAD, by(survey_yr)
+replace START_YR_PREV_HEAD=1900+START_YR_PREV_HEAD if START_YR_PREV_HEAD<100
+
+sum START_YR_EMPLOYER_HEAD, detail
+replace START_YR_EMPLOYER_HEAD=. if inrange(START_YR_EMPLOYER_HEAD,9000,9999)
+replace START_YR_EMPLOYER_HEAD=. if START_YR_EMPLOYER_HEAD==0
+
+gen start_yr_employer_head=.
+replace start_yr_employer_head = START_YR_CURRENT_HEAD if inrange(survey_yr,1988,2001) & START_YR_CURRENT_HEAD!=.
+replace start_yr_employer_head = START_YR_PREV_HEAD if inrange(survey_yr,1988,2001) & START_YR_PREV_HEAD!=.
+replace start_yr_employer_head = START_YR_EMPLOYER_HEAD if inrange(survey_yr,2003,2021)
+
+browse unique_id survey_yr relationship_ start_yr_employer_head START_YR_EMPLOYER_HEAD START_YR_CURRENT_HEAD START_YR_PREV_HEAD YRS_CURRENT_EMPLOY_HEAD
+
+sum START_YR_CURRENT_WIFE, detail
+replace START_YR_CURRENT_WIFE=. if inrange(START_YR_CURRENT_WIFE,9000,9999)
+replace START_YR_CURRENT_WIFE=. if START_YR_CURRENT_WIFE==0
+tabstat START_YR_CURRENT_WIFE, by(survey_yr)
+replace START_YR_CURRENT_WIFE=1900+START_YR_CURRENT_WIFE if START_YR_CURRENT_WIFE<100
+
+sum START_YR_PREV_WIFE, detail
+replace START_YR_PREV_WIFE=. if inrange(START_YR_PREV_WIFE,9000,9999)
+replace START_YR_PREV_WIFE=. if START_YR_PREV_WIFE==0
+tabstat START_YR_PREV_WIFE, by(survey_yr)
+replace START_YR_PREV_WIFE=1900+START_YR_PREV_WIFE if START_YR_PREV_WIFE<100
+
+sum START_YR_EMPLOYER_WIFE, detail
+replace START_YR_EMPLOYER_WIFE=. if inrange(START_YR_EMPLOYER_WIFE,9000,9999)
+replace START_YR_EMPLOYER_WIFE=. if START_YR_EMPLOYER_WIFE==0
+
+gen start_yr_employer_wife=.
+replace start_yr_employer_wife = START_YR_CURRENT_WIFE if inrange(survey_yr,1988,2001) & START_YR_CURRENT_WIFE!=.
+replace start_yr_employer_wife = START_YR_PREV_WIFE if inrange(survey_yr,1988,2001) & START_YR_PREV_WIFE!=.
+replace start_yr_employer_wife = START_YR_EMPLOYER_WIFE if inrange(survey_yr,2003,2021)
+
+gen start_yr_employer_focal = .
+replace start_yr_employer_focal = start_yr_employer_head if relationship_==1 
+replace start_yr_employer_focal = start_yr_employer_wife if relationship_==2
+
+gen yrs_employer_focal = .
+replace yrs_employer_focal=YRS_CURRENT_EMPLOY_HEAD if relationship_==1
+replace yrs_employer_focal=YRS_CURRENT_EMPLOY_WIFE if relationship_==2
 
 // drop variables that aren't core (aka were used to create main variables)
-drop LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD WAGES_T1_HEAD WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ employ_head employ1_head employ2_head employ3_head employ_wife employ1_wife employ2_wife employ3_wife HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_  educ_wife_early educ_head_early educ_wife_1975 educ_head_1975
+drop LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD WAGES_T1_HEAD WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_  ANNUAL_HOURS_T1_INDV EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ employ_head employ1_head employ2_head employ3_head employ_wife employ1_wife employ2_wife employ3_wife HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_  educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 START_YR_EMPLOYER_HEAD START_YR_CURRENT_HEAD START_YR_PREV_HEAD YRS_CURRENT_EMPLOY_HEAD START_YR_EMPLOYER_WIFE START_YR_CURRENT_WIFE START_YR_PREV_WIFE YRS_CURRENT_EMPLOY_WIFE total_housework_weekly
 
-// now need to allocate variables to individual based on relationship and if not relationship, individual. so that we have FOCAL variables, not head / sex versions
+save "$temp\inidividual_vars_imputation_long.dta", replace
+
+********************************************************************************
+**# now reshape back to wide to fill in the off years where possible
+********************************************************************************
+drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave
+
+reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ FIRST_BIRTH_YR TOTAL_INCOME_T1_FAMILY_ ///
+, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(survey_yr)
+
+// weekly hours
+browse unique_id weekly_hrs_t1_focal* weekly_hrs_t2_focal*
+// gen weekly_hrs_t1_focal1998=weekly_hrs_t2_focal1999 // so, t-2 for 1999 becomes t-1 for 1998
+
+forvalues y=1998(2)2020{
+	local z=`y'+1
+	gen weekly_hrs_t1_focal`y'=weekly_hrs_t2_focal`z'
+}
+
+browse weekly_hrs_t1_focal1998 weekly_hrs_t1_focal1999 weekly_hrs_t1_focal2000 weekly_hrs_t2_focal1999 weekly_hrs_t2_focal2001
+
+// earnings
+forvalues y=1998(2)2020{
+	local z=`y'+1
+	gen earnings_t1_focal`y'=earnings_t2_focal`z'
+}
+
+browse weekly_hrs_t1_focal1998 earnings_t1_focal1998 weekly_hrs_t2_focal1999 earnings_t2_focal1999
+
+/*
+// employment status - this won't really work because one is t, not t-1...
+forvalues y=1998(2)2020{
+	local z=`y'+1
+	gen employed_focal`y'=employed_t2_focal`z'
+}
+*/
+
+********************************************************************************
+* BACK to long so can recenter on duration
+********************************************************************************
+reshape long
+
+browse unique_id survey_yr rel_start_all min_dur max_dur relationship_ in_sample_ weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
+
+foreach var in weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal{
+	replace `var'=. if in_sample==0
+}
+
+gen duration = survey_yr - rel_start_all
+browse unique_id partner_id survey_yr rel_start_all duration last_yr_observed
+
+tab duration, m
+keep if duration >=-4 // keep up to 5 years prior, jic
+keep if duration <=12 // up to 10/11 for now - but adding a few extra years so I can do the lookups below and still retain up to 20
+
+browse unique_id survey_yr rel_start_all duration min_dur max_dur relationship_ in_sample_ weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
+
+gen duration_rec=duration+4 // negatives won't work in reshape - so make -4 0
+
+drop survey_yr duration
+
+reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ FIRST_BIRTH_YR TOTAL_INCOME_T1_FAMILY_ ///
+, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(duration_rec)
+
+
+save "$created_data\individs_by_duration_wide.dta", replace
+
+unique unique_id
+unique unique_id partner_id
+
+browse unique_id weekly_hrs_t1_focal*
