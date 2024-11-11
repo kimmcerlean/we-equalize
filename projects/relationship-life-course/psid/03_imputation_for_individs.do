@@ -10,11 +10,15 @@
 ********************************************************************************
 * Description
 ********************************************************************************
-* This files uses the individual level data from the coules to impute base data
+* This files uses the individual level data from the couples to impute base data
 * necessary for final analysis.
 
 ** INSTALL THIS FIRST
 ssc install sq
+ssc install moremata
+
+net sj 17-3 st0486 // SADI
+net install st0486
 
 ********************************************************************************
 **# First get survey responses for each individual in couple from main file
@@ -175,7 +179,7 @@ replace weekly_hrs_t1_head=. if weekly_hrs_t1_head==999
 
 // create individual variable using annual version? no but that's not helpful either, because only through 1993? I guess better than nothing
 browse unique_id survey_yr relationship_ ANNUAL_HOURS_T1_INDV
-gen weekly_hrs_t1_indv = ANNUAL_HOURS_T1_INDV / 52
+gen weekly_hrs_t1_indv = round(ANNUAL_HOURS_T1_INDV / 52,1)
 browse unique_id survey_yr relationship_ weekly_hrs_t1_indv weekly_hrs_t1_head weekly_hrs_t1_wife ANNUAL_HOURS_T1_INDV
 
 // current employment
@@ -522,7 +526,7 @@ keep if duration <=12 // up to 10/11 for now - but adding a few extra years so I
 browse unique_id survey_yr rel_start_all duration min_dur max_dur relationship_ in_sample_ weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
 
 **# Here the data is now long, by duration
-save "$created_data\individs_by_duration_wide.dta", replace
+save "$created_data\individs_by_duration_long.dta", replace
 
 unique unique_id partner_id
 egen couple_id = group(unique_id partner_id)
@@ -533,6 +537,12 @@ tab duration
 unique couple_id
 
 bysort couple_id (SEX): replace SEX=SEX[1] if SEX==.
+bysort couple_id (unique_id): replace unique_id=unique_id[1] if unique_id==.
+bysort couple_id (partner_id): replace partner_id=partner_id[1] if partner_id==.
+
+foreach var in rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended{
+	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
+}
 
 gen duration_rec=duration+4 // negatives won't work in reshape or with sq commands - so make -4 0
 
@@ -542,15 +552,15 @@ browse couple_id duration weekly_hrs_t1_focal housework_focal _fillin
 replace weekly_hrs_t1_focal=. if weekly_hrs_t1_focal>900 & weekly_hrs_t1_focal!=.
 
 // just to get a better sense of the data instead of plotting by the continuous variable
-gen hours_type_t1=.
-replace hours_type_t1=0 if weekly_hrs_t1_focal==0
-replace hours_type_t1=1 if weekly_hrs_t1_focal>0 & weekly_hrs_t1_focal<35
-replace hours_type_t1=2 if weekly_hrs_t1_focal>=35 & weekly_hrs_t1_focal!=.
+gen hours_type_t1_focal=.
+replace hours_type_t1_focal=0 if weekly_hrs_t1_focal==0
+replace hours_type_t1_focal=1 if weekly_hrs_t1_focal>0 & weekly_hrs_t1_focal<35
+replace hours_type_t1_focal=2 if weekly_hrs_t1_focal>=35 & weekly_hrs_t1_focal!=.
 
 sqset hours_type_t1 couple_id duration_rec
 sqindexplot, gapinclude
 sqindexplot, gapinclude by(SEX)
-
+sdchronogram hours_type_t1
 
 // just to get a better sense of the data instead of plotting by the continuous variable
 gen hw_hours_gp=.
@@ -563,22 +573,66 @@ sqindexplot, gapinclude
 sqindexplot, gapinclude by(SEX)
 
 ********************************************************************************
-* reshaping wide
+* reshaping wide for imputation purposes
 ********************************************************************************
 
-drop survey_yr duration
+drop survey_yr duration _fillin
 
-reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ FIRST_BIRTH_YR TOTAL_INCOME_T1_FAMILY_ ///
-, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(duration_rec)
+reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ FIRST_BIRTH_YR TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp ///
+, i(couple_id unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(duration_rec)
 
 
 **# Here the data is now reshaped wide, by duration
 save "$created_data\individs_by_duration_wide.dta", replace
+// use "$created_data\individs_by_duration_wide.dta", clear
 
 // first, let's just get a sense of missings
-
 unique unique_id
 unique unique_id partner_id
 
-browse unique_id weekly_hrs_t1_focal*
+browse unique_id partner_id couple_id weekly_hrs_t1_focal*
 browse unique_id housework_focal*
+
+forvalues y=0/16{
+	replace weekly_hrs_t1_focal`y' = round(weekly_hrs_t1_focal`y',1)
+}
+
+/*
+forvalues y=1/16{
+	replace hours_type_t1_focal`y' = 4 if hours_type_t1_focal`y'==.
+	replace hours_type_t1_focal`y' = 3 if hours_type_t1_focal`y'==0
+}
+*/
+
+// sdchronogram hours_type_t1_focal0-hours_type_t1_focal16 // this is not working; I am not sure why
+
+** Looking at steps in Halpin 2016
+mict_prep weekly_hrs_t1_focal, id(couple_id)
+
+// browse _mct_id _mct_t _mct_state _mct_last _mct_next // last feels off? okay last and next are created...somewhere else? they aren't created here? I am so confused...bc they are supposed to be created here...
+
+// redefine bc they should be regress, not mlogit, but can't use augment when I do that, just fyi
+// trying ologit instead of regress bc i think it's predicting non-integer numbers
+// okay so that is not converging LOL
+
+capture program drop mict_model_gap
+program mict_model_gap
+mi impute ologit _mct_state ///
+i._mct_next i._mct_last ///
+_mct_before* _mct_after*, ///
+add(1) force
+end
+
+capture program drop mict_model_initial
+program mict_model_initial
+mi impute ologit _mct_state i._mct_next _mct_after*, add(1) force
+end
+
+capture program drop mict_model_terminal
+program mict_model_terminal
+mi impute ologit _mct_state i._mct_last _mct_before*, add(1) force
+end
+
+mict_impute, maxgap(6) maxitgap(3) // this is getting stuck with integers. Because the data isn't truly categorical. trying ologit but now it is taking much longer
+
+browse _mct_id _mct_t _mct_state _mct_last _mct_next _mct_lg _mct_tw _mct_initgap _mct_termgap _mct_igl _mct_tgl
