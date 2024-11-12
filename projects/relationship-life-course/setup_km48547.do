@@ -35,7 +35,7 @@ global code "$homedir/github/we-equalize/projects/relationship-life-course"
 global created_data "$homedir/Research Projects/Growth Curves/created data"
 
 * PROJECT SPECIFIC results
-global results "$homedir/Research Projects/Growth Curves/results"
+global results "$homedir/Research Projects/Growth Curves/results & output"
 
 * PROJECT SPECIFIC logdir
 global logdir "$homedir/Research Projects/Growth Curves/logs"

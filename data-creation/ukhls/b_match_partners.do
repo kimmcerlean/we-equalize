@@ -17,31 +17,30 @@
 ********************************************************************************
 * Going to try to first update spouse id for BHPS so it's pidp NOT pid
 ********************************************************************************
-// use "G:\Other computers\My Laptop\Documents\WeEqualize (Postdoc)\Dataset info\UK data\data files\cross wave\xwaveid_bh.dta"
-use "$ukhls\xwaveid_bh.dta"
+use "$UKHLS\xwaveid_bh.dta"
 
 keep pidp pid
 rename pid sppid_bh
 rename pidp partner_pidp_bh
 
-save "$temp\spid_lookup.dta", replace
+save "$temp_ukhls\spid_lookup.dta", replace
 
 ********************************************************************************
 * Prep partner history file for later
 ********************************************************************************
-use "$input/phistory_wide.dta", clear
+use "$UKHLS_mh/phistory_wide.dta", clear
 
 foreach var in status* partner* starty* startm* endy* endm* divorcey* divorcem* mrgend* cohend* ongoing* ttl_spells ttl_married ttl_civil_partnership ttl_cohabit ever_married ever_civil_partnership ever_cohabit lastintdate lastinty lastintm hhorig{
 	rename `var' mh_`var' // renaming for ease of finding later, especially when matching partner info
 }
 
-save "$temp\partner_history_tomatch.dta", replace
+save "$temp_ukhls\partner_history_tomatch.dta", replace
 
 ********************************************************************************
 * Import data (created in step a) and do some data cleaning / recoding before creating a file to match partners
 ********************************************************************************
 
-use "$outputpath/UKHLS_long_all.dta", clear
+use "$created_data_ukhls/UKHLS_long_all.dta", clear
 drop if pidp==. // think these are HHs that didn't match?
 
 // Right now 1-13 are ukhls and 14-31 are bhps, so the wave order doesn't make a lot of sense. These aren't perfect but will work for now.
@@ -374,7 +373,7 @@ browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng
 * Doing here (used to be later, just for reference person) so I can get gendered versions for later
 ********************************************************************************
 
-merge m:1 pidp using "$temp\partner_history_tomatch.dta", keepusing(mh_*)
+merge m:1 pidp using "$temp_ukhls\partner_history_tomatch.dta", keepusing(mh_*)
 tab marital_status_defacto _merge, row // so def some missing that shouldn't be... but not a lot
 drop if _merge==2
 drop _merge
@@ -441,7 +440,7 @@ replace current_rel_ongoing = mh_ongoing1 if rel_no==. & partner_id!=. & inlist(
 gen rel_no_orig=rel_no
 replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1 // okay this actually didn't add that many more that is fine.
 
-save "$outputpath/UKHLS_long_all_recoded.dta", replace
+save "$created_data_ukhls/UKHLS_long_all_recoded.dta", replace
 
 unique pidp // 109651, 772472 total py
 unique pidp partner_id // 126305	
@@ -486,12 +485,12 @@ replace partner_id = pidp if partner_id==.
 // drop pidp pid survey
 drop pid survey
 
-save "$temp/UKHLS_partners.dta", replace
+save "$temp_ukhls/UKHLS_partners.dta", replace
 
 // now open file and merge on partner characteristics
-use "$outputpath/UKHLS_long_all_recoded.dta", clear
+use "$created_data_ukhls/UKHLS_long_all_recoded.dta", clear
 
-merge m:1 partner_id wavename using "$temp/UKHLS_partners.dta" // okay it feels like switching to pidp left me with the same number of matches...
+merge m:1 partner_id wavename using "$temp_ukhls/UKHLS_partners.dta" // okay it feels like switching to pidp left me with the same number of matches...
 drop if _merge==2
 
 tab survey _merge, m
@@ -523,7 +522,7 @@ browse survey wavename pidp pid partner_id partner_match if partner_id==78217008
 browse pidp pid wavename partner_id partner_match if pid==78217008  // this is a pid not a pidp. so yeah, this person doesn't have records for 20-21?
 */
 
-save "$outputpath/UKHLS_matched.dta", replace
+save "$created_data_ukhls/UKHLS_matched.dta", replace
 
 browse survey wavename pidp pid partner_id hubuys hubuys_sp partner_match if partnered==1
 

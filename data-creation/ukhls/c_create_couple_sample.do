@@ -16,7 +16,7 @@
 ********************************************************************************
 * Import data
 ********************************************************************************
-use "$outputpath/UKHLS_matched.dta", clear
+use "$created_data_ukhls/UKHLS_matched.dta", clear
 
 ********************************************************************************
 * Relationship recodes
@@ -267,7 +267,7 @@ browse pidp year nkids_dv nch02_dv agechy_dv had_birth had_first_birth_alt
 drop if partner_match==0
 drop if sex==. | sex_sp==.
 
-save "$outputpath/UKHLS_matched_cleaned.dta", replace
+save "$created_data_ukhls/UKHLS_matched_cleaned.dta", replace
 
 ********************************************************************************
 **# Create some preliminary descriptive statistics

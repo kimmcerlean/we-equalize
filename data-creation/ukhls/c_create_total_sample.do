@@ -13,7 +13,7 @@
 * create file used to track DoL variables over time
 * Consider age restrictions based on who answers the relevant questions
 
-use "$outputpath/UKHLS_matched.dta", clear // okay file I created at end of step b has ALL people and their potential partner matches, even if not partnered, so use this to start.
+use "$created_data_ukhls/UKHLS_matched.dta", clear // okay file I created at end of step b has ALL people and their potential partner matches, even if not partnered, so use this to start.
 unique pidp // 109651, 772472 total py
 unique pidp partner_id // 126305	
 unique pidp, by(sex) // 52397 m, 57362 w
@@ -261,7 +261,7 @@ replace current_rel_duration = year-current_rel_start_year if partner_match==1 /
 
 browse pidp partner_id year current_rel_duration current_rel_start_year current_rel_end_year
 
-save "$outputpath/UKHLS_full_sample.dta", replace
+save "$created_data_ukhls/UKHLS_full_sample.dta", replace
 
 // another check - oh, duh will be slightly less bc dropped same-sex couples and the missing sex people
 unique pidp // 109651, 772472 total py
@@ -299,7 +299,7 @@ browse year hidp pidp record_type partner_id record_type per_id
 
 keep if inlist(per_id,0,1,3,5,7) // 0 = individual records, 1 = first couple record?
 
-save "$outputpath/UKHLS_full_sample_deduped.dta", replace
+save "$created_data_ukhls/UKHLS_full_sample_deduped.dta", replace
 
 // should be cut in half?
 unique pidp partner_id if partner_match==1 // 64360 438156 -- now 32,304 219,092. AND the abstract for PAA said 32,174 / 218,652 so this feels v close and right, but we will check

@@ -16,7 +16,7 @@
 ********************************************************************************
 * Input data and restrict to cohabiting couples / one record per HH
 ********************************************************************************
-use "$outputpath/UKHLS_matched_cleaned.dta", clear
+use "$created_data_ukhls/UKHLS_matched_cleaned.dta", clear
 
 // first drop if there isn't a matching partner
 drop if partner_match==0
