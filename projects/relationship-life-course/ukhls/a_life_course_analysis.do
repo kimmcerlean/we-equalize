@@ -17,7 +17,7 @@
 ********************************************************************************
 * Input data and restrict to couples in our time frame / age range
 ********************************************************************************
-use "$outputpath/UKHLS_matched_cleaned.dta", clear
+use "$created_data_ukhls/UKHLS_matched_cleaned.dta", clear
 
 // think I need to fix duration because for some, I think clock might start again when they transition to cohabitation? get minimum year within a couple as main start date?
 sort pidp partner_id year
