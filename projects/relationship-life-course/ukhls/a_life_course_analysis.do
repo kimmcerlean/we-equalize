@@ -64,7 +64,7 @@ keep if per_id==1
 ********************************************************************************
 **# Recenter on duration
 ********************************************************************************
-browse pidp partner_id year istrtdaty current_rel_start_year current_rel_duration duration
+browse pidp partner_id year int_year current_rel_start_year current_rel_duration duration
 
 tab duration, m
 // keep if duration >=-4 // keep up to 5 years prior, jic - okay, don't have this data for UKHLS atm

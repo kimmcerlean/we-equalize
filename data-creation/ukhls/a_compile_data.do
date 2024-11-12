@@ -93,7 +93,7 @@ foreach wave in `allWaves' {
 	// if only household variables are required, skip this part and return all households
 	if ("`indvars'" != "" || "`chvars'" != "" || "`youthvars'" != "") {
 		// if any individual variable is required, first  merge INDALL keeping the pipd (and possibly some default variables?), so that other files can merge on it.
-		// merge 1:m `wave'_hidp using "$ukhls/`wave'_indall"
+		// merge 1:m `wave'_hidp using "$UKHLS/`wave'_indall"
 		// drop _merge
 		// drop loose households with no individuals
 		// drop if (pidp == .)
@@ -104,7 +104,7 @@ foreach wave in `allWaves' {
 		
 		// add any requested individual variables
 		if ("`indvars'" != "") {
-			merge 1:m `wave'_hidp using "$ukhls/`wave'_indresp"
+			merge 1:m `wave'_hidp using "$UKHLS/`wave'_indresp"
 			drop _merge
 			// keep only variables that were requested and exist in this wave
 			getExistingVars "pidp pid `wave'_hidp `wavehhvars' `waveindvars'"

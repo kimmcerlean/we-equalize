@@ -51,9 +51,10 @@ tab nmar survey, m // ukhls, but a lot of inapplicable? I think this variable is
 tab nmar_bh survey, m // same with bhps
 tab mh_ttl_spells survey, m
 
-browse pidp marital_status_defacto partner_id partner1 mh_status1 partner2 mh_status2 partner3 mh_status3 partner4 mh_status4
+browse pidp marital_status_defacto partner_id mh_partner1 mh_status1 mh_partner2 mh_status2 mh_partner3 mh_status3 mh_partner4 mh_status4
 
-label define status_new 1 "Marriage" 2 "Cohab"
+/* restructured files and this is redundant atm
+// label define status_new 1 "Marriage" 2 "Cohab"
 foreach var in mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6 mh_status7 mh_status8 mh_status9 mh_status10 mh_status11 mh_status12 mh_status13 mh_status14{
 	gen x_`var' = `var'
 	replace `var' = 1 if inlist(`var',2,3)
@@ -68,8 +69,7 @@ forvalues r=1/14{
 }
 
 tab rel_no if inlist(marital_status_defacto,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
-browse pidp marital_status_defacto partner_id rel_no partner1 status1 partner2 status2 partner3 status3 partner4 status4
-browse pidp marital_status_defacto partner_id rel_no partner1 status1 starty1 startm1 endy1 endm1 divorcey1 divorcem1 mrgend1 cohend1 ongoing1 // if separated, then divorced, end date is seapration date, and divorce date is against divorcey.
+browse pidp marital_status_defacto partner_id rel_no mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 // if separated, then divorced, end date is seapration date, and divorce date is against divorcey.
 
 gen current_rel_start_year=.
 gen current_rel_start_month=.
@@ -81,15 +81,15 @@ gen current_rel_marr_end=.
 gen current_rel_coh_end=.
 
 forvalues r=1/14{
-	replace current_rel_start_year = starty`r' if rel_no==`r'
-	replace current_rel_start_month = startm`r' if rel_no==`r'
-	replace current_rel_end_year = endy`r' if rel_no==`r'
-	replace current_rel_end_month = endm`r' if rel_no==`r'
-	replace current_rel_ongoing = ongoing`r' if rel_no==`r'
+	replace current_rel_start_year = mh_starty`r' if rel_no==`r'
+	replace current_rel_start_month = mh_startm`r' if rel_no==`r'
+	replace current_rel_end_year = mh_endy`r' if rel_no==`r'
+	replace current_rel_end_month = mh_endm`r' if rel_no==`r'
+	replace current_rel_ongoing = mh_ongoing`r' if rel_no==`r'
 	// replace current_rel_how_end = mrgend`r' if rel_no==`r' & status`r'==1 // if marriage - okay this actually won't work because the codes are different between marriage and cohab
 	// replace current_rel_how_end = cohend`r' if rel_no==`r' & status`r'==2 // if cohab
-	replace current_rel_marr_end = mrgend`r' if rel_no==`r'
-	replace current_rel_coh_end = cohend`r' if rel_no==`r'
+	replace current_rel_marr_end = mh_mrgend`r' if rel_no==`r'
+	replace current_rel_coh_end = mh_cohend`r' if rel_no==`r'
 }
 
 replace current_rel_start_year=. if current_rel_start_year==-9
@@ -97,27 +97,28 @@ replace current_rel_start_month=. if current_rel_start_month==-9
 replace current_rel_end_year=. if current_rel_end_year==-9
 replace current_rel_end_month=. if current_rel_end_month==-9
 
-label values current_rel_ongoing ongoing
-label values current_rel_marr_end mrgend
-label values current_rel_coh_end cohend
+label values current_rel_ongoing mh_ongoing
+label values current_rel_marr_end mh_mrgend
+label values current_rel_coh_end mh_cohend
 
-browse pidp marital_status_defacto partner_id rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end partner1 status1 starty1 startm1 endy1 endm1 divorcey1 divorcem1 mrgend1 cohend1 ongoing1 partner2 status2 starty2 startm2 endy2 endm2 divorcey2 divorcem2 mrgend2 cohend2 ongoing2
+browse pidp marital_status_defacto partner_id rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
 
 // for those with missing, maybe if only 1 spell, use that info? as long as the status matches and the interview date is within the confines of the spell?
-browse pidp istrtdaty istrtdatm marital_status_defacto partner_id rel_no ttl_spells partner1 status1 starty1 startm1 endy1 endm1 divorcey1 divorcem1 mrgend1 cohend1 ongoing1 partner2 status2 starty2 startm2 endy2 endm2 divorcey2 divorcem2 mrgend2 cohend2 ongoing2
+browse pidp int_year istrtdatm marital_status_defacto partner_id rel_no mh_ttl_spells mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
 
-replace current_rel_start_year = starty1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
-replace current_rel_start_month = startm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
-replace current_rel_end_year = endy1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
-replace current_rel_end_month = endm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
-replace current_rel_ongoing = ongoing1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1
+replace current_rel_start_year = mh_starty1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
+replace current_rel_start_month = mh_startm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
+replace current_rel_end_year = mh_endy1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
+replace current_rel_end_month = mh_endm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
+replace current_rel_ongoing = mh_ongoing1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
 gen rel_no_orig=rel_no
-replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & istrtdaty>=starty1 & istrtdaty<=endy1 // okay this actually didn't add that many more that is fine.
+replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & int_year>=mh_starty1 & int_year<=mh_endy1 // okay this actually didn't add that many more that is fine.
+*/
 
 // okay duration info
 gen current_rel_duration=.
-replace current_rel_duration = istrtdaty-current_rel_start_year
-browse pidp istrtdaty istrtdatm current_rel_duration current_rel_start_year current_rel_start_month
+replace current_rel_duration = int_year-current_rel_start_year
+browse pidp int_year istrtdatm current_rel_duration current_rel_start_year current_rel_start_month
 
 ********************************************************************************
 * Division of Labor recodes

@@ -17,7 +17,7 @@
 ********************************************************************************
 * Going to try to first update spouse id for BHPS so it's pidp NOT pid
 ********************************************************************************
-use "$UKHLS\xwaveid_bh.dta"
+use "$UKHLS\xwaveid_bh.dta", clear
 
 keep pidp pid
 rename pid sppid_bh
@@ -245,7 +245,7 @@ inspect ppid if partnered==1 // this is only ukhls
 inspect sppid if partnered==1 // okay this is also only ukhls and is just spouses
 inspect sppid_bh if partnered==1 // okay this is bhps but includes spouses and partners
 
-merge m:1 sppid_bh using "$temp\spid_lookup.dta"
+merge m:1 sppid_bh using "$temp_ukhls\spid_lookup.dta"
 drop if _merge==2
 browse survey pidp pid sppid_bh partner_pidp_bh _merge
 inspect sppid_bh if partnered==1

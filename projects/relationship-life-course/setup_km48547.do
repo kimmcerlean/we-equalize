@@ -43,31 +43,49 @@ global logdir "$homedir/Research Projects/Growth Curves/logs"
 * PROJECT SPECIFIC temporary data files (they get deleted without a second thought)
 global temp "$homedir/Research Projects/Growth Curves/temp data"
 
-/*
+
 ********************************************************************************
-** EUI Computer
+**# EUI Computer
 ********************************************************************************
-global homedir_EUI "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\projects"
+global homedir "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo"
 
-* This locations of folders containing the original data files
-global PSID "$homedir/data/PSID"
-global SIPP2014 "$homedir/data/sipp/2014"
-global ACS "$homedir/data/ACS"
-global CPS "$homedir/data/CPS"
-global GSOEP "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\datasets\GSOEP\Stata"
+********************************************************************************
+** Original / base data
+********************************************************************************
 
-global code "\\bfsrv2\home$\kmcerlea\PersonalData\Documents\GitHub\we-equalize/projects/relationship-life-course"
+* PSID
+global PSID "$homedir/datasets/PSID"
+global created_data_psid "$homedir/datasets/PSID/created data"
+global temp_psid "$homedir/datasets/PSID/temp data"
 
-* created data files
-global created_data "$homedir_EUI/Growth Curves/created data"
+* UKHLS
+global UKHLS "$homedir/datasets/UKHLS/UKDA-6614-stata/stata/stata13_se"
+global UKHLS_mh "$homedir/datasets\UKHLS\UKDA-8473-stata/stata/stata13"
+global created_data_ukhls "$homedir/projects/UK Relative Density/output data" 
+global temp_ukhls "$homedir/projects/UK Relative Density/temp created files"
 
-* results
-global results "$homedir_EUI/Growth Curves/results"
+* GSOEP
+global GSOEP "$homedir/datasets/GSOEP/Stata"
+global created_data_gsoep "$homedir/datasets/GSOEP/created data"
+global temp_gsoep "$homedir/datasets/GSOEP/temp data"
 
-* logdir
-global logdir "$homedir_EUI/Growth Curves/logs"
 
-* temporary data files (they get deleted without a second thought)
-global temp "$homedir_EUI/Growth Curves/temp data"
+********************************************************************************
+** Project specific data files
+********************************************************************************
+* This is the base directory with the setup files.
+* It is the directory you should change into before executing any files
+global code "$homedir/github/we-equalize/projects/relationship-life-course"
 
-*/
+* PROJECT SPECIFIC created data files
+global created_data "$homedir/projects/Growth Curves/created data"
+
+* PROJECT SPECIFIC results
+global results "$homedir/projects/Growth Curves/results"
+
+* PROJECT SPECIFIC logdir
+global logdir "$homedir/projects/Growth Curves/logs"
+
+* PROJECT SPECIFIC temporary data files (they get deleted without a second thought)
+global temp "$homedir/projects/Growth Curves/temp data"
+
