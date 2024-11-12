@@ -22,8 +22,7 @@ clear all
 set more off
 
 // Replace "where" with the filepath of the working folder (where any temporary files created by this programme will be stored)   eg:  c:\ukhls\temp
-cd "$temp"
-// cd "G:\Data\UKHLS data\temp created files" 
+cd "$temp_ukhls"
 
 // The file produced by this programme will be named as below. If you want to change the name do it here.
 local outputfilename "UKHLS_egoalt_all"
@@ -159,7 +158,7 @@ order pidp, first
 sort pidp survey year
 
 // save the long file
-save "$outputpath/`outputfilename'", replace
+save "$created_data_ukhls/`outputfilename'", replace
 
 // erase temporary files
 foreach w in `allWaves' {
@@ -177,12 +176,12 @@ unique pidp apidp if sex==2
 ********************************************************************************
 **# Try to match characteristics from other created file
 ********************************************************************************
-// use "$outputpath\UKHLS_egoalt_all.dta", clear
+// use "$created_data_ukhls\UKHLS_egoalt_all.dta", clear
 
 local keepvars "sampst jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed"
 
 ** First, the reference person
-merge m:1 pidp year using "$outputpath/UKHLS_long_all_recoded.dta", keepusing(`keepvars')
+merge m:1 pidp year using "$created_data_ukhls/UKHLS_long_all_recoded.dta", keepusing(`keepvars')
 drop if _merge==2 // using makes sense, bc I just have partnered people, so it's probably those not partnered
 gen ref_match=0
 replace ref_match=1 if _merge==3
@@ -192,7 +191,7 @@ tab survey ref_match, m row
 tab year ref_match, m row
 
 ** Now, the spouse
-merge m:1 apidp year using "$temp/UKHLS_partners.dta" // feels like the same amount matched? yes, so it's like the inverse. some people just missing, so will be missing as references but also as spouse (bc I have deduplicated yet)
+merge m:1 apidp year using "$temp_ukhls/UKHLS_partners.dta" // feels like the same amount matched? yes, so it's like the inverse. some people just missing, so will be missing as references but also as spouse (bc I have deduplicated yet)
 drop if _merge==2 // using makes sense, bc I just have partnered people, so it's probably those not partnered
 gen sp_match=0
 replace sp_match=1 if _merge==3
