@@ -13,12 +13,16 @@
 * This files uses the individual level data from the couples to impute base data
 * necessary for final analysis.
 
-** INSTALL THIS FIRST
+** INSTALL THESE FIRST
 ssc install sq
 ssc install moremata
 
 net sj 17-3 st0486 // SADI
 net install st0486
+
+net sj 16-3 st0445 // MICT
+net install st0445
+net get st0445 // these go into working directory (the ancillary files); pwd shows current working directory
 
 ********************************************************************************
 **# First get survey responses for each individual in couple from main file
@@ -612,27 +616,56 @@ mict_prep weekly_hrs_t1_focal, id(couple_id)
 // browse _mct_id _mct_t _mct_state _mct_last _mct_next // last feels off? okay last and next are created...somewhere else? they aren't created here? I am so confused...bc they are supposed to be created here...
 
 // redefine bc they should be regress, not mlogit, but can't use augment when I do that, just fyi
-// trying ologit instead of regress bc i think it's predicting non-integer numbers
+// trying ologit instead of regress bc i think it's predicting non-integer numbers. OKAY if I just remove the i. from next and last is that actually fine??
 // okay so that is not converging LOL
 
 capture program drop mict_model_gap
 program mict_model_gap
-mi impute ologit _mct_state ///
-i._mct_next i._mct_last ///
+mi impute regress _mct_state ///
+_mct_next _mct_last ///
 _mct_before* _mct_after*, ///
 add(1) force
 end
 
 capture program drop mict_model_initial
 program mict_model_initial
-mi impute ologit _mct_state i._mct_next _mct_after*, add(1) force
+mi impute regress _mct_state _mct_next _mct_after*, add(1) force
 end
 
 capture program drop mict_model_terminal
 program mict_model_terminal
-mi impute ologit _mct_state i._mct_last _mct_before*, add(1) force
+mi impute regress _mct_state _mct_last _mct_before*, add(1) force
 end
 
-mict_impute, maxgap(6) maxitgap(3) // this is getting stuck with integers. Because the data isn't truly categorical. trying ologit but now it is taking much longer
+mict_impute, maxgap(6) maxitgap(3) // this is getting stuck with integers. Because the data isn't truly categorical. trying ologit but now it is taking much longer.
+// best practice for maxgap seems to be half of total time length. then maxitgap seems to be half of maxgap
 
-browse _mct_id _mct_t _mct_state _mct_last _mct_next _mct_lg _mct_tw _mct_initgap _mct_termgap _mct_igl _mct_tgl
+// browse _mct_id _mct_t _mct_state _mct_last _mct_next _mct_lg _mct_tw _mct_initgap _mct_termgap _mct_igl _mct_tgl
+
+browse couple_id weekly_hrs_t1_focal* _mct_iter
+
+// let's trying removing cumulative duration. think for hours this is worse than if a true sequence state?
+use "$created_data\individs_by_duration_wide.dta", clear
+
+mict_prep weekly_hrs_t1_focal, id(couple_id)
+
+capture program drop mict_model_gap
+program mict_model_gap
+mi impute regress _mct_state ///
+_mct_next _mct_last, ///
+add(1) force
+end
+
+capture program drop mict_model_initial
+program mict_model_initial
+mi impute regress _mct_state _mct_next, add(1) force
+end
+
+capture program drop mict_model_terminal
+program mict_model_terminal
+mi impute regress _mct_state _mct_last, add(1) force
+end
+
+mict_impute, maxgap(6) maxitgap(3) 
+
+browse couple_id weekly_hrs_t1_focal* _mct_iter

@@ -15,6 +15,7 @@ global temp_psid "$homedir/WeEqualize (Postdoc)/Temp Data/PSID"
 
 * UKHLS
 global UKHLS "$homedir/data/UKHLS"
+global UKHLS_mh "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\datasets\UKHLS\UKDA-8473-stata\stata\stata13"
 global created_data_ukhls "$homedir/WeEqualize (Postdoc)/Compiled Data/UKHLS"
 global temp_ukhls "$homedir/WeEqualize (Postdoc)/Temp Data/UKHLS"
 
