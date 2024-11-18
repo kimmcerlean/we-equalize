@@ -564,7 +564,7 @@ replace hours_type_t1_focal=2 if weekly_hrs_t1_focal>=35 & weekly_hrs_t1_focal!=
 sqset hours_type_t1 couple_id duration_rec
 sqindexplot, gapinclude
 sqindexplot, gapinclude by(SEX)
-sdchronogram hours_type_t1
+// sdchronogram hours_type_t1
 
 // just to get a better sense of the data instead of plotting by the continuous variable
 gen hw_hours_gp=.
