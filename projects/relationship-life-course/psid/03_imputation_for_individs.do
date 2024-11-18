@@ -88,7 +88,7 @@ forvalues y=1999(2)2021{
 
 gen SEX_sp = SEX
 
-forvalues y=1969/1987{ // let's keep a few years to see if we have ANY data for people before they were observed
+forvalues y=1969/1985{ // let's keep a few years to see if we have ANY data for people before they were observed
 	drop in_sample_`y'
 	drop in_sample_sp_`y'
 	drop relationship_`y'
@@ -98,7 +98,7 @@ forvalues y=1969/1987{ // let's keep a few years to see if we have ANY data for 
 }
 
 foreach var in AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ FAMILY_INTERVIEW_NUM_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_{
-	forvalues y=1968/1987{
+	forvalues y=1968/1985{
 		capture drop `var'`y' // in case var not in all years
 	}
 }
@@ -120,9 +120,42 @@ drop _merge
 drop *_sp_*
 drop SEX_sp
 
-save "$temp\inidividual_vars_imputation_wide.dta", replace
+save "$temp\individual_vars_imputation_wide.dta", replace
 
-// use "$temp\inidividual_vars_imputation_wide.dta", clear
+// use "$temp\individual_vars_imputation_wide.dta", clear
+misstable summarize LABOR_INCOME_T2_INDV_*, all
+misstable summarize WEEKLY_HRS_T2_INDV_*, all
+misstable summarize ANNUAL_HOURS_T1_INDV_*, all
+misstable summarize *_INDV_*, all // okay so NO missings ever LOL, always 0
+misstable summarize LABOR_INCOME_T2_HEAD_*, all // okay, it is right for head and wife I think?
+misstable summarize *_HEAD_*, all
+misstable summarize *_WIFE_*, all
+
+browse in_sample_1999 in_sample_2001 in_sample_2003 in_sample_2005 in_sample_2007 LABOR_INCOME_T2_INDV_*
+
+forvalues y=1986/1997{
+	capture replace AGE_INDV_`y'=. if in_sample_`y'==0
+	capture replace EMPLOYMENT_INDV_`y'=. if in_sample_`y'==0
+	capture replace YRS_EDUCATION_INDV_`y'=. if in_sample_`y'==0
+	capture replace TOTAL_INCOME_T1_INDV_`y'=. if in_sample_`y'==0
+	capture replace ANNUAL_HOURS_T1_INDV_`y'=. if in_sample_`y'==0
+	capture replace LABOR_INCOME_T1_INDV_`y'=. if in_sample_`y'==0
+	capture replace LABOR_INCOME_T2_INDV_`y'=. if in_sample_`y'==0
+	capture replace WEEKLY_HRS_T2_INDV_`y'=. if in_sample_`y'==0
+}
+
+forvalues y=1999(2)2021{
+	capture replace AGE_INDV_`y'=. if in_sample_`y'==0
+	capture replace EMPLOYMENT_INDV_`y'=. if in_sample_`y'==0
+	capture replace YRS_EDUCATION_INDV_`y'=. if in_sample_`y'==0
+	capture replace TOTAL_INCOME_T1_INDV_`y'=. if in_sample_`y'==0
+	capture replace ANNUAL_HOURS_T1_INDV_`y'=. if in_sample_`y'==0
+	capture replace LABOR_INCOME_T1_INDV_`y'=. if in_sample_`y'==0
+	capture replace LABOR_INCOME_T2_INDV_`y'=. if in_sample_`y'==0
+	capture replace WEEKLY_HRS_T2_INDV_`y'=. if in_sample_`y'==0
+}
+
+misstable summarize *_INDV_*, all // okay NOW there are missings
 
 reshape long MARITAL_PAIRS_ in_sample_ relationship_ FAMILY_INTERVIEW_NUM_ AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_, ///
  i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(survey_yr)
@@ -482,6 +515,12 @@ drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave
 reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ FIRST_BIRTH_YR TOTAL_INCOME_T1_FAMILY_ ///
 , i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(survey_yr)
 
+misstable summarize weekly_hrs_t1_focal*, all
+misstable summarize weekly_hrs_t2_focal*, all
+misstable summarize housework_focal*, all
+misstable summarize weekly_hrs_t2_focal1999 weekly_hrs_t2_focal2001 // okay so I fixed this
+misstable summarize *focal*, all
+
 // weekly hours
 browse unique_id weekly_hrs_t1_focal* weekly_hrs_t2_focal*
 // gen weekly_hrs_t1_focal1998=weekly_hrs_t2_focal1999 // so, t-2 for 1999 becomes t-1 for 1998
@@ -517,7 +556,7 @@ reshape long
 browse unique_id survey_yr rel_start_all min_dur max_dur relationship_ in_sample_ weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
 
 foreach var in weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal{
-	replace `var'=. if in_sample==0
+	replace `var'=. if in_sample==0 // oh lol, I also did this here...
 }
 
 gen duration = survey_yr - rel_start_all
@@ -576,6 +615,10 @@ sqset hw_hours_gp couple_id duration_rec
 sqindexplot, gapinclude
 sqindexplot, gapinclude by(SEX)
 
+// do patterns of missing make sense? yes
+tab survey_yr hours_type_t1_focal, m
+tab survey_yr hw_hours_gp, m
+
 ********************************************************************************
 * reshaping wide for imputation purposes
 ********************************************************************************
@@ -593,6 +636,15 @@ save "$created_data\individs_by_duration_wide.dta", replace
 // first, let's just get a sense of missings
 unique unique_id
 unique unique_id partner_id
+
+
+misstable summarize *focal*, all // they all have missing, but some feel low?? oh I am dumb, I was reading wrong - the right column is where we HAVE data, so the ones that seem low are mostly the t2 variables, which makes sense,bc didn't exist until 1999 okay I actually feel okay about this
+misstable summarize *focal0, all // -4? (first time point)
+misstable summarize *focal4, all // -1
+misstable summarize *focal5, all // this is actually time 0?
+misstable summarize *focal6, all // t1
+misstable summarize *focal7, all // t2
+misstable summarize *focal14, all // last time point
 
 browse unique_id partner_id couple_id weekly_hrs_t1_focal*
 browse unique_id housework_focal*
