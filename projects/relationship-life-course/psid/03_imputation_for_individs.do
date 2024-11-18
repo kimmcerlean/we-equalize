@@ -619,6 +619,17 @@ sqindexplot, gapinclude by(SEX)
 tab survey_yr hours_type_t1_focal, m
 tab survey_yr hw_hours_gp, m
 
+// expore SHAPE of data for continuous variables
+histogram weekly_hrs_t1_focal, width(1)
+histogram weekly_hrs_t1_focal if weekly_hrs_t1_focal>0, width(1)
+histogram housework_focal, width(1)
+
+gen partnered=.
+replace partnered=0 if MARITAL_PAIRS_==0
+replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
+
+tabstat weekly_hrs_t1_focal housework_focal employed_focal earnings_t1_focal age_focal educ_focal college_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T1_FAMILY_, stats(mean sd p50) columns(statistics)
+
 ********************************************************************************
 * reshaping wide for imputation purposes
 ********************************************************************************
@@ -637,6 +648,9 @@ save "$created_data\individs_by_duration_wide.dta", replace
 unique unique_id
 unique unique_id partner_id
 
+browse unique_id partner_id couple_id weekly_hrs_t1_focal*
+browse unique_id housework_focal*
+
 
 misstable summarize *focal*, all // they all have missing, but some feel low?? oh I am dumb, I was reading wrong - the right column is where we HAVE data, so the ones that seem low are mostly the t2 variables, which makes sense,bc didn't exist until 1999 okay I actually feel okay about this
 misstable summarize *focal0, all // -4? (first time point)
@@ -645,9 +659,14 @@ misstable summarize *focal5, all // this is actually time 0?
 misstable summarize *focal6, all // t1
 misstable summarize *focal7, all // t2
 misstable summarize *focal14, all // last time point
+mdesc *focal*
 
-browse unique_id partner_id couple_id weekly_hrs_t1_focal*
-browse unique_id housework_focal*
+egen nmis_workhrs = rmiss(weekly_hrs_t1_focal*)
+tab nmis_workhrs, m
+browse nmis_workhrs weekly_hrs_t1_focal*
+
+egen nmis_hwhrs = rmiss(housework_focal*)
+tab nmis_hwhrs, m
 
 forvalues y=0/16{
 	replace weekly_hrs_t1_focal`y' = round(weekly_hrs_t1_focal`y',1)
@@ -660,7 +679,39 @@ forvalues y=1/16{
 }
 */
 
+// attempting to export mdesc, following: https://www.statalist.org/forums/forum/general-stata-discussion/general/1643775-export-mdesc-table-to-excel
+
+program mmdesc, rclass byable(recall)
+syntax [varlist] [if] [in]
+tempvar touse
+mark `touse' `if' `in'
+local nvars : word count `varlist' 
+tempname matrix 
+matrix `matrix' = J(`nvars', 3, .) 
+local i = 1 
+quietly foreach var of local varlist {
+    count if missing(`var') & `touse' 
+    matrix `matrix'[`i', 1] = r(N) 
+    count if `touse'
+    matrix `matrix'[`i', 2] = r(N) 
+    matrix `matrix'[`i', 3] = `matrix'[`i',1] / `matrix'[`i',2] 
+    local ++i  
+}
+matrix rownames `matrix' = `varlist'                     
+matrix colnames `matrix' = Missing Total Missing/Total 
+matrix list `matrix', noheader 
+return matrix table = `matrix' 
+end
+
+putexcel set "$results/missingtable.xlsx"
+mmdesc FIRST_BIRTH_YR0-hw_hours_gp16
+putexcel A1 = matrix(r(table))
+
 // sdchronogram hours_type_t1_focal0-hours_type_t1_focal16 // this is not working; I am not sure why
+
+********************************************************************************
+**# MICT Exploration
+********************************************************************************
 
 ** Looking at steps in Halpin 2016
 mict_prep weekly_hrs_t1_focal, id(couple_id)
