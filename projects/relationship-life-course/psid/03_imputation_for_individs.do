@@ -69,7 +69,7 @@ forvalues y=1999(2)2021{
 
 
 // browse unique_id in_sample_* relationship_* MARITAL_PAIRS_* HOUSEWORK_WIFE_* HOUSEWORK_HEAD_*
-keep unique_id FIRST_BIRTH_YR in_sample_* relationship_* MARITAL_PAIRS_* SEX AGE_INDV* YRS_EDUCATION_INDV* EDUC1_WIFE_* EDUC1_HEAD_* EDUC_WIFE_* EDUC_HEAD_* LABOR_INCOME_T1_WIFE_* LABOR_INCOME_T2_WIFE_* WAGES_T1_WIFE_* LABOR_INCOME_T1_HEAD_* LABOR_INCOME_T2_HEAD_* WAGES_T1_HEAD_* TAXABLE_T1_HEAD_WIFE_* WEEKLY_HRS1_T1_WIFE_* WEEKLY_HRS_T1_WIFE_* WEEKLY_HRS1_T1_HEAD_* WEEKLY_HRS_T1_HEAD_* HOUSEWORK_HEAD_* HOUSEWORK_WIFE_* TOTAL_HOUSEWORK_T1_HW_* MOST_HOUSEWORK_T1* EMPLOY_STATUS_HEAD_* EMPLOY_STATUS1_HEAD_* EMPLOY_STATUS2_HEAD_* EMPLOY_STATUS3_HEAD_* EMPLOY_STATUS_WIFE_* EMPLOY_STATUS1_WIFE_* EMPLOY_STATUS2_WIFE_* EMPLOY_STATUS3_WIFE_* NUM_CHILDREN_* AGE_YOUNG_CHILD_* AGE_HEAD_* AGE_WIFE_* TOTAL_INCOME_T1_FAMILY_* FAMILY_INTERVIEW_NUM_* EMPLOY_STATUS_T2_HEAD_* EMPLOY_STATUS_T2_WIFE_* WEEKLY_HRS_T2_HEAD_* WEEKLY_HRS_T2_WIFE_* START_YR_EMPLOYER_HEAD_* START_YR_EMPLOYER_WIFE_* START_YR_CURRENT_HEAD_* START_YR_CURRENT_WIFE_* START_YR_PREV_HEAD_* START_YR_PREV_WIFE_* YRS_CURRENT_EMPLOY_HEAD_* YRS_CURRENT_EMPLOY_WIFE_*  WEEKLY_HRS_T2_INDV_* ANNUAL_HOURS_T1_INDV_* ANNUAL_HOURS_T1_HEAD* ANNUAL_HOURS_T1_WIFE* EMPLOYMENT_INDV* LABOR_INCOME_T1_INDV* LABOR_INCOME_T2_INDV* TOTAL_INCOME_T1_INDV*
+keep unique_id FIRST_BIRTH_YR in_sample_* relationship_* MARITAL_PAIRS_* SEX AGE_INDV* YRS_EDUCATION_INDV* EDUC1_WIFE_* EDUC1_HEAD_* EDUC_WIFE_* EDUC_HEAD_* LABOR_INCOME_T1_WIFE_* LABOR_INCOME_T2_WIFE_* WAGES_T1_WIFE_* LABOR_INCOME_T1_HEAD_* LABOR_INCOME_T2_HEAD_* WAGES_T1_HEAD_* TAXABLE_T1_HEAD_WIFE_* WEEKLY_HRS1_T1_WIFE_* WEEKLY_HRS_T1_WIFE_* WEEKLY_HRS1_T1_HEAD_* WEEKLY_HRS_T1_HEAD_* HOUSEWORK_HEAD_* HOUSEWORK_WIFE_* TOTAL_HOUSEWORK_T1_HW_* MOST_HOUSEWORK_T1* EMPLOY_STATUS_HEAD_* EMPLOY_STATUS1_HEAD_* EMPLOY_STATUS2_HEAD_* EMPLOY_STATUS3_HEAD_* EMPLOY_STATUS_WIFE_* EMPLOY_STATUS1_WIFE_* EMPLOY_STATUS2_WIFE_* EMPLOY_STATUS3_WIFE_* NUM_CHILDREN_* AGE_YOUNG_CHILD_* AGE_HEAD_* AGE_WIFE_* TOTAL_INCOME_T1_FAMILY_* FAMILY_INTERVIEW_NUM_* EMPLOY_STATUS_T2_HEAD_* EMPLOY_STATUS_T2_WIFE_* WEEKLY_HRS_T2_HEAD_* WEEKLY_HRS_T2_WIFE_* START_YR_EMPLOYER_HEAD_* START_YR_EMPLOYER_WIFE_* START_YR_CURRENT_HEAD_* START_YR_CURRENT_WIFE_* START_YR_PREV_HEAD_* START_YR_PREV_WIFE_* YRS_CURRENT_EMPLOY_HEAD_* YRS_CURRENT_EMPLOY_WIFE_*  WEEKLY_HRS_T2_INDV_* ANNUAL_HOURS_T1_INDV_* ANNUAL_HOURS_T1_HEAD* ANNUAL_HOURS_T1_WIFE* EMPLOYMENT_INDV* LABOR_INCOME_T1_INDV* LABOR_INCOME_T2_INDV* TOTAL_INCOME_T1_INDV* BIRTH_YR_INDV_* RACE_*
 
 
 gen partner_id = unique_id
@@ -97,7 +97,7 @@ forvalues y=1969/1985{ // let's keep a few years to see if we have ANY data for 
 	drop MARITAL_PAIRS_sp_`y'
 }
 
-foreach var in AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ FAMILY_INTERVIEW_NUM_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_{
+foreach var in AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ FAMILY_INTERVIEW_NUM_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ BIRTH_YR_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_{
 	forvalues y=1968/1985{
 		capture drop `var'`y' // in case var not in all years
 	}
@@ -142,6 +142,7 @@ forvalues y=1986/1997{
 	capture replace LABOR_INCOME_T1_INDV_`y'=. if in_sample_`y'==0
 	capture replace LABOR_INCOME_T2_INDV_`y'=. if in_sample_`y'==0
 	capture replace WEEKLY_HRS_T2_INDV_`y'=. if in_sample_`y'==0
+	capture replace BIRTH_YR_INDV_`y'=. if in_sample_`y'==0
 }
 
 forvalues y=1999(2)2021{
@@ -153,11 +154,18 @@ forvalues y=1999(2)2021{
 	capture replace LABOR_INCOME_T1_INDV_`y'=. if in_sample_`y'==0
 	capture replace LABOR_INCOME_T2_INDV_`y'=. if in_sample_`y'==0
 	capture replace WEEKLY_HRS_T2_INDV_`y'=. if in_sample_`y'==0
+	capture replace BIRTH_YR_INDV_`y'=. if in_sample_`y'==0
 }
 
 misstable summarize *_INDV_*, all // okay NOW there are missings
 
-reshape long MARITAL_PAIRS_ in_sample_ relationship_ FAMILY_INTERVIEW_NUM_ AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_, ///
+egen birth_yr = rowmin(BIRTH_YR_INDV_*)
+replace birth_yr=. if birth_yr==9999
+browse unique_id birth_yr BIRTH_YR_INDV_*
+
+drop BIRTH_YR_INDV_*
+
+reshape long MARITAL_PAIRS_ in_sample_ relationship_ FAMILY_INTERVIEW_NUM_ AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_, ///
  i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(survey_yr)
 
 // want consecutive waves to make some things easier later
@@ -224,26 +232,37 @@ browse unique_id survey_yr EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATU
 // not numbered until 1994; 1-3 arose in 1994. codes match
 // wife not asked until 1976?
 
-gen employ_head=0
+gen employ_head=.
+replace employ_head=0 if inrange(EMPLOY_STATUS_HEAD_,2,9)
 replace employ_head=1 if EMPLOY_STATUS_HEAD_==1
-gen employ1_head=0
+gen employ1_head=.
+replace employ1_head=0 if inrange(EMPLOY_STATUS1_HEAD_,2,8)
 replace employ1_head=1 if EMPLOY_STATUS1_HEAD_==1
-gen employ2_head=0
+gen employ2_head=.
+replace employ2_head=0 if EMPLOY_STATUS2_HEAD_==0 | inrange(EMPLOY_STATUS2_HEAD_,2,8)
 replace employ2_head=1 if EMPLOY_STATUS2_HEAD_==1
-gen employ3_head=0
+gen employ3_head=.
+replace employ3_head=0 if EMPLOY_STATUS3_HEAD_==0 | inrange(EMPLOY_STATUS3_HEAD_,2,8)
 replace employ3_head=1 if EMPLOY_STATUS3_HEAD_==1
-egen employed_head=rowtotal(employ_head employ1_head employ2_head employ3_head)
+
+browse employ_head employ1_head employ2_head employ3_head
+egen employed_head=rowtotal(employ_head employ1_head employ2_head employ3_head), missing
 replace employed_head=1 if employed_head==2
 
-gen employ_wife=0
+gen employ_wife=.
+replace employ_wife=0 if inrange(EMPLOY_STATUS_WIFE_,2,9)
 replace employ_wife=1 if EMPLOY_STATUS_WIFE_==1
-gen employ1_wife=0
+gen employ1_wife=.
+replace employ1_wife=0 if inrange(EMPLOY_STATUS1_WIFE_,2,8)
 replace employ1_wife=1 if EMPLOY_STATUS1_WIFE_==1
-gen employ2_wife=0
+gen employ2_wife=.
+replace employ2_wife=0 if EMPLOY_STATUS2_WIFE_==0 | inrange(EMPLOY_STATUS2_WIFE_,2,8)
 replace employ2_wife=1 if EMPLOY_STATUS2_WIFE_==1
-gen employ3_wife=0
+gen employ3_wife=.
+replace employ3_wife=0 if EMPLOY_STATUS3_WIFE_==0 | inrange(EMPLOY_STATUS3_WIFE_,2,8)
 replace employ3_wife=1 if EMPLOY_STATUS3_WIFE_==1
-egen employed_wife=rowtotal(employ_wife employ1_wife employ2_wife employ3_wife)
+
+egen employed_wife=rowtotal(employ_wife employ1_wife employ2_wife employ3_wife), missing
 replace employed_wife=1 if employed_wife==2
 
 browse unique_id survey_yr employed_head employed_wife employ_head employ1_head employ_wife employ1_wife
@@ -254,13 +273,16 @@ replace employed_indv=0 if inrange(EMPLOYMENT_INDV,2,9)
 replace employed_indv=1 if EMPLOYMENT_INDV==1
 
 // t-1 employment (need to create based on earnings)
-gen employed_t1_head=0
+gen employed_t1_head=.
+replace employed_t1_head=0 if earnings_t1_head == 0
 replace employed_t1_head=1 if earnings_t1_head > 0 & earnings_t1_head!=.
 
-gen employed_t1_wife=0
+gen employed_t1_wife=.
+replace employed_t1_wife=0 if earnings_t1_wife == 0
 replace employed_t1_wife=1 if earnings_t1_wife > 0 & earnings_t1_wife!=.
 
-gen employed_t1_indv=0
+gen employed_t1_indv=.
+replace employed_t1_indv=0 if LABOR_INCOME_T1_INDV == 0
 replace employed_t1_indv=1 if LABOR_INCOME_T1_INDV > 0 & LABOR_INCOME_T1_INDV!=.
 
 gen ft_pt_t1_head=.
@@ -278,9 +300,11 @@ label values ft_pt_t1_head ft_pt_t1_wife ft_pt
 
 gen ft_t1_head=0
 replace ft_t1_head=1 if ft_pt_t1_head==2
+replace ft_t1_head=. if ft_pt_t1_head==.
 
 gen ft_t1_wife=0
 replace ft_t1_wife=1 if ft_pt_t1_wife==2
+replace ft_t1_wife=. if ft_pt_t1_wife==.
 
 // housework hours - not totally sure if accurate prior to 1976 (asked annually not weekly - and was t-1. missing head/wife specific in 1968, 1975, 1982
 browse unique_id survey_yr HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 // total and most HW stopped after 1974
@@ -355,8 +379,105 @@ replace college_complete_indv=0 if inrange(educ_completed,1,3)
 replace college_complete_indv=1 if educ_completed==4
 
 // number of children
-gen children=0
-replace children=1 if NUM_CHILDREN_>=1
+gen children=.
+replace children=0 if NUM_CHILDREN_==0
+replace children=1 if NUM_CHILDREN_>=1 & NUM_CHILDREN_!=.
+
+// race
+browse unique_id survey_yr RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_
+// wait race of wife not asked until 1985?! that's wild. also need to see if codes changed in between. try to fill in historical for wife if in survey in 1985 and prior.
+/*
+1968-1984: 1=White; 2=Negro; 3=PR or Mexican; 7=Other
+1985-1989: 1=White; 2=Black; 3=Am Indian 4=Asian 7=Other; 8 =more than 2
+1990-2003: 1=White; 2=Black; 3=Am India; 4=Asian; 5=Latino; 6=Other; 7=Other
+2005-2019: 1=White; 2=Black; 3=Am India; 4=Asian; 5=Native Hawaiian/Pac Is; 7=Other
+*/
+
+gen race_1_head_rec=.
+replace race_1_head_rec=1 if RACE_1_HEAD_==1
+replace race_1_head_rec=2 if RACE_1_HEAD_==2
+replace race_1_head_rec=3 if (inrange(survey_yr,1985,2019) & RACE_1_HEAD_==3)
+replace race_1_head_rec=4 if (inrange(survey_yr,1985,2019) & RACE_1_HEAD_==4)
+replace race_1_head_rec=5 if (inrange(survey_yr,1968,1984) & RACE_1_HEAD_==3) | (inrange(survey_yr,1990,2003) & RACE_1_HEAD_==5)
+replace race_1_head_rec=6 if RACE_1_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_1_HEAD_==6) | (inrange(survey_yr,2005,2019) & RACE_1_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_1_HEAD_==8)
+
+gen race_2_head_rec=.
+replace race_2_head_rec=1 if RACE_2_HEAD_==1
+replace race_2_head_rec=2 if RACE_2_HEAD_==2
+replace race_2_head_rec=3 if (inrange(survey_yr,1985,2019) & RACE_2_HEAD_==3)
+replace race_2_head_rec=4 if (inrange(survey_yr,1985,2019) & RACE_2_HEAD_==4)
+replace race_2_head_rec=5 if (inrange(survey_yr,1968,1984) & RACE_2_HEAD_==3) | (inrange(survey_yr,1990,2003) & RACE_2_HEAD_==5)
+replace race_2_head_rec=6 if RACE_2_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_2_HEAD_==6) | (inrange(survey_yr,2005,2019) & RACE_2_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_2_HEAD_==8)
+
+gen race_3_head_rec=.
+replace race_3_head_rec=1 if RACE_3_HEAD_==1
+replace race_3_head_rec=2 if RACE_3_HEAD_==2
+replace race_3_head_rec=3 if (inrange(survey_yr,1985,2019) & RACE_3_HEAD_==3)
+replace race_3_head_rec=4 if (inrange(survey_yr,1985,2019) & RACE_3_HEAD_==4)
+replace race_3_head_rec=5 if (inrange(survey_yr,1968,1984) & RACE_3_HEAD_==3) | (inrange(survey_yr,1990,2003) & RACE_3_HEAD_==5)
+replace race_3_head_rec=6 if RACE_3_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_3_HEAD_==6) | (inrange(survey_yr,2005,2019) & RACE_3_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_3_HEAD_==8)
+
+gen race_4_head_rec=.
+replace race_4_head_rec=1 if RACE_4_HEAD_==1
+replace race_4_head_rec=2 if RACE_4_HEAD_==2
+replace race_4_head_rec=3 if (inrange(survey_yr,1985,2019) & RACE_4_HEAD_==3)
+replace race_4_head_rec=4 if (inrange(survey_yr,1985,2019) & RACE_4_HEAD_==4)
+replace race_4_head_rec=5 if (inrange(survey_yr,1968,1984) & RACE_4_HEAD_==3) | (inrange(survey_yr,1990,2003) & RACE_4_HEAD_==5)
+replace race_4_head_rec=6 if RACE_4_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_4_HEAD_==6) | (inrange(survey_yr,2005,2019) & RACE_4_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_4_HEAD_==8)
+
+gen race_1_wife_rec=.
+replace race_1_wife_rec=1 if RACE_1_WIFE_==1
+replace race_1_wife_rec=2 if RACE_1_WIFE_==2
+replace race_1_wife_rec=3 if (inrange(survey_yr,1985,2019) & RACE_1_WIFE_==3)
+replace race_1_wife_rec=4 if (inrange(survey_yr,1985,2019) & RACE_1_WIFE_==4)
+replace race_1_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_1_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_1_WIFE_==5)
+replace race_1_wife_rec=6 if RACE_1_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_1_WIFE_==6) | (inrange(survey_yr,2005,2019) & RACE_1_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_1_WIFE_==8)
+
+gen race_2_wife_rec=.
+replace race_2_wife_rec=1 if RACE_2_WIFE_==1
+replace race_2_wife_rec=2 if RACE_2_WIFE_==2
+replace race_2_wife_rec=3 if (inrange(survey_yr,1985,2019) & RACE_2_WIFE_==3)
+replace race_2_wife_rec=4 if (inrange(survey_yr,1985,2019) & RACE_2_WIFE_==4)
+replace race_2_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_2_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_2_WIFE_==5)
+replace race_2_wife_rec=6 if RACE_2_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_2_WIFE_==6) | (inrange(survey_yr,2005,2019) & RACE_2_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_2_WIFE_==8)
+
+gen race_3_wife_rec=.
+replace race_3_wife_rec=1 if RACE_3_WIFE_==1
+replace race_3_wife_rec=2 if RACE_3_WIFE_==2
+replace race_3_wife_rec=3 if (inrange(survey_yr,1985,2019) & RACE_3_WIFE_==3)
+replace race_3_wife_rec=4 if (inrange(survey_yr,1985,2019) & RACE_3_WIFE_==4)
+replace race_3_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_3_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_3_WIFE_==5)
+replace race_3_wife_rec=6 if RACE_3_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_3_WIFE_==6) | (inrange(survey_yr,2005,2019) & RACE_3_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_3_WIFE_==8)
+
+browse unique_id race_1_head_rec race_2_head_rec race_3_head_rec race_4_head_rec
+
+gen race_wife=race_1_wife_rec
+replace race_wife=7 if race_2_wife_rec!=.
+
+gen race_head=race_1_head_rec
+replace race_head=7 if race_2_head_rec!=.
+
+label define race 1 "White" 2 "Black" 3 "Indian" 4 "Asian" 5 "Latino" 6 "Other" 7 "Multi-racial"
+label values race_wife race_head race
+
+tab race_head in_sample_, m
+tab race_wife in_sample_, m
+browse unique_id survey_yr race_head race_wife
+
+bysort unique_id: egen race_head_fixed = median(race_head)
+browse unique_id survey_yr race_head_fixed race_head
+replace race_head_fixed=. if inlist(race_head_fixed,1.5,2.5,3.5,4.5,5.5,6.5)
+
+bysort unique_id: egen race_wife_fixed = median(race_wife)
+browse unique_id survey_yr race_wife_fixed race_wife
+replace race_wife_fixed=. if inlist(race_wife_fixed,1.5,2.5,3.5,4.5,5.5,6.5)
+
+// fill in missing birthdates from age if possible (And check against age)
+browse unique_id survey_yr birth_yr AGE_INDV_
+replace AGE_INDV_=. if AGE_INDV_==999
+replace AGE_INDV_ = survey_yr - birth_yr if AGE_INDV_==.
+browse unique_id survey_yr birth_yr AGE_INDV_ if birth_yr==.
+replace birth_yr = survey_yr - AGE_INDV_ if birth_yr==.
 
 ********************************************************************************
 **# now need to allocate variables to individual based on relationship
@@ -407,6 +528,15 @@ replace college_focal = 1 if educ_focal==4
 // Age
 browse unique_id survey_yr relationship_ AGE_*
 gen age_focal = AGE_INDV
+
+// race
+gen race_focal=.
+replace race_focal=race_head if relationship_==1
+replace race_focal=race_wife if relationship_==2
+
+gen race_fixed_focal=.
+replace race_fixed_focal=race_head_fixed if relationship_==1
+replace race_fixed_focal=race_wife_fixed if relationship_==2
 
 * t-2 variables
 // weekly hours
@@ -501,7 +631,7 @@ replace yrs_employer_focal=YRS_CURRENT_EMPLOY_HEAD if relationship_==1
 replace yrs_employer_focal=YRS_CURRENT_EMPLOY_WIFE if relationship_==2
 
 // drop variables that aren't core (aka were used to create main variables)
-drop LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD WAGES_T1_HEAD WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_  ANNUAL_HOURS_T1_INDV EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ employ_head employ1_head employ2_head employ3_head employ_wife employ1_wife employ2_wife employ3_wife HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_  educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 START_YR_EMPLOYER_HEAD START_YR_CURRENT_HEAD START_YR_PREV_HEAD YRS_CURRENT_EMPLOY_HEAD START_YR_EMPLOYER_WIFE START_YR_CURRENT_WIFE START_YR_PREV_WIFE YRS_CURRENT_EMPLOY_WIFE total_housework_weekly
+drop LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD WAGES_T1_HEAD WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_  ANNUAL_HOURS_T1_INDV EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ employ_head employ1_head employ2_head employ3_head employ_wife employ1_wife employ2_wife employ3_wife HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_  educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 START_YR_EMPLOYER_HEAD START_YR_CURRENT_HEAD START_YR_PREV_HEAD YRS_CURRENT_EMPLOY_HEAD START_YR_EMPLOYER_WIFE START_YR_CURRENT_WIFE START_YR_PREV_WIFE YRS_CURRENT_EMPLOY_WIFE total_housework_weekly RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ race_1_head_rec race_2_head_rec race_3_head_rec race_4_head_rec race_1_wife_rec race_2_wife_rec race_3_wife_rec
 
 save "$temp\inidividual_vars_imputation_long.dta", replace
 
@@ -512,8 +642,11 @@ save "$temp\inidividual_vars_imputation_long.dta", replace
 
 drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave
 
-reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ FIRST_BIRTH_YR TOTAL_INCOME_T1_FAMILY_ ///
-, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(survey_yr)
+bysort unique_id: egen birth_yr_all = min(birth_yr)
+drop birth_yr
+
+reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ race_fixed_focal race_focal ///
+, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(survey_yr)  // birth_yr FIRST_BIRTH_YR
 
 misstable summarize weekly_hrs_t1_focal*, all
 misstable summarize weekly_hrs_t2_focal*, all
@@ -568,6 +701,14 @@ keep if duration <=12 // up to 10/11 for now - but adding a few extra years so I
 
 browse unique_id survey_yr rel_start_all duration min_dur max_dur relationship_ in_sample_ weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
 
+browse unique_id survey_yr age_focal birth_yr
+replace age_focal = survey_yr - birth_yr if age_focal==.
+
+drop race_fixed_focal
+by unique_id: egen race_fixed_focal = median(race_focal)
+replace race_fixed_focal=. if inlist(race_fixed_focal,1.5,2.5,3.5,4.5,5.5,6.5)
+browse unique_id survey_yr race_fixed_focal race_focal
+
 **# Here the data is now long, by duration
 save "$created_data\individs_by_duration_long.dta", replace
 
@@ -575,6 +716,7 @@ unique unique_id partner_id
 egen couple_id = group(unique_id partner_id)
 browse couple_id unique_id partner_id duration SEX
 
+// make it rectangular then fill in fixed characteristics for those added
 fillin couple_id duration
 tab duration
 unique couple_id
@@ -587,6 +729,22 @@ foreach var in rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended{
 	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
 }
 
+browse unique_id duration birth_yr_all if inlist(unique_id,4039,4180,4201,4202,5004,5004,5183,5183,6032,6177,7032)
+bysort unique_id (birth_yr_all): replace birth_yr_all = birth_yr_all[1]
+
+browse if race_fixed_focal==.
+browse unique_id duration race_fixed_focal if inlist(unique_id,4039,4180,4201,4202,5004,5004,5183,5183,6032,6177,7032)
+bysort unique_id (race_fixed_focal): replace race_fixed_focal = race_fixed_focal[1]
+bysort unique_id (FIRST_BIRTH_YR): replace FIRST_BIRTH_YR = FIRST_BIRTH_YR[1]
+sort unique_id partner_id duration
+
+browse unique_id survey_yr birth_yr_all age_focal duration if inlist(unique_id,4039,4180,4201,4202,5004,5004,5183,5183,6032,6177,7032)
+bysort unique_id partner_id duration
+replace survey_yr = survey_yr[_n-1]+1 if survey_yr==.
+
+replace age_focal=survey_yr - birth_yr_all if age_focal==.
+
+// get ready to reshape back
 gen duration_rec=duration+4 // negatives won't work in reshape or with sq commands - so make -4 0
 
 sort couple_id duration
@@ -600,9 +758,9 @@ replace hours_type_t1_focal=0 if weekly_hrs_t1_focal==0
 replace hours_type_t1_focal=1 if weekly_hrs_t1_focal>0 & weekly_hrs_t1_focal<35
 replace hours_type_t1_focal=2 if weekly_hrs_t1_focal>=35 & weekly_hrs_t1_focal!=.
 
-sqset hours_type_t1 couple_id duration_rec
-sqindexplot, gapinclude
-sqindexplot, gapinclude by(SEX)
+// sqset hours_type_t1 couple_id duration_rec
+// sqindexplot, gapinclude
+// sqindexplot, gapinclude by(SEX)
 // sdchronogram hours_type_t1
 
 // just to get a better sense of the data instead of plotting by the continuous variable
@@ -611,9 +769,9 @@ replace hw_hours_gp=0 if housework_focal==0
 replace hw_hours_gp=1 if housework_focal>0 & housework_focal<10
 replace hw_hours_gp=2 if housework_focal>=10 & housework_focal!=.
 
-sqset hw_hours_gp couple_id duration_rec
-sqindexplot, gapinclude
-sqindexplot, gapinclude by(SEX)
+// sqset hw_hours_gp couple_id duration_rec
+// sqindexplot, gapinclude
+// sqindexplot, gapinclude by(SEX)
 
 // do patterns of missing make sense? yes
 tab survey_yr hours_type_t1_focal, m
@@ -628,15 +786,15 @@ gen partnered=.
 replace partnered=0 if MARITAL_PAIRS_==0
 replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
 
-tabstat weekly_hrs_t1_focal housework_focal employed_focal earnings_t1_focal age_focal educ_focal college_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T1_FAMILY_, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t1_focal housework_focal employed_focal earnings_t1_focal age_focal educ_focal college_focal race_focal race_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T1_FAMILY_, stats(mean sd p50) columns(statistics)
 
 ********************************************************************************
 * reshaping wide for imputation purposes
 ********************************************************************************
 
-drop survey_yr duration _fillin
+drop survey_yr duration _fillin MARITAL_PAIRS_
 
-reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ FIRST_BIRTH_YR TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp ///
+reshape wide in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp race_focal ///
 , i(couple_id unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(duration_rec)
 
 
@@ -703,8 +861,8 @@ matrix list `matrix', noheader
 return matrix table = `matrix' 
 end
 
-putexcel set "$results/missingtable.xlsx"
-mmdesc FIRST_BIRTH_YR0-hw_hours_gp16
+putexcel set "$results/missingtable.xlsx", replace
+mmdesc FAMILY_INTERVIEW_NUM_0-race_fixed_focal
 putexcel A1 = matrix(r(table))
 
 // sdchronogram hours_type_t1_focal0-hours_type_t1_focal16 // this is not working; I am not sure why
