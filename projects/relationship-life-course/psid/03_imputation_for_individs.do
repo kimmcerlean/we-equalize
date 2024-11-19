@@ -68,7 +68,20 @@ mi impute chained
 ;
 #delimit cr
 
-/// 
+********************************************************************************
+********************************************************************************
+**# * Troubleshooting area
+********************************************************************************
+********************************************************************************
+
+********************************************************************************
+* Can I get this to work with just one time varying variable?
+********************************************************************************
+
+mi set wide
+mi register imputed weekly_hrs_t1_focal*
+mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all
+
 #delimit ;
 
 mi impute chained
@@ -85,13 +98,40 @@ mi impute chained
 (pmm, knn(5) include ( weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16         )) weekly_hrs_t1_focal13
 (pmm, knn(5) include (weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16          )) weekly_hrs_t1_focal14
 
-= i.FIRST_BIRTH_YR i.birth_yr_all i.rel_start_all, chaindots force add(10) rseed(12345) noimputed noisily augment
+= i.FIRST_BIRTH_YR i.birth_yr_all i.rel_start_all, chaindots force add(10) rseed(12345) noimputed augment
+
+;
+#delimit cr
+
+// do I need less predictors?
+
+mi set wide
+mi register imputed weekly_hrs_t1_focal*
+mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all
+
+#delimit ;
+
+mi impute chained
+
+(pmm, knn(5) include (          weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8        )) weekly_hrs_t1_focal4
+(pmm, knn(5) include (          weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9        )) weekly_hrs_t1_focal5
+(pmm, knn(5) include (          weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10        )) weekly_hrs_t1_focal6
+(pmm, knn(5) include (          weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11        )) weekly_hrs_t1_focal7
+(pmm, knn(5) include (          weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12        )) weekly_hrs_t1_focal8
+(pmm, knn(5) include (          weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13        )) weekly_hrs_t1_focal9
+(pmm, knn(5) include (          weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14        )) weekly_hrs_t1_focal10
+(pmm, knn(5) include (          weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15        )) weekly_hrs_t1_focal11
+(pmm, knn(5) include (          weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16        )) weekly_hrs_t1_focal12
+(pmm, knn(5) include (          weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16         )) weekly_hrs_t1_focal13
+(pmm, knn(5) include (          weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16          )) weekly_hrs_t1_focal14
+
+= i.FIRST_BIRTH_YR i.birth_yr_all i.rel_start_all, chaindots force add(10) rseed(12345) augment noimputed
 
 ;
 #delimit cr
 
 ********************************************************************************
-* Troubleshooting area
+* No observations
 ********************************************************************************
 
 regress housework_focal4 housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16 weekly_hrs_t1_focal4 employed_focal4 earnings_t1_focal4 educ_focal4 children4 NUM_CHILDREN_4 AGE_YOUNG_CHILD_4 relationship_4 partnered4 TOTAL_INCOME_T1_FAMILY_4 race_fixed_focal 
