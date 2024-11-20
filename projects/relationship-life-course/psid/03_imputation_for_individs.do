@@ -29,6 +29,9 @@ tab nmis_age, m
 
 drop if nmis_age==17 // for now, just so this is actually complete
 
+********************************************************************************
+* Attempting all core variables 
+********************************************************************************
 mi set wide
 mi register imputed weekly_hrs_t1_focal* housework_focal* employed_focal* earnings_t1_focal* educ_focal* college_focal* children* NUM_CHILDREN_* AGE_YOUNG_CHILD_* relationship_* partnered* TOTAL_INCOME_T1_FAMILY_* race_fixed_focal
 mi register regular FIRST_BIRTH_YR age_focal* birth_yr_all rel_start_all
@@ -86,28 +89,42 @@ mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all
 
 mi impute chained
 
-(pmm, knn(5) include (          weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16)) weekly_hrs_t1_focal4
-(pmm, knn(5) include (         weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16 )) weekly_hrs_t1_focal5
-(pmm, knn(5) include (        weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16  )) weekly_hrs_t1_focal6
-(pmm, knn(5) include (       weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16   )) weekly_hrs_t1_focal7
-(pmm, knn(5) include (      weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16    )) weekly_hrs_t1_focal8
-(pmm, knn(5) include (     weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16     )) weekly_hrs_t1_focal9
-(pmm, knn(5) include (    weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16      )) weekly_hrs_t1_focal10
-(pmm, knn(5) include (   weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16       )) weekly_hrs_t1_focal11
-(pmm, knn(5) include (  weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16        )) weekly_hrs_t1_focal12
-(pmm, knn(5) include ( weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16         )) weekly_hrs_t1_focal13
-(pmm, knn(5) include (weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16          )) weekly_hrs_t1_focal14
+(pmm, knn(5) include (                weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16)) weekly_hrs_t1_focal0
+(pmm, knn(5) include (               weekly_hrs_t1_focal0 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16 )) weekly_hrs_t1_focal1
+(pmm, knn(5) include (              weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16  )) weekly_hrs_t1_focal2
+(pmm, knn(5) include (             weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16   )) weekly_hrs_t1_focal3
+(pmm, knn(5) include (            weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16    )) weekly_hrs_t1_focal4
+(pmm, knn(5) include (           weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16     )) weekly_hrs_t1_focal5
+(pmm, knn(5) include (          weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16      )) weekly_hrs_t1_focal6
+(pmm, knn(5) include (         weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16       )) weekly_hrs_t1_focal7
+(pmm, knn(5) include (        weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16        )) weekly_hrs_t1_focal8
+(pmm, knn(5) include (       weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16         )) weekly_hrs_t1_focal9
+(pmm, knn(5) include (      weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16          )) weekly_hrs_t1_focal10
+(pmm, knn(5) include (     weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16           )) weekly_hrs_t1_focal11
+(pmm, knn(5) include (    weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16            )) weekly_hrs_t1_focal12
+(pmm, knn(5) include (   weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16             )) weekly_hrs_t1_focal13
+(pmm, knn(5) include (  weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16              )) weekly_hrs_t1_focal14
+(pmm, knn(5) include ( weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal16               )) weekly_hrs_t1_focal15
+(pmm, knn(5) include (weekly_hrs_t1_focal0 weekly_hrs_t1_focal1 weekly_hrs_t1_focal2 weekly_hrs_t1_focal3 weekly_hrs_t1_focal4 weekly_hrs_t1_focal5 weekly_hrs_t1_focal6 weekly_hrs_t1_focal7 weekly_hrs_t1_focal8 weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15                )) weekly_hrs_t1_focal16
 
-= i.FIRST_BIRTH_YR i.birth_yr_all i.rel_start_all, chaindots force add(10) rseed(12345) noimputed augment
+= i.FIRST_BIRTH_YR i.birth_yr_all i.rel_start_all, chaindots force add(1) rseed(12345) noimputed // dryrun
 
 ;
 #delimit cr
 
-// do I need less predictors?
+/*
+do I need less predictors? NO you just needed to include ALL of the weekly hours variables 0 - 16
+log using "$logdir/mi_troubleshoot.log", replace
 
 mi set wide
 mi register imputed weekly_hrs_t1_focal*
 mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all
+
+// for LP:
+mi describe
+mi misstable summarize
+
+// run your imputation model with the dryrun option. You can probably remove the augment option for now.
 
 #delimit ;
 
@@ -125,10 +142,13 @@ mi impute chained
 (pmm, knn(5) include (          weekly_hrs_t1_focal9 weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal14 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16         )) weekly_hrs_t1_focal13
 (pmm, knn(5) include (          weekly_hrs_t1_focal10 weekly_hrs_t1_focal11 weekly_hrs_t1_focal12 weekly_hrs_t1_focal13 weekly_hrs_t1_focal15 weekly_hrs_t1_focal16          )) weekly_hrs_t1_focal14
 
-= i.FIRST_BIRTH_YR i.birth_yr_all i.rel_start_all, chaindots force add(10) rseed(12345) augment noimputed
+= i.FIRST_BIRTH_YR i.birth_yr_all i.rel_start_all, chaindots force add(10) rseed(12345) dryrun noimputed
 
 ;
 #delimit cr
+
+log close
+*/
 
 ********************************************************************************
 * No observations
@@ -140,4 +160,8 @@ regress housework_focal4 housework_focal2 housework_focal3 housework_focal5 hous
 
 regress housework_focal9 housework_focal7 housework_focal8 housework_focal10 housework_focal11 weekly_hrs_t1_focal4 employed_focal4 earnings_t1_focal4 educ_focal4 children4 NUM_CHILDREN_4 AGE_YOUNG_CHILD_4 relationship_4 partnered4 TOTAL_INCOME_T1_FAMILY_4 race_fixed_focal 
 
+// sequence number. in unit. sample status. can recode ER30001 -> to like the latino, the oversample of CRC. Lea is sending me code. Using this as fixed covariate.
+// recode ER30001 (1/2930 = 1 "SRC cross-section") (3001/3441 = 2 "Immigrant 97") (3442/3511 = 3 "Immigrant 99") (4001/4851 = 4 "Immigrant 17") (5001/6872  = 5 "1968 Census") (7001/9043 = 6 "Latino 90") (9044/9308 = 7 "Latino 92"), gen(sample)
+// Use Fabian's version of the race variable -> they make it fixed. 
+// Race not asked every year - so figure out when they newly self-report
 
