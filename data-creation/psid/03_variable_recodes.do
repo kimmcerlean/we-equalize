@@ -465,7 +465,7 @@ replace ft_t1_wife=1 if ft_pt_t1_wife==2
 gen either_enrolled=0
 replace either_enrolled = 1 if ENROLLED_WIFE_==1 | ENROLLED_HEAD_==1
 
-// race
+// race / ethnicity
 // drop if RACE_1_WIFE_==9 | RACE_1_HEAD_==9
 
 browse unique_id survey_yr RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_
@@ -475,6 +475,11 @@ browse unique_id survey_yr RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_1_HEAD_ R
 1985-1989: 1=White; 2=Black; 3=Am Indian 4=Asian 7=Other; 8 =more than 2
 1990-2003: 1=White; 2=Black; 3=Am India; 4=Asian; 5=Latino; 6=Other; 7=Other
 2005-2021: 1=White; 2=Black; 3=Am India; 4=Asian; 5=Native Hawaiian/Pac Is; 7=Other
+
+From SHELF:
+Both summary measures were based on majority response across all available waves (with a small number of ties being broken by most recent report). 
+Also good history on how the PSID collected race and when actually asked v. carried forward
+so maybe rely on when asked and more recent, when measures more robust and self-reported (aka not by interviewer)
 */
 
 gen race_1_head_rec=.
@@ -533,6 +538,15 @@ replace race_3_wife_rec=4 if (inrange(survey_yr,1985,2021) & RACE_3_WIFE_==4)
 replace race_3_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_3_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_3_WIFE_==5)
 replace race_3_wife_rec=6 if RACE_3_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_3_WIFE_==6) | (inrange(survey_yr,2005,2021) & RACE_3_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_3_WIFE_==8)
 
+gen race_4_wife_rec=.
+replace race_4_wife_rec=1 if RACE_4_WIFE_==1
+replace race_4_wife_rec=2 if RACE_4_WIFE_==2
+replace race_4_wife_rec=3 if (inrange(survey_yr,1985,2021) & RACE_4_WIFE_==3)
+replace race_4_wife_rec=4 if (inrange(survey_yr,1985,2021) & RACE_4_WIFE_==4)
+replace race_4_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_4_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_4_WIFE_==5)
+replace race_4_wife_rec=6 if RACE_4_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_4_WIFE_==6) | (inrange(survey_yr,2005,2021) & RACE_4_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_4_WIFE_==8)
+
+// based on first mention (that is one option they use in SHELF)
 gen race_wife=race_1_wife_rec
 replace race_wife=7 if race_2_wife_rec!=.
 
@@ -543,9 +557,20 @@ label define race 1 "White" 2 "Black" 3 "Indian" 4 "Asian" 5 "Latino" 6 "Other" 
 label values race_wife race_head race
 
 // wife - not asked until 1985, need to figure out
-	browse id survey_yr race_wife if inlist(id,3,12,16)
-	bysort id (race_wife): replace race_wife=race_wife[1] if race_wife==.
+	// browse id survey_yr race_wife if inlist(id,3,12,16)
+	// bysort id (race_wife): replace race_wife=race_wife[1] if race_wife==.
+	
+gen hispanic_head=.
+replace hispanic_head=0 if HISPANICITY_HEAD_==0
+replace hispanic_head=1 if inrange(HISPANICITY_HEAD_,1,7)
 
+gen hispanic_wife=.
+replace hispanic_wife=0 if HISPANICITY_WIFE_==0
+replace hispanic_wife=1 if inrange(HISPANICITY_WIFE_,1,7)
+
+tab race_head hispanic_head, m
+
+// if partners same race
 gen same_race=0
 replace same_race=1 if race_head==race_wife & race_head!=.
 
