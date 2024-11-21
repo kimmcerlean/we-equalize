@@ -759,7 +759,7 @@ browse weekly_hrs_t1_focal1998 earnings_t1_focal1998 weekly_hrs_t2_focal1999 ear
 // family income
 forvalues y=1998(2)2020{
 	local z=`y'+1
-	gen TOTAL_INCOME_T1_FAMILY_`y'=TOTAL_INCOME_T2_FAMILY_`z'
+	gen long TOTAL_INCOME_T1_FAMILY_`y'=TOTAL_INCOME_T2_FAMILY_`z'
 }
 
 browse TOTAL_INCOME_T1_FAMILY_1998 TOTAL_INCOME_T1_FAMILY_1999 TOTAL_INCOME_T2_FAMILY_1999
@@ -775,7 +775,7 @@ forvalues y=1998(2)2020{
 // also need to realign the t-1 variables
 forvalues y=1987/2021{
 	local x=`y'-1
-	gen TOTAL_INCOME_T_FAMILY`x' = TOTAL_INCOME_T1_FAMILY_`y'
+	gen long TOTAL_INCOME_T_FAMILY`x' = TOTAL_INCOME_T1_FAMILY_`y'
 	gen weekly_hrs_t_focal`x' = weekly_hrs_t1_focal`y'
 	gen earnings_t_focal`x' = earnings_t1_focal`y'
 }
@@ -816,6 +816,7 @@ bysort unique_id: egen raceth_fixed_focal = median(raceth_focal) // majority
 tab raceth_fixed_focal, m
 browse unique_id survey_yr last_race_focal raceth_focal raceth_fixed_focal
 replace raceth_fixed_focal=last_race_focal if inlist(raceth_fixed_focal,1.5,2.5,3.5,4.5) // tie break with last observed (from above)
+replace raceth_fixed_focal=last_race_focal if raceth_fixed_focal==. // if any other gaps, use last observed
 
 **# Here the data is now long, by duration
 save "$created_data\individs_by_duration_long.dta", replace
@@ -833,10 +834,11 @@ bysort couple_id (SEX): replace SEX=SEX[1] if SEX==.
 bysort couple_id (unique_id): replace unique_id=unique_id[1] if unique_id==.
 bysort couple_id (partner_id): replace partner_id=partner_id[1] if partner_id==.
 
-foreach var in rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended{
+foreach var in rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR sample_type last_race_focal{
 	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
 }
 
+/* incorporate all of these above, these are people who going past 10 years is past 2021
 browse unique_id duration birth_yr_all if inlist(unique_id,4039,4180,4201,4202,5004,5004,5183,5183,6032,6177,7032)
 bysort unique_id (birth_yr_all): replace birth_yr_all = birth_yr_all[1]
 
@@ -845,9 +847,10 @@ browse unique_id duration race_fixed_focal if inlist(unique_id,4039,4180,4201,42
 bysort unique_id (race_fixed_focal): replace race_fixed_focal = race_fixed_focal[1]
 bysort unique_id (FIRST_BIRTH_YR): replace FIRST_BIRTH_YR = FIRST_BIRTH_YR[1]
 sort unique_id partner_id duration
+*/
 
 browse unique_id survey_yr birth_yr_all age_focal duration if inlist(unique_id,4039,4180,4201,4202,5004,5004,5183,5183,6032,6177,7032)
-bysort unique_id partner_id duration
+sort unique_id partner_id duration
 replace survey_yr = survey_yr[_n-1]+1 if survey_yr==.
 
 replace age_focal=survey_yr - birth_yr_all if age_focal==.
@@ -859,6 +862,11 @@ sort couple_id duration
 browse couple_id duration weekly_hrs_t1_focal housework_focal _fillin
 
 replace weekly_hrs_t1_focal=. if weekly_hrs_t1_focal>900 & weekly_hrs_t1_focal!=.
+replace weekly_hrs_t_focal=. if weekly_hrs_t_focal>900 & weekly_hrs_t_focal!=.
+replace TOTAL_INCOME_T_FAMILY=. if TOTAL_INCOME_T_FAMILY>9000000 & TOTAL_INCOME_T_FAMILY!=.
+replace TOTAL_INCOME_T1_FAMILY_=. if TOTAL_INCOME_T1_FAMILY_>9000000 & TOTAL_INCOME_T1_FAMILY_!=.
+replace earnings_t_focal=. if earnings_t_focal>9000000 & earnings_t_focal!=.
+replace earnings_t1_focal=. if earnings_t1_focal>9000000 & earnings_t1_focal!=.
 
 // just to get a better sense of the data instead of plotting by the continuous variable
 gen hours_type_t1_focal=.
@@ -894,7 +902,7 @@ gen partnered=.
 replace partnered=0 if MARITAL_PAIRS_==0
 replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
 
-tabstat weekly_hrs_t1_focal housework_focal employed_focal earnings_t1_focal age_focal educ_focal college_focal race_focal race_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T1_FAMILY_, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal employed_focal earnings_t_focal age_focal educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type, stats(mean sd p50) columns(statistics)
 
 ********************************************************************************
 * reshaping wide for imputation purposes
@@ -902,9 +910,8 @@ tabstat weekly_hrs_t1_focal housework_focal employed_focal earnings_t1_focal age
 
 drop survey_yr duration _fillin MARITAL_PAIRS_
 
-reshape wide in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp race_focal ///
+reshape wide in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ ///
 , i(couple_id unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(duration_rec)
-
 
 **# Here the data is now reshaped wide, by duration
 save "$created_data\individs_by_duration_wide.dta", replace
@@ -916,7 +923,6 @@ unique unique_id partner_id
 
 browse unique_id partner_id couple_id weekly_hrs_t1_focal*
 browse unique_id housework_focal*
-
 
 misstable summarize *focal*, all // they all have missing, but some feel low?? oh I am dumb, I was reading wrong - the right column is where we HAVE data, so the ones that seem low are mostly the t2 variables, which makes sense,bc didn't exist until 1999 okay I actually feel okay about this
 misstable summarize *focal0, all // -4? (first time point)
@@ -970,7 +976,7 @@ return matrix table = `matrix'
 end
 
 putexcel set "$results/missingtable.xlsx", replace
-mmdesc FAMILY_INTERVIEW_NUM_0-race_fixed_focal
+mmdesc FAMILY_INTERVIEW_NUM_0-raceth_fixed_focal
 putexcel A1 = matrix(r(table))
 
 // sdchronogram hours_type_t1_focal0-hours_type_t1_focal16 // this is not working; I am not sure why
