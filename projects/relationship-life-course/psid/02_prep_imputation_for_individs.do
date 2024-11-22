@@ -902,7 +902,7 @@ gen partnered=.
 replace partnered=0 if MARITAL_PAIRS_==0
 replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
 
-tabstat weekly_hrs_t_focal housework_focal employed_focal earnings_t_focal age_focal educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type, stats(mean sd p50) columns(statistics)
 
 ********************************************************************************
 * reshaping wide for imputation purposes
