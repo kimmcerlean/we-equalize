@@ -767,6 +767,11 @@ tabstat weekly_hrs_t_focal housework_focal, by(imputed) stats(mean sd p50)
 tabstat weekly_hrs_t_focal housework_focal if SEX==1, by(imputed) stats(mean sd p50)
 tabstat weekly_hrs_t_focal housework_focal if SEX==2, by(imputed) stats(mean sd p50)
 
+
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type if imputed==0, stats(mean sd p50) columns(statistics)
+
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type if imputed==1, stats(mean sd p50) columns(statistics)
+
 histogram weekly_hrs_t_focal, width(1)
 twoway (histogram weekly_hrs_t_focal if imputed==0, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
 twoway (histogram weekly_hrs_t_focal if imputed==0 & SEX==1, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1 & SEX==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
@@ -1007,14 +1012,71 @@ TOTAL_INCOME_T_FAMILY16: TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INC
 
 use ice_test_bysex.dta, clear
 
-reshape long in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ ///
-, i(couple_id unique_id partner_id rel_start_all _mi _mj) j(duration_rec)
-
 mi import ice
 
-browse _mi _mj couple_id duration_rec weekly_hrs_t_focal housework_focal
+mi reshape long in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ ///
+, i(couple_id unique_id partner_id rel_start_all ) j(duration_rec) // _mi _mj
 
-tabstat weekly_hrs_t_focal housework_focal employed_focal earnings_t1_focal, by(_mj) stats(mean sd p50)
+mi convert flong
+
+browse couple_id unique_id partner_id SEX duration_rec weekly_hrs_t_focal housework_focal _mi_miss _mi_m _mi_id
+gen imputed=0
+replace imputed=1 if inrange(_mi_m,1,10)
+
+inspect weekly_hrs_t_focal if imputed==0
+inspect weekly_hrs_t_focal if imputed==1
+
+inspect housework_focal if imputed==0
+inspect housework_focal if imputed==1
+
+// mi register regular n
+
+save "$created_data/psid_individs_imputed_long_ice", replace
+
+*******************************************************************************
+*  Let's look at some descriptives
+********************************************************************************
+tabstat weekly_hrs_t_focal housework_focal, by(imputed) stats(mean sd p50)
+tabstat weekly_hrs_t_focal housework_focal if SEX==1, by(imputed) stats(mean sd p50)
+tabstat weekly_hrs_t_focal housework_focal if SEX==2, by(imputed) stats(mean sd p50)
+
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type if imputed==0, stats(mean sd p50) columns(statistics)
+
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type if imputed==1, stats(mean sd p50) columns(statistics)
+
+histogram weekly_hrs_t_focal, width(1)
+twoway (histogram weekly_hrs_t_focal if imputed==0, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+twoway (histogram weekly_hrs_t_focal if imputed==0 & SEX==1, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1 & SEX==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
+twoway (histogram weekly_hrs_t_focal if imputed==0 & SEX==2, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1 & SEX==2, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
+
+histogram weekly_hrs_t_focal if weekly_hrs_t1_focal>0, width(1)
+histogram housework_focal, width(1)
+twoway (histogram housework_focal if imputed==0, width(2) color(blue%30)) (histogram housework_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
+
+preserve
+
+collapse (mean) weekly_hrs_t_focal housework_focal, by(duration_rec imputed)
+
+twoway (line weekly_hrs_t_focal duration_rec if imputed==0) (line weekly_hrs_t_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration")
+twoway (line housework_focal duration_rec if imputed==0) (line housework_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration")
+
+restore
+
+//
+preserve
+
+collapse (mean) weekly_hrs_t_focal housework_focal, by(SEX duration_rec imputed)
+
+// men
+twoway (line weekly_hrs_t_focal duration_rec if imputed==0 & SEX==1) (line weekly_hrs_t_focal duration_rec if imputed==1 & SEX==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
+twoway (line housework_focal duration_rec if imputed==0 & SEX==1) (line housework_focal duration_rec if imputed==1 & SEX==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
+
+// women - okay so it is women where the disparities are primarily. is it bc of EMPLOYMENT STATUS?! need to do conditional on that? let's see if it improves with other predictors, bc employment status not currently included
+twoway (line weekly_hrs_t_focal duration_rec if imputed==0 & SEX==2) (line weekly_hrs_t_focal duration_rec if imputed==1 & SEX==2), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
+twoway (line housework_focal duration_rec if imputed==0 & SEX==2) (line housework_focal duration_rec if imputed==1 & SEX==2), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
+
+restore
+
 
 ********************************************************************************
 ********************************************************************************
