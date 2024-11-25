@@ -1010,6 +1010,8 @@ use ice_test_bysex.dta, clear
 reshape long in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ ///
 , i(couple_id unique_id partner_id rel_start_all _mi _mj) j(duration_rec)
 
+mi import ice
+
 browse _mi _mj couple_id duration_rec weekly_hrs_t_focal housework_focal
 
 tabstat weekly_hrs_t_focal housework_focal employed_focal earnings_t1_focal, by(_mj) stats(mean sd p50)

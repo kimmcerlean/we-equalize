@@ -966,6 +966,19 @@ drop survey_yr duration _fillin MARITAL_PAIRS_
 reshape wide in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal ///
 , i(couple_id unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(duration_rec)
 
+forvalues d=0/16{
+	// gen employed_focal_rec`d' = employed_focal`d'
+	replace employed_focal_rec`d' = 1 if employed_focal`d'==0 & weekly_hrs_t_focal`d' > 0 & weekly_hrs_t_focal`d'!=. // so, put them as employed if there are hours
+	replace employed_focal_rec`d' = 1 if employed_focal`d'==. & weekly_hrs_t_focal`d' > 0 & weekly_hrs_t_focal`d'!=. // so, put them as employed if there are hours
+	replace employed_focal_rec`d' = 0 if employed_focal`d'==. & weekly_hrs_t_focal`d' == 0 // so, put them as unemployed if hours are 0 and employment is missing
+}
+
+tab weekly_hrs_t_focal5 employed_focal5, m
+tab weekly_hrs_t_focal5 employed_focal_rec5, m
+
+tab employed_focal5, m
+tab employed_focal_rec5, m
+
 **# Here the data is now reshaped wide, by duration
 save "$created_data\individs_by_duration_wide.dta", replace
 // use "$created_data\individs_by_duration_wide.dta", clear
