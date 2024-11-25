@@ -827,7 +827,7 @@ drop if raceth_fixed_focal==. // for now, just so this is actually complete
 #delimit ;
 
 ice weekly_hrs_t_focal* housework_focal* employed_focal* earnings_t_focal* educ_focal* NUM_CHILDREN_* AGE_YOUNG_CHILD_* partnered* TOTAL_INCOME_T_FAMILY* birth_yr_all i.raceth_fixed_focal i.sample_type,
-saving(ice_test_bysex, replace) m(1) cycles(5) match(weekly_hrs_t_focal* housework_focal* earnings_t_focal* NUM_CHILDREN_* AGE_YOUNG_CHILD_* TOTAL_INCOME_T_FAMILY*) by(SEX) cmd(educ*:ologit) // dryrun 
+saving(ice_test_bysex, replace) m(10) cycles(10) match(weekly_hrs_t_focal* housework_focal* earnings_t_focal* NUM_CHILDREN_* AGE_YOUNG_CHILD_* TOTAL_INCOME_T_FAMILY*) by(SEX) cmd(educ*:ologit) // dryrun 
 
 /* Employment hours */
 eq(weekly_hrs_t_focal0:                 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16 housework_focal0 employed_focal0 earnings_t_focal0 educ_focal0 NUM_CHILDREN_0 AGE_YOUNG_CHILD_0 partnered0 TOTAL_INCOME_T_FAMILY0 i.raceth_fixed_focal birth_yr_all i.sample_type,
