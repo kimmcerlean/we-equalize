@@ -14,6 +14,96 @@
 * a cohabitation history
 
 ********************************************************************************
+********************************************************************************
+**# Using HH composition variables
+********************************************************************************
+********************************************************************************
+use "$temp_psid\PSID_full_long.dta", clear // use long data for now, bc easier to manage
+egen wave = group(survey_yr) // this will make years consecutive, easier for later
+
+** First create some recodes that will make things easier
+gen in_sample=.
+replace in_sample=0 if SEQ_NUMBER_==0 | inrange(SEQ_NUMBER_,60,90)
+replace in_sample=1 if inrange(SEQ_NUMBER_,1,59)
+
+gen hh_status_=.
+replace hh_status_=0 if SEQ_NUMBER_==0 
+replace hh_status_=1 if inrange(SEQ_NUMBER_,1,20) // in sample
+replace hh_status_=2 if inrange(SEQ_NUMBER_,51,59) // institutionalized
+replace hh_status_=3 if inrange(SEQ_NUMBER_,71,80) // new HH 
+replace hh_status_=4 if inrange(SEQ_NUMBER_,81,89) // died
+label define hh_status 0 "not in sample" 1 "in sample" 2 "institutionalized" 3 "new hh" 4 "died"
+label values hh_status_ hh_status
+
+gen has_psid_gene=0
+replace has_psid_gene = 1 if inlist(SAMPLE,1,2)
+
+label define sample 0 "not sample" 1 "original sample" 2 "born-in" 3 "moved in" 4 "joint inclusion" 5 "followable nonsample parent" 6 "nonsample elderly"
+label values SAMPLE sample
+
+gen relationship=.
+replace relationship=0 if RELATION_==0
+replace relationship=1 if inlist(RELATION_,1,10)
+replace relationship=2 if inlist(RELATION_,2,20,22,88)
+replace relationship=3 if inrange(RELATION_,23,87) | inrange(RELATION_,90,98) | inrange(RELATION_,3,9)
+label define relationship 0 "not in sample" 1 "head" 2 "partner" 3 "other"
+label values relationship relationship
+
+replace in_sample=0 if survey_yr==1968 & relationship==0 // no seq number in 1968
+replace in_sample=1 if survey_yr==1968 & relationship!=0 // no seq number in 1968
+
+gen moved = 0
+replace moved = 1 if inlist(MOVED_,1,2) & inlist(SPLITOFF_,1,3) // moved in
+replace moved = 2 if inlist(MOVED_,1,2) & inlist(SPLITOFF_,2,4) // splitoff
+replace moved = 3 if inlist(MOVED_,5,6) // moved out
+replace moved = 4 if MOVED_==1 & SPLITOFF_==0 // born
+replace moved = 5 if MOVED_==7
+
+label define moved 0 "no" 1 "Moved in" 2 "Splitoff" 3 "Moved out" 4 "Born" 5 "Died"
+label values moved moved
+tab moved in_sample, m
+tab AGE_INDV_ moved
+
+gen permanent_attrit=0
+replace permanent_attrit=1 if PERMANENT_ATTRITION==1 // attrited
+replace permanent_attrit=2 if inlist(PERMANENT_ATTRITION,2,3) // marked as died
+label define perm 0 "no" 1 "attrited" 2 "died"
+label values permanent_attrit perm
+
+** Partner recodes
+gen partnered=.
+replace partnered=0 if in_sample==1 & MARITAL_PAIRS_==0
+replace partnered=1 if in_sample==1 & inrange(MARITAL_PAIRS_,1,3)
+
+sort unique_id wave
+// start rel - observed
+gen rel_start=0
+replace rel_start=1 if partnered==1 & partnered[_n-1]==0 & unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
+
+// end rel - observed
+gen rel_end=0
+replace rel_end=1 if partnered==0 & partnered[_n-1]==1 & unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
+
+gen rel_end_pre=0
+replace rel_end_pre=1 if partnered==1 & partnered[_n+1]==0 & unique_id==unique_id[_n+1] & wave==wave[_n+1]-1
+
+// merge on marital history - bc in order of prio, it should be marital history for marriages observed, then other variables for not in marital history or cohabitation.
+merge m:1 unique_id using "$temp_psid\marital_history_wide.dta"
+drop if _merge==2
+
+gen in_marital_history=0
+replace in_marital_history=1 if _merge==3
+drop _merge
+
+browse unique_id survey_yr has_psid_gene SAMPLE in_sample hh_status_ relationship partnered rel_start rel_end rel_end_pre hh_status_ moved MOVED_YEAR_ SPLITOFF_YEAR_  YR_NONRESPONSE_FIRST permanent_attrit mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 ANY_ATTRITION COMPOSITION_CHANGE_ MOVED_
+
+********************************************************************************
+********************************************************************************
+**# Using family matrix
+********************************************************************************
+********************************************************************************
+
+********************************************************************************
 * Just cohabitation
 ********************************************************************************
 

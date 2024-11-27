@@ -28,13 +28,16 @@ net get st0445 // these go into working directory (the ancillary files); pwd sho
 **# First get survey responses for each individual in couple from main file
 ********************************************************************************
 use "$PSID\PSID_full_renamed.dta", clear
+browse X1968_PERSON_NUM_1968 X1968_INTERVIEW_NUM_1968 // 30001 = interview; 30002 = person number
+
 rename X1968_PERSON_NUM_1968 main_per_id
+rename X1968_INTERVIEW_NUM_1968 main_fam_id
 
-gen unique_id = (main_per_id*1000) + INTERVIEW_NUM_1968 // (ER30001 * 1000) + ER30002
-browse main_per_id INTERVIEW_NUM_1968 unique_id
+gen unique_id = (main_fam_id*1000) + main_per_id // (ER30001 * 1000) + ER30002
+browse main_per_id main_fam_id unique_id
 
-// create time-fixed sample status
-recode main_per_id (1/2999 = 1 "SRC cross-section") (3001/3441 = 2 "Immigrant 97") (3442/3511 = 3 "Immigrant 99") (4001/4851 = 4 "Immigrant 17/19") (5001/6999  = 5 "1968 Census") (7001/9043 = 6 "Latino 90") (9044/9308 = 7 "Latino 92"), gen(sample_type) 
+// want to see if I can make this time-fixed sample status
+recode main_fam_id (1/2999 = 1 "SRC cross-section") (3001/3441 = 2 "Immigrant 97") (3442/3511 = 3 "Immigrant 99") (4001/4851 = 4 "Immigrant 17/19") (5001/6999  = 5 "1968 Census") (7001/9043 = 6 "Latino 90") (9044/9308 = 7 "Latino 92"), gen(sample_type) 
 /* from FAQ:
 You will need to look at the 1968 family interview number available in the individual-level files (variable ER30001).
 SRC sample families have values less than 3000.
@@ -43,6 +46,10 @@ Immigrant sample families have values greater than 3000 and less than 5000. (Val
 Latino sample families have values greater than 7000 and less than 9309. (Values from 7001 to 9043 indicate the original family was first interviewed in 1990; values from 9044 to 9308 indicate the original family was first interviewed in 1992.)
 */
 tab sample_type, m
+
+// and if original sample or not
+tab SAMPLE,m
+tab SAMPLE_STATUS_TYPE, m
 
 // figure out what variables i need / can help me figure this out - need indicator of a. in survey and b. relationship status (easy for non-heads) - so need to be INDIVIDUAL, not family variables, right?!
 browse unique_id SEQ_NUMBER_1995 SEQ_NUMBER_1996 MARITAL_PAIRS_1995 MARITAL_PAIRS_1996 RELATION_1995 RELATION_1996
@@ -59,6 +66,17 @@ forvalues y=1999(2)2021{
 	replace in_sample_`y'=1 if inrange(SEQ_NUMBER_`y',1,59)	
 }
 
+label define hh_status 0 "not in sample" 1 "in sample" 2 "institutionalized" 3 "new hh" 4 "died"
+foreach y of numlist 1969/1997 1999(2)2021{
+	gen hh_status_`y'=.
+	replace hh_status_`y'=0 if SEQ_NUMBER_`y'==0 
+	replace hh_status_`y'=1 if inrange(SEQ_NUMBER_`y',1,20) // in sample
+	replace hh_status_`y'=2 if inrange(SEQ_NUMBER_`y',51,59) // institutionalized
+	replace hh_status_`y'=3 if inrange(SEQ_NUMBER_`y',71,80) // new HH 
+	replace hh_status_`y'=4 if inrange(SEQ_NUMBER_`y',81,89) // died
+	label values hh_status_`y' hh_status
+}
+	
 label define relationship 0 "not in sample" 1 "head" 2 "partner" 3 "other"
 forvalues y=1969/1997{
 	gen relationship_`y'=.
@@ -78,25 +96,24 @@ forvalues y=1999(2)2021{
 	label values relationship_`y' relationship
 }
 
-
 // browse unique_id in_sample_* relationship_* MARITAL_PAIRS_* HOUSEWORK_WIFE_* HOUSEWORK_HEAD_*
-keep unique_id sample_type FIRST_BIRTH_YR in_sample_* relationship_* MARITAL_PAIRS_* SEX AGE_INDV* YRS_EDUCATION_INDV* EDUC1_WIFE_* EDUC1_HEAD_* EDUC_WIFE_* EDUC_HEAD_* LABOR_INCOME_T1_WIFE_* LABOR_INCOME_T2_WIFE_* WAGES_T1_WIFE_* LABOR_INCOME_T1_HEAD_* LABOR_INCOME_T2_HEAD_* WAGES_T1_HEAD_* TAXABLE_T1_HEAD_WIFE_* WEEKLY_HRS1_T1_WIFE_* WEEKLY_HRS_T1_WIFE_* WEEKLY_HRS1_T1_HEAD_* WEEKLY_HRS_T1_HEAD_* HOUSEWORK_HEAD_* HOUSEWORK_WIFE_* TOTAL_HOUSEWORK_T1_HW_* MOST_HOUSEWORK_T1* EMPLOY_STATUS_HEAD_* EMPLOY_STATUS1_HEAD_* EMPLOY_STATUS2_HEAD_* EMPLOY_STATUS3_HEAD_* EMPLOY_STATUS_WIFE_* EMPLOY_STATUS1_WIFE_* EMPLOY_STATUS2_WIFE_* EMPLOY_STATUS3_WIFE_* NUM_CHILDREN_* AGE_YOUNG_CHILD_* AGE_HEAD_* AGE_WIFE_* TOTAL_INCOME_T1_FAMILY_* FAMILY_INTERVIEW_NUM_* EMPLOY_STATUS_T2_HEAD_* EMPLOY_STATUS_T2_WIFE_* WEEKLY_HRS_T2_HEAD_* WEEKLY_HRS_T2_WIFE_* START_YR_EMPLOYER_HEAD_* START_YR_EMPLOYER_WIFE_* START_YR_CURRENT_HEAD_* START_YR_CURRENT_WIFE_* START_YR_PREV_HEAD_* START_YR_PREV_WIFE_* YRS_CURRENT_EMPLOY_HEAD_* YRS_CURRENT_EMPLOY_WIFE_*  WEEKLY_HRS_T2_INDV_* ANNUAL_HOURS_T1_INDV_* ANNUAL_HOURS_T1_HEAD* ANNUAL_HOURS_T1_WIFE* EMPLOYMENT_INDV* LABOR_INCOME_T1_INDV* LABOR_INCOME_T2_INDV* TOTAL_INCOME_T1_INDV* BIRTH_YR_INDV_* RACE_* HOUSEWORK_INDV_* HISPANICITY_* CHILDCARE_HEAD_* CHILDCARE_WIFE_* ADULTCARE_HEAD_* ADULTCARE_WIFE_* TOTAL_INCOME_T2_FAMILY_* WEEKS_WORKED_T2_INDV_*
+keep unique_id sample_type SAMPLE SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST FIRST_BIRTH_YR in_sample_* hh_status* relationship_* MARITAL_PAIRS_* SEX AGE_INDV* YRS_EDUCATION_INDV* EDUC1_WIFE_* EDUC1_HEAD_* EDUC_WIFE_* EDUC_HEAD_* LABOR_INCOME_T1_WIFE_* LABOR_INCOME_T2_WIFE_* WAGES_T1_WIFE_* LABOR_INCOME_T1_HEAD_* LABOR_INCOME_T2_HEAD_* WAGES_T1_HEAD_* TAXABLE_T1_HEAD_WIFE_* WEEKLY_HRS1_T1_WIFE_* WEEKLY_HRS_T1_WIFE_* WEEKLY_HRS1_T1_HEAD_* WEEKLY_HRS_T1_HEAD_* HOUSEWORK_HEAD_* HOUSEWORK_WIFE_* TOTAL_HOUSEWORK_T1_HW_* MOST_HOUSEWORK_T1* EMPLOY_STATUS_HEAD_* EMPLOY_STATUS1_HEAD_* EMPLOY_STATUS2_HEAD_* EMPLOY_STATUS3_HEAD_* EMPLOY_STATUS_WIFE_* EMPLOY_STATUS1_WIFE_* EMPLOY_STATUS2_WIFE_* EMPLOY_STATUS3_WIFE_* NUM_CHILDREN_* AGE_YOUNG_CHILD_* AGE_HEAD_* AGE_WIFE_* TOTAL_INCOME_T1_FAMILY_* FAMILY_INTERVIEW_NUM_* EMPLOY_STATUS_T2_HEAD_* EMPLOY_STATUS_T2_WIFE_* WEEKLY_HRS_T2_HEAD_* WEEKLY_HRS_T2_WIFE_* START_YR_EMPLOYER_HEAD_* START_YR_EMPLOYER_WIFE_* START_YR_CURRENT_HEAD_* START_YR_CURRENT_WIFE_* START_YR_PREV_HEAD_* START_YR_PREV_WIFE_* YRS_CURRENT_EMPLOY_HEAD_* YRS_CURRENT_EMPLOY_WIFE_*  WEEKLY_HRS_T2_INDV_* ANNUAL_HOURS_T1_INDV_* ANNUAL_HOURS_T1_HEAD* ANNUAL_HOURS_T1_WIFE* EMPLOYMENT_INDV* LABOR_INCOME_T1_INDV* LABOR_INCOME_T2_INDV* TOTAL_INCOME_T1_INDV* BIRTH_YR_INDV_* RACE_* HOUSEWORK_INDV_* HISPANICITY_* CHILDCARE_HEAD_* CHILDCARE_WIFE_* ADULTCARE_HEAD_* ADULTCARE_WIFE_* TOTAL_INCOME_T2_FAMILY_* WEEKS_WORKED_T2_INDV_* NUM_IN_HH_* NEW_WIFE_YEAR_* MOVED_* MOVED_YEAR_* MOVED_MONTH_* SPLITOFF_YEAR_* SPLITOFF_MONTH_* DATA_RECORD_TYPE_* SPLITOFF_* FAMILY_ID_SO_* COMPOSITION_CHANGE_* NEW_HEAD_* NEW_WIFE_* NEW_WIFE_YEAR_*
 
 gen partner_id = unique_id
 
-forvalues y=1969/1997{
+foreach y of numlist 1969/1997 1999(2)2021{
 	gen in_sample_sp_`y' = in_sample_`y'
 	gen relationship_sp_`y' = relationship_`y'
 	gen MARITAL_PAIRS_sp_`y' = MARITAL_PAIRS_`y'
-}
-
-forvalues y=1999(2)2021{
-	gen in_sample_sp_`y' = in_sample_`y'
-	gen relationship_sp_`y' = relationship_`y'
-	gen MARITAL_PAIRS_sp_`y' = MARITAL_PAIRS_`y'
+	gen MOVED_sp_`y' = MOVED_`y'
+	gen MOVED_YEAR_sp_`y' = MOVED_YEAR_`y'
+	gen SPLITOFF_sp_`y' = SPLITOFF_`y'
+	gen SPLITOFF_YEAR_sp_`y' = SPLITOFF_YEAR_`y'
+	gen hh_status_sp_`y' = hh_status_`y'
 }
 
 gen SEX_sp = SEX
+gen SAMPLE_sp = SAMPLE
 
 forvalues y=1969/1985{ // let's keep a few years to see if we have ANY data for people before they were observed
 	drop in_sample_`y'
@@ -107,7 +124,7 @@ forvalues y=1969/1985{ // let's keep a few years to see if we have ANY data for 
 	drop MARITAL_PAIRS_sp_`y'
 }
 
-foreach var in AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ FAMILY_INTERVIEW_NUM_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ BIRTH_YR_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_4_WIFE_ HOUSEWORK_INDV_ HISPANICITY_HEAD_ HISPANICITY_WIFE_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_{
+foreach var in AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ FAMILY_INTERVIEW_NUM_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ BIRTH_YR_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_4_WIFE_ HOUSEWORK_INDV_ HISPANICITY_HEAD_ HISPANICITY_WIFE_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_ NUM_IN_HH_ NEW_WIFE_YEAR_ MOVED_ MOVED_YEAR_ MOVED_MONTH_ SPLITOFF_YEAR_ SPLITOFF_MONTH_ DATA_RECORD_TYPE_ SPLITOFF_ MOVED_sp_ MOVED_YEAR_sp_ SPLITOFF_sp_ SPLITOFF_YEAR_sp_ FAMILY_ID_SO_ COMPOSITION_CHANGE_ NEW_HEAD_ NEW_WIFE_ NEW_WIFE_YEAR_ hh_status_ hh_status_sp_{
 	forvalues y=1968/1985{
 		capture drop `var'`y' // in case var not in all years
 	}
@@ -129,6 +146,13 @@ drop _merge
 
 drop *_sp_*
 drop SEX_sp
+drop SAMPLE_sp
+
+merge m:1 partner_id using "$temp\individual_sample_info.dta", keepusing(*_sp_* *_sp) // this way, I know which of them is the OG, which is the moved in, and when that happened
+drop if _merge==2
+drop _merge
+
+browse unique_id partner_id SEX SEX_sp
 
 save "$temp\individual_vars_imputation_wide.dta", replace
 
@@ -179,7 +203,7 @@ browse unique_id birth_yr BIRTH_YR_INDV_*
 
 drop BIRTH_YR_INDV_*
 
-reshape long MARITAL_PAIRS_ in_sample_ relationship_ FAMILY_INTERVIEW_NUM_ AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_4_WIFE_ HOUSEWORK_INDV_ HISPANICITY_HEAD_ HISPANICITY_WIFE_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_, ///
+reshape long MARITAL_PAIRS_ in_sample_ relationship_ FAMILY_INTERVIEW_NUM_ AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_4_WIFE_ HOUSEWORK_INDV_ HISPANICITY_HEAD_ HISPANICITY_WIFE_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_ NUM_IN_HH_ NEW_WIFE_YEAR_ MOVED_ MOVED_YEAR_ MOVED_MONTH_ SPLITOFF_YEAR_ SPLITOFF_MONTH_ DATA_RECORD_TYPE_ SPLITOFF_ MOVED_sp_ MOVED_YEAR_sp_ SPLITOFF_sp_ SPLITOFF_YEAR_sp_ FAMILY_ID_SO_ COMPOSITION_CHANGE_ NEW_HEAD_ NEW_WIFE_ hh_status_ hh_status_sp_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_, ///
  i(unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(survey_yr)
 
 // want consecutive waves to make some things easier later
@@ -552,6 +576,43 @@ replace AGE_INDV_ = survey_yr - birth_yr if AGE_INDV_==.
 browse unique_id survey_yr birth_yr AGE_INDV_ if birth_yr==.
 replace birth_yr = survey_yr - AGE_INDV_ if birth_yr==.
 
+// okay, attempt to create indicators of partnership status using move in / out dates
+label define sample 0 "not sample" 1 "original sample" 2 "born-in" 3 "moved in" 4 "joint inclusion" 5 "followable nonsample parent" 6 "nonsample elderly"
+label values SAMPLE SAMPLE_sp sample
+label values hh_status_sp_ hh_status
+
+gen has_psid_gene=0
+replace has_psid_gene = 1 if inlist(SAMPLE,1,2)
+
+gen has_psid_gene_sp=0
+replace has_psid_gene_sp = 1 if inlist(SAMPLE_sp,1,2)
+
+tab SAMPLE SAMPLE_sp, m
+tab has_psid_gene has_psid_gene_sp
+
+gen moved = 0
+replace moved = 1 if inlist(MOVED_,1,2) & inlist(SPLITOFF_,1,3) // moved in
+replace moved = 2 if inlist(MOVED_,1,2) & inlist(SPLITOFF_,2,4) // splitoff
+replace moved = 3 if inlist(MOVED_,5,6) // moved out
+
+gen moved_sp = 0
+replace moved_sp = 1 if inlist(MOVED_sp_,1,2) & inlist(SPLITOFF_sp_,1,3) // moved in
+replace moved_sp = 2 if inlist(MOVED_sp_,1,2) & inlist(SPLITOFF_sp_,2,4) // splitoff
+replace moved_sp = 3 if inlist(MOVED_sp_,5,6) // moved out
+
+label define moved 0 "no" 1 "Moved in" 2 "Splitoff" 3 "Moved out"
+label values moved moved_sp moved
+
+gen partnered=.
+replace partnered=0 if in_sample_==1 & MARITAL_PAIRS_==0
+replace partnered=1 if in_sample_==1 & inrange(MARITAL_PAIRS_,1,3)
+
+gen partnered_sp=.
+replace partnered_sp=0 if in_sample_sp_==1 & MARITAL_PAIRS_sp_==0
+replace partnered_sp=1 if in_sample_sp_==1 & inrange(MARITAL_PAIRS_sp_,1,3)
+
+browse unique_id partner_id survey_yr rel_start_all last_yr_observed min_dur max_dur has_psid_gene has_psid_gene_sp partnered partnered_sp hh_status_ hh_status_sp_  moved MOVED_YEAR_ SPLITOFF_YEAR_  moved_sp MOVED_YEAR_sp SPLITOFF_YEAR_sp_ COMPOSITION_CHANGE_
+
 ********************************************************************************
 **# now need to allocate variables to individual based on relationship
 * so that we have FOCAL variables, not head / sex versions
@@ -559,14 +620,14 @@ replace birth_yr = survey_yr - AGE_INDV_ if birth_yr==.
 
 * Let's start with t-1 variables
 // weekly hours
-browse unique_id survey_yr relationship  weekly_hrs_t1_head weekly_hrs_t1_wife weekly_hrs_t1_indv
+browse unique_id survey_yr relationship_  weekly_hrs_t1_head weekly_hrs_t1_wife weekly_hrs_t1_indv
 gen weekly_hrs_t1_focal=.
 replace weekly_hrs_t1_focal=weekly_hrs_t1_head if relationship_==1
 replace weekly_hrs_t1_focal=weekly_hrs_t1_wife if relationship_==2
 replace weekly_hrs_t1_focal=weekly_hrs_t1_indv if relationship_==3
 
 // annual earnings
-browse unique_id survey_yr relationship earnings_t1_head earnings_t1_wife LABOR_INCOME_T1_INDV
+browse unique_id survey_yr relationship_ earnings_t1_head earnings_t1_wife LABOR_INCOME_T1_INDV
 gen earnings_t1_focal=.
 replace earnings_t1_focal=earnings_t1_head if relationship_==1
 replace earnings_t1_focal=earnings_t1_wife if relationship_==2
@@ -580,11 +641,11 @@ replace employed_t1_earn_focal=employed_t1_indv if relationship_==3
 
 * t variables
 // weekly HW hours
-browse unique_id survey_yr relationship housework_head housework_wife HOUSEWORK_INDV_
+browse unique_id survey_yr relationship_ housework_head housework_wife HOUSEWORK_INDV_
 gen housework_focal=.
 replace housework_focal=housework_head if relationship_==1
 replace housework_focal=housework_wife if relationship_==2
-replace housework_focal=HOUSEWORK_INDV_ if relationship==3
+replace housework_focal=HOUSEWORK_INDV_ if relationship_==3
 // replace housework_focal=. if relationship_==3
 
 // weekly childcare
