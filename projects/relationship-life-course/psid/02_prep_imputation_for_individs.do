@@ -837,7 +837,7 @@ save "$temp\inidividual_vars_imputation_long.dta", replace
 ********************************************************************************
 **# now reshape back to wide to fill in the off years where possible (with t-2 data)
 ********************************************************************************
-// use "$temp\inidividual_vars_imputation_long.dta", clear
+use "$temp\inidividual_vars_imputation_long.dta", clear
 
 drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave MOVED_ MOVED_MONTH_  SPLITOFF_MONTH_ FAMILY_ID_SO_ MOVED_sp_
 
@@ -951,9 +951,47 @@ replace raceth_fixed_focal=last_race_focal if inlist(raceth_fixed_focal,1.5,2.5,
 replace raceth_fixed_focal=last_race_focal if raceth_fixed_focal==. // if any other gaps, use last observed
 
 // try to fill in partnership status using various history measures
-browse unique_id partner_id survey_yr rel_start_all rel_end_all partnered partnered_sp
+browse unique_id partner_id survey_yr rel_start_all rel_end_all partnered partnered_sp MARITAL_PAIRS_
+gen partnered_imp = partnered
+replace partnered_imp = 1 if survey_yr>= rel_start_all & survey_yr <=rel_end_all
+replace partnered_imp = .x if partnered_imp==. // using this, because partnered will be real missing if attrit / not in smaple, so need to distinguish real missing frm those i can fill in
+// browse unique_id partner_id survey_yr rel_start_all rel_end_all partnered partnered_imp partnered_sp
 
-merge m:1 using "$created_data_psid\psid_composition_history.dta"
+gen change_yr=.
+replace change_yr = MOVED_YEAR_ if MOVED_YEAR_ >0 & MOVED_YEAR_ <9000
+replace change_yr = SPLITOFF_YEAR_ if SPLITOFF_YEAR_ >0 & SPLITOFF_YEAR_ <9000
+
+gen permanent_attrit=0
+replace permanent_attrit=1 if PERMANENT_ATTRITION==1 // attrited
+replace permanent_attrit=2 if inlist(PERMANENT_ATTRITION,2,3) // marked as died
+label define perm 0 "no" 1 "attrited" 2 "died"
+label values permanent_attrit perm
+
+merge m:1 unique_id using "$created_data_psid\psid_composition_history.dta", keepusing(rel*_start rel*_end marr*_start marr*_end coh*_start coh*_end hh*_start hh*_end mh_yr_married* mh_yr_end* mh_status* first_survey_yr last_survey_yr in_marital_history)
+drop if _merge==2
+drop _merge
+
+rename first_survey_yr first_survey_yr_focal
+rename last_survey_yr last_survey_yr_focal
+
+tab in_marital_history, m // okay so almost everyone (think bc i restricted to later relationships)
+
+gen in_rel_est = 0
+
+forvalues r=1/13{
+	capture replace in_rel_est = 1 if survey_yr>=mh_yr_married`r' & survey_yr <=mh_yr_end`r' // just capturing if any of the rel variables indicate a relationship
+}
+replace partnered_imp = 1 if in_rel_est==1 & partnered_imp==.x
+
+/*
+forvalues r=1/5{
+	replace in_rel_est = 1 if survey_yr>=rel`r'_start & survey_yr <=rel`r'_end
+}
+*/
+
+browse unique_id partner_id survey_yr partnered_imp in_sample_ in_rel_est rel_start_all rel_end_all hh1_start hh2_start hh1_end hh2_end rel1_start rel1_end rel2_start rel2_end mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 permanent_attrit YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST  moved change_yr
+
+tab partnered_imp, m
 
 **# Here the data is now long, by duration
 save "$created_data\individs_by_duration_long.dta", replace

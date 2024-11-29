@@ -117,7 +117,7 @@ bysort unique_id partner_id: egen max_dur = max(dur)
 bysort unique_id partner_id: egen last_yr_observed = max(survey_yr)
 
 browse unique_id partner_id survey_yr rel_start_all rel_end_all last_yr_observed relationship_duration min_dur max_dur 
-keep if rel_start_all >= 1990 & inlist(min_dur,0,1,2) // keeping up to two, because if got married in 2001, say, might not appear in survey until 2003, which is a problem. 
+keep if rel_start_all >= 1990 & inlist(min_dur,0,1) // keeping up to two, because if got married in 2001, say, might not appear in survey until 2003, which is a problem. 
 keep if rel_start_all <= 2011
 
 // restrict to working age?
