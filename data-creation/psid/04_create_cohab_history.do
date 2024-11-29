@@ -174,13 +174,13 @@ replace partnered=0 if rel_type==0 & partnered==. // sometimes people move out b
 sort unique_id wave
 // start rel - observed
 gen rel_start=0
-replace rel_start=1 if partnered==0 & partnered[_n+1]==1 & unique_id==unique_id[_n+1] & wave==wave[_n+1]-1
+replace rel_start=1 if partnered==1 & partnered[_n-1]==0 & unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
 
 gen marriage_start=0 // from unpartnered, NOT cohabiting
-replace marriage_start=1 if rel_type==0 & rel_type[_n+1]==1 & unique_id==unique_id[_n+1] & wave==wave[_n+1]-1
+replace marriage_start=1 if rel_type==1 & rel_type[_n-1]==0 & unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
 
 gen cohab_start=0
-replace cohab_start=1 if rel_type==0 & rel_type[_n+1]==2 & unique_id==unique_id[_n+1] & wave==wave[_n+1]-1
+replace cohab_start=1 if rel_type==2 & rel_type[_n-1]==0 & unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
 
 // end rel - observed
 /*
