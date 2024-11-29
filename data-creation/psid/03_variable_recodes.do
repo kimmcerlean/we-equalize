@@ -77,15 +77,43 @@ save "$temp_psid\marital_history_wide.dta", replace
 use "$created_data_psid\PSID_partners.dta", clear
 
 // merge on marital history
-merge m:1 unique_id using "$temp_psid\marital_history_wide.dta"
-drop if _merge==2
-
+/*
+merge m:1 unique_id using "$temp_psid\marital_history_wide.dta" // merge this or the other relationship history file?!
 gen in_marital_history=0
 replace in_marital_history=1 if _merge==3
+drop _merge
+*/
+merge m:1 unique_id using "$created_data_psid\psid_composition_history.dta" // try this for now
+rename partnered ever_partnered
+drop partner_id // need to clean up some things I don't need in this file for now
+
+drop if _merge==2
 drop _merge
 
 // Need to figure our how to get relationship number and duration. can I use with what is here? or need to merge marital history?! also, will this work for cohabiting relationships?! can I also use if started during PSID?. so key question is whether this covers cohab...I feel like in theory no, but in practice, it might?
 
+// HH change variables
+gen moved = 0
+replace moved = 1 if inlist(MOVED_,1,2) & inlist(SPLITOFF_,1,3) // moved in
+replace moved = 2 if inlist(MOVED_,1,2) & inlist(SPLITOFF_,2,4) // splitoff
+replace moved = 3 if inlist(MOVED_,5,6) // moved out
+replace moved = 4 if MOVED_==1 & SPLITOFF_==0 // born
+replace moved = 5 if MOVED_==7
+
+label define moved 0 "no" 1 "Moved in" 2 "Splitoff" 3 "Moved out" 4 "Born" 5 "Died"
+label values moved moved
+
+gen change_yr=.
+replace change_yr = MOVED_YEAR_ if MOVED_YEAR_ >0 & MOVED_YEAR_ <9000
+replace change_yr = SPLITOFF_YEAR_ if SPLITOFF_YEAR_ >0 & SPLITOFF_YEAR_ <9000
+
+gen permanent_attrit=0
+replace permanent_attrit=1 if PERMANENT_ATTRITION==1 // attrited
+replace permanent_attrit=2 if inlist(PERMANENT_ATTRITION,2,3) // marked as died
+label define perm 0 "no" 1 "attrited" 2 "died"
+label values permanent_attrit perm
+
+/* okay, the other one I made I think is better, so not using this
 // this is just for those where marital history not cutting it (either not in it OR cohab)
 tab marital_status_updated rel_start
 gen rel_start_yr_est = survey_yr if rel_start==1
@@ -105,10 +133,13 @@ forvalues r=1/6{
 }
 
 sort unique_id survey_yr
-browse unique_id survey_yr rel_start_yr_est rel_start_est* count_rel_est rel_rank_est
+browse unique_id survey_yr rel_start_est* rel1_start rel2_start rel3_start rel4_start rel5_start // does what i created here match what i created in other file? seems liek yes, except I moved year up by 1 and i accounted for those who entered partnered
+tab rel_start_est1, m
+tab rel1_start, m // so I have way less missing with theother variable, I think because I accounted for those who entered partnered. so use these instead?
+*/
 
 // filling in marital history
-browse unique_id survey_yr RELATION_ marital_status_updated marr_trans rel_start_yr_est FIRST_MARRIAGE_YR_START mh_yr_married1 mh_yr_end1 mh_status1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 mh_yr_married4 mh_yr_end4 in_marital_history // FAMILY_INTERVIEW_NUM_ so will compare what is provided in individual file, what is provided in MH, what I calculated based on observed transitions
+browse unique_id survey_yr RELATION_ marital_status_updated marr_trans FIRST_MARRIAGE_YR_START mh_yr_married1 mh_yr_end1 mh_status1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 mh_yr_married4 mh_yr_end4 in_marital_history // FAMILY_INTERVIEW_NUM_ so will compare what is provided in individual file, what is provided in MH, what I calculated based on observed transitions
 tab  FIRST_MARRIAGE_YR_START if in_marital_history==0 // oh I think this is populated from marital history GAH
 
 gen rel_number=.
@@ -118,11 +149,14 @@ forvalues r=1/9{
 forvalues r=12/13{
 	replace rel_number=`r' if survey_yr >=mh_yr_married`r' & survey_yr <= mh_yr_end`r'
 }
+
+/*
 forvalues r=98/99{
 	replace rel_number=`r' if survey_yr >=mh_yr_married`r' & survey_yr <= mh_yr_end`r'
 }
+*/
 
-browse unique_id survey_yr marital_status_updated rel_number rel_start_yr_est FIRST_MARRIAGE_YR_START mh_yr_married1 mh_yr_end1 mh_status1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 mh_yr_married4 mh_yr_end4 in_marital_history
+browse unique_id survey_yr marital_status_updated rel_number FIRST_MARRIAGE_YR_START mh_yr_married1 mh_yr_end1 mh_status1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 mh_yr_married4 mh_yr_end4 in_marital_history
 
 tab rel_number, m
 tab rel_number in_marital_history, m // so about half of the missing are bc not in marital history, but still a bunch otherwise
@@ -142,17 +176,77 @@ forvalues r=12/13{
 	replace rel_end_yr=mh_yr_end`r' if rel_number==`r'
 	replace rel_status=mh_status`r' if rel_number==`r'
 }
+
+/*
 forvalues r=98/99{
 	replace rel_start_yr=mh_yr_married`r' if rel_number==`r'
 	replace rel_end_yr=mh_yr_end`r' if rel_number==`r'
 	replace rel_status=mh_status`r' if rel_number==`r'
 }
+*/
 
-browse unique_id survey_yr marital_status_updated rel_number rel_start_yr rel_end_yr rel_start_yr_est count_rel_est FIRST_MARRIAGE_YR_START mh_yr_married1 mh_yr_end1 mh_status1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 mh_yr_married4 mh_yr_end4 in_marital_history
+browse unique_id survey_yr marital_status_updated rel_number rel_start_yr rel_end_yr FIRST_MARRIAGE_YR_START mh_yr_married1 mh_yr_end1 mh_status1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 mh_yr_married4 mh_yr_end4 in_marital_history
 
 gen flag=0
 replace flag=1 if rel_start_yr==. // aka need to add manually
 
+// so, right now, official relationship start and end filled in for those in marital history and not cohabiting. let's figure out the rest
+browse unique_id survey_yr marital_status_updated in_marital_history flag rel_start_yr rel_end_yr rel_start moved change_yr hh1_start hh2_start hh1_end hh2_end rel1_start rel1_end rel2_start rel2_end mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2
+browse unique_id survey_yr marital_status_updated in_marital_history rel_start_yr rel_end_yr rel_start moved change_yr hh1_start hh2_start hh1_end hh2_end rel1_start rel1_end rel2_start rel2_end if flag==1
+
+gen hhno_est=.
+forvalues h=1/5{
+	replace hhno_est=`h' if survey_yr >=hh`h'_start & survey_yr <= hh`h'_end
+}
+
+gen relno_est=.
+forvalues r=1/5{
+	replace relno_est=`r' if survey_yr >=rel`r'_start & survey_yr <= rel`r'_end
+}
+
+gen rel_start_yr_est=.
+gen rel_end_yr_est =.
+gen hh_start_yr_est=.
+gen hh_end_yr_est=.
+
+forvalues r=1/5{
+	replace rel_start_yr_est=rel`r'_start if relno_est==`r'
+	replace rel_end_yr_est=rel`r'_end if relno_est==`r'
+	replace hh_start_yr_est=hh`r'_start if hhno_est==`r'
+	replace hh_end_yr_est=hh`r'_end if hhno_est==`r'
+}
+
+egen max_start_yr_est = rowmax(hh_start_yr_est rel_start_yr_est)
+egen max_end_yr_est = rowmax(hh_end_yr_est rel_end_yr_est)
+egen min_start_yr_est = rowmin(hh_start_yr_est rel_start_yr_est)
+egen min_end_yr_est = rowmin(hh_end_yr_est rel_end_yr_est)
+// browse unique_id survey_yr max_start_yr_est max_end_yr_est hh_start_yr_est rel_start_yr_est hh_end_yr_est rel_end_yr_est
+
+replace rel_start_yr = rel_start_yr_est if flag==1 & hh_start_yr_est==. // so use relationship if no HH info
+replace rel_end_yr = rel_end_yr_est if flag==1 & hh_end_yr_est==. // so use relationship if no HH info
+
+replace rel_start_yr = hh_start_yr_est if rel_start_yr_est==hh_start_yr_est & rel_start_yr_est!=. & hh_start_yr_est!=. & rel_start_yr==. // fill in if they match
+replace rel_start_yr = hh_start_yr_est if (abs(rel_start_yr_est-hh_start_yr_est)==1 | abs(rel_start_yr_est-hh_start_yr_est)==2) & rel_start_yr_est!=. & hh_start_yr_est!=. & rel_start_yr==. // fill in if they are just a year or two off in either direction (bc of biennial surveys)
+replace rel_start_yr = max_start_yr_est if rel_start_yr_est!=. & hh_start_yr_est!=. & rel_start_yr==. // I think the later date makes sense in these instances
+replace rel_start_yr = survey_yr if rel_start==1 & rel_start_yr==. 
+tab hh_start_yr_est if rel_start_yr==. , m
+tab rel_start_yr_est if rel_start_yr==. , m
+
+replace rel_end_yr = hh_end_yr_est if rel_end_yr_est==hh_end_yr_est & rel_end_yr_est!=. & hh_end_yr_est!=. & rel_end_yr==. // fill in if they match
+replace rel_end_yr = hh_end_yr_est if (abs(rel_end_yr_est-hh_end_yr_est)==1 | abs(rel_end_yr_est-hh_end_yr_est)==2) & rel_end_yr_est!=. & hh_end_yr_est!=. & rel_end_yr==. // fill in if they are just a year off in either direction
+replace rel_end_yr = hh_end_yr_est if rel_end_yr==. // use hh end if no rel end bc I think this better captures move outs then permanent attrits
+replace rel_end_yr = rel_end_yr_est if rel_end_yr==. // then for rest, use rel end, okay these are all missing
+tab hh_end_yr_est if rel_end_yr==. , m
+tab rel_end_yr_est if rel_end_yr==. , m
+
+/* to troubleshoot
+browse unique_id survey_yr marital_status_updated rel_start_yr rel_end_yr rel_start hhno_est hh_start_yr_est hh_end_yr_est relno_est rel_start_yr_est rel_end_yr_est moved change_yr hh1_start hh2_start hh1_end hh2_end  rel1_start rel1_end rel2_start rel2_end if flag==1
+browse unique_id survey_yr marital_status_updated rel_start_yr rel_end_yr rel_start hhno_est hh_start_yr_est hh_end_yr_est relno_est rel_start_yr_est rel_end_yr_est moved change_yr hh1_start hh2_start hh1_end hh2_end  rel1_start rel1_end rel2_start rel2_end rel3_start rel3_end if rel_start_yr==.
+browse unique_id survey_yr marital_status_updated rel_start_yr rel_end_yr rel_start hhno_est hh_start_yr_est hh_end_yr_est relno_est rel_start_yr_est rel_end_yr_est moved change_yr hh1_start hh2_start hh1_end hh2_end  rel1_start rel1_end rel2_start rel2_end if rel_end_yr==.
+*/
+
+/* old code
+// help
 forvalues r=1/5{
 	local s = `r'+1
 	display `s'
@@ -178,6 +272,7 @@ sort unique_id survey_yr
 browse unique_id survey_yr marital_status_updated flag rel_number rel_start_est_cohab rel_start_yr mh_yr_married1 FIRST_MARRIAGE_YR_START FIRST_MARRIAGE_YR_HEAD_ LAST_MARRIAGE_YR_HEAD_ first_survey_yr if marital_status_updated==2
 
 replace rel_start_yr=rel_start_est_cohab if rel_start_yr==. & marital_status_updated==2
+*/
 
 gen relationship_duration = survey_yr - rel_start_yr
 
@@ -603,13 +698,14 @@ browse unique_id survey_yr SEX NUM_CHILDREN_ AGE_YOUNG_CHILD_  had_birth had_fir
 // also use FIRST_BIRTH_YR to say whether pre / post marital
 
 // some age things
-browse unique_id survey_yr SEX year_birth  AGE_INDV AGE_HEAD_ AGE_WIFE_
+gen year_birth = survey_yr - AGE_INDV
+// browse unique_id survey_yr SEX year_birth  AGE_INDV AGE_HEAD_ AGE_WIFE_
 
 gen yr_born_head = survey_yr - AGE_HEAD_
 gen yr_born_wife = survey_yr- AGE_WIFE_
 
 gen age_mar_head = rel_start_yr -  yr_born_head
 gen age_mar_wife = rel_start_yr -  yr_born_wife
-browse unique_id survey_yr SEX year_birth yr_born_head  yr_born_wife   AGE_INDV AGE_HEAD_ AGE_WIFE_ rel_start_yr age_mar_head age_mar_wife
+browse unique_id survey_yr SEX yr_born_head  yr_born_wife  year_birth AGE_INDV AGE_HEAD_ AGE_WIFE_ rel_start_yr age_mar_head age_mar_wife
 
 save "$created_data_psid\PSID_partners_cleaned.dta", replace

@@ -381,11 +381,13 @@ collapse 	(mean) rel1_start rel2_start rel3_start rel4_start rel5_start rel1_end
 					hh1_start hh2_start hh3_start hh4_start hh5_start hh1_end hh2_end hh3_end hh4_end hh5_end /// based on move in / move out
 					mh_yr_married1 mh_yr_married2 mh_yr_married3 mh_yr_married4 mh_yr_married5 mh_yr_married6 mh_yr_married7 mh_yr_married8 mh_yr_married9 mh_yr_married12 mh_yr_married13 /// marital history variables
 					mh_yr_end1 mh_yr_end2 mh_yr_end3 mh_yr_end4 mh_yr_end5 mh_yr_end6 mh_yr_end7 mh_yr_end8 mh_yr_end9 mh_yr_end12 mh_yr_end13  ///
+					mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6 mh_status7 mh_status8 mh_status9 mh_status12 mh_status13 ///
 					first_survey_yr last_survey_yr YR_NONRESPONSE_FIRST YR_NONRESPONSE_RECENT ///
 			(max) partnered in_marital_history /// get a sense of ever partnered
 , by(unique_id has_psid_gene SAMPLE)
 
 gen partner_id = unique_id // for later matching
+**# Create file
 save "$created_data_psid\psid_composition_history.dta", replace
 
 restore
