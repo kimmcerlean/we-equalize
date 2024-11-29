@@ -936,7 +936,7 @@ replace raceth_fixed_focal=last_race_focal if raceth_fixed_focal==. // if any ot
 save "$created_data\individs_by_duration_long.dta", replace
 
 unique unique_id partner_id
-egen couple_id = group(unique_id partner_id)
+// egen couple_id = group(unique_id partner_id)
 browse couple_id unique_id partner_id duration SEX
 
 // make it rectangular then fill in fixed characteristics for those added

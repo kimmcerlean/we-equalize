@@ -34,7 +34,9 @@ gen partner_id=.
 replace partner_id = id_ref if inlist(RELATION_,2,20,22)  // so need opposite id
 replace partner_id = id_wife if inlist(RELATION_,1,10)
 
-browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr RELATION_ partner_id id_ref id_wife rel_start_yr
+egen couple_id = group(unique_id partner_id)
+
+browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr RELATION_ partner_id couple_id id_ref id_wife rel_start_yr
 sort unique_id survey_yr
 
 // start to get data ready to deduplicate
@@ -53,7 +55,7 @@ INDIVIDUAL | Married (  Partnered |     Total
 */
 
 drop if SEX_HEAD_!=1
-tab rel_start_yr SEX, m // is either one's data more reliable?
+tab rel_start_yr SEX, m // is either one's data more reliable? I tink I fixed this in previous step
 
 // figuring out some missing relationship info
 sort survey_yr FAMILY_INTERVIEW_NUM_  unique_id   
@@ -64,21 +66,41 @@ replace has_rel_info=1 if rel_start_yr!=.
 
 bysort survey_yr FAMILY_INTERVIEW_NUM_: egen rel_info = max(has_rel_info)
 bysort survey_yr FAMILY_INTERVIEW_NUM_: egen rel_start_yr_couple = min(rel_start_yr) // can i fill in the missing partner's data?
+bysort survey_yr FAMILY_INTERVIEW_NUM_: egen rel_end_yr_couple = min(rel_end_yr) // can i fill in the missing partner's data?
 
 sort unique_id partner_id survey_yr
-browse unique_id partner_id FAMILY_INTERVIEW_NUM_ survey_yr SEX marital_status_updated rel_info has_rel_info rel_start_yr rel_start_yr_couple female_earn_pct hh_earn_type female_hours_pct hh_hours_type wife_housework_pct housework_bkt
+browse unique_id partner_id FAMILY_INTERVIEW_NUM_ survey_yr SEX marital_status_updated rel_info has_rel_info rel_start_yr rel_start_yr_couple rel_end_yr rel_end_yr_couple female_earn_pct hh_earn_type female_hours_pct hh_hours_type wife_housework_pct housework_bkt
 
 // think I need to fix duration because for some, I think clock might start again when they transition to cohabitation? get minimum year within a couple as main start date?
 sort unique_id partner_id survey_yr
-browse unique_id partner_id survey_yr rel_start_yr marital_status_updated relationship_duration
+browse unique_id partner_id survey_yr rel_start_yr_couple rel_end_yr_couple marital_status_updated relationship_duration
 
 bysort unique_id partner_id: egen rel_start_all = min(rel_start_yr_couple)
 gen dur=survey_yr - rel_start_all
-browse unique_id partner_id survey_yr rel_start_all rel_start_yr_couple marital_status_updated dur relationship_duration rel_rank_est count_rel_est rel_number
+bysort unique_id partner_id: egen rel_end_all = max(rel_end_yr_couple)
+browse unique_id partner_id survey_yr marital_status_updated rel_start_all rel_end_all rel_start_yr_couple rel_end_yr_couple dur relationship_duration
 
 tab dur, m
 tab relationship_duration, m
 unique unique_id partner_id, by(marital_status_updated)
+
+// want to create at time-constant indicator of relationship type
+bysort unique_id partner_id (marr_trans): egen ever_transition = max(marr_trans)
+gen rel_type_constant=.
+replace rel_type_constant = 1 if ever_transition==0 & marital_status_updated==1
+replace rel_type_constant = 2 if ever_transition==0 & marital_status_updated==2
+replace rel_type_constant = 3 if ever_transition==1
+
+label define rel_type_constant 1 "Married" 2 "Cohab" 3 "Transitioned"
+label values rel_type_constant rel_type_constant
+tab rel_type_constant,m 
+quietly unique rel_type_constant, by(couple_id)
+bysort couple_id (_Unique): replace _Unique = _Unique[1]
+tab _Unique, m
+replace rel_type_constant=3 if _Unique==2
+// unique unique_id partner_id
+// unique unique_id partner_id rel_type_constant
+// browse unique_id partner_id survey_yr rel_type_constant marital_status_updated ever_transition marr_trans if _Unique==2
 
 // should I restrict to certain years? aka to help with the cohab problem? well probably should from a time standpoint... and to match to the british one, at least do 1990+?
 tab survey_yr marital_status_updated
@@ -94,8 +116,8 @@ bysort unique_id partner_id: egen min_dur = min(dur)
 bysort unique_id partner_id: egen max_dur = max(dur)
 bysort unique_id partner_id: egen last_yr_observed = max(survey_yr)
 
-browse unique_id partner_id survey_yr rel_start_all rel_end_yr relationship_duration min_dur max_dur
-keep if rel_start_all >= 1990 & inlist(min_dur,0,1)
+browse unique_id partner_id survey_yr rel_start_all rel_end_all last_yr_observed relationship_duration min_dur max_dur 
+keep if rel_start_all >= 1990 & inlist(min_dur,0,1,2) // keeping up to two, because if got married in 2001, say, might not appear in survey until 2003, which is a problem. 
 keep if rel_start_all <= 2011
 
 // restrict to working age?
@@ -106,7 +128,8 @@ keep if (AGE_HEAD_>=18 & AGE_HEAD_<=60) &  (AGE_WIFE_>=18 & AGE_WIFE_<=60) // so
 bysort unique_id partner_id: egen ended = max(rel_end_pre)
 sort unique_id partner_id survey_yr
 
-browse unique_id partner_id survey_yr rel_start_all rel_end_yr last_yr_observed rel_status ended relationship_duration min_dur max_dur // these rel_end rel_status only cover marriage not cohab bc from marital history
+browse unique_id partner_id survey_yr rel_type_constant rel_start_all rel_end_all last_yr_observed rel_status ended relationship_duration min_dur max_dur // these rel_end rel_status only cover marriage not cohab bc from marital history
+tab min_dur rel_type_constant, col // this is the problem. for cohab, I need to make a choice. if not married in 2001, and appear married 2003, and I don't have other info, which date do I use? i was using the earlier date because that seems to align with HH info? but I feel like it's maybe the off year? which I don't always know?
 
 ********************************************************************************
 **# get NON-deduped list of couples to match their info on later
@@ -116,7 +139,7 @@ unique unique_id partner_id
 
 preserve
 
-collapse (first) rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended, by(unique_id partner_id)
+collapse (first) rel_start_all rel_end_all rel_type_constant min_dur max_dur last_yr_observed ended, by(unique_id partner_id)
 
 save "$created_data\couple_list_individ.dta", replace
 
@@ -142,7 +165,7 @@ unique unique_id partner_id
 
 preserve
 
-collapse (first) rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended, by(unique_id partner_id)
+collapse (first) rel_start_all rel_end_all rel_type_constant min_dur max_dur last_yr_observed ended, by(unique_id partner_id)
 
 save "$created_data\couple_list.dta", replace
 
