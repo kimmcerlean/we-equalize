@@ -97,7 +97,7 @@ forvalues y=1999(2)2021{
 }
 
 // browse unique_id in_sample_* relationship_* MARITAL_PAIRS_* HOUSEWORK_WIFE_* HOUSEWORK_HEAD_*
-keep unique_id sample_type SAMPLE SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST FIRST_BIRTH_YR in_sample_* hh_status* relationship_* MARITAL_PAIRS_* SEX AGE_INDV* YRS_EDUCATION_INDV* EDUC1_WIFE_* EDUC1_HEAD_* EDUC_WIFE_* EDUC_HEAD_* LABOR_INCOME_T1_WIFE_* LABOR_INCOME_T2_WIFE_* WAGES_T1_WIFE_* LABOR_INCOME_T1_HEAD_* LABOR_INCOME_T2_HEAD_* WAGES_T1_HEAD_* TAXABLE_T1_HEAD_WIFE_* WEEKLY_HRS1_T1_WIFE_* WEEKLY_HRS_T1_WIFE_* WEEKLY_HRS1_T1_HEAD_* WEEKLY_HRS_T1_HEAD_* HOUSEWORK_HEAD_* HOUSEWORK_WIFE_* TOTAL_HOUSEWORK_T1_HW_* MOST_HOUSEWORK_T1* EMPLOY_STATUS_HEAD_* EMPLOY_STATUS1_HEAD_* EMPLOY_STATUS2_HEAD_* EMPLOY_STATUS3_HEAD_* EMPLOY_STATUS_WIFE_* EMPLOY_STATUS1_WIFE_* EMPLOY_STATUS2_WIFE_* EMPLOY_STATUS3_WIFE_* NUM_CHILDREN_* AGE_YOUNG_CHILD_* AGE_HEAD_* AGE_WIFE_* TOTAL_INCOME_T1_FAMILY_* FAMILY_INTERVIEW_NUM_* EMPLOY_STATUS_T2_HEAD_* EMPLOY_STATUS_T2_WIFE_* WEEKLY_HRS_T2_HEAD_* WEEKLY_HRS_T2_WIFE_* START_YR_EMPLOYER_HEAD_* START_YR_EMPLOYER_WIFE_* START_YR_CURRENT_HEAD_* START_YR_CURRENT_WIFE_* START_YR_PREV_HEAD_* START_YR_PREV_WIFE_* YRS_CURRENT_EMPLOY_HEAD_* YRS_CURRENT_EMPLOY_WIFE_*  WEEKLY_HRS_T2_INDV_* ANNUAL_HOURS_T1_INDV_* ANNUAL_HOURS_T1_HEAD* ANNUAL_HOURS_T1_WIFE* EMPLOYMENT_INDV* LABOR_INCOME_T1_INDV* LABOR_INCOME_T2_INDV* TOTAL_INCOME_T1_INDV* BIRTH_YR_INDV_* RACE_* HOUSEWORK_INDV_* HISPANICITY_* CHILDCARE_HEAD_* CHILDCARE_WIFE_* ADULTCARE_HEAD_* ADULTCARE_WIFE_* TOTAL_INCOME_T2_FAMILY_* WEEKS_WORKED_T2_INDV_* NUM_IN_HH_* NEW_WIFE_YEAR_* MOVED_* MOVED_YEAR_* MOVED_MONTH_* SPLITOFF_YEAR_* SPLITOFF_MONTH_* DATA_RECORD_TYPE_* SPLITOFF_* FAMILY_ID_SO_* COMPOSITION_CHANGE_* NEW_HEAD_* NEW_WIFE_* NEW_WIFE_YEAR_* BIRTHS_T1_HEAD_* BIRTHS_T1_WIFE_* BIRTHS_T1_BOTH_*
+keep unique_id main_fam_id sample_type SAMPLE SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST FIRST_BIRTH_YR in_sample_* hh_status* relationship_* MARITAL_PAIRS_* SEX AGE_INDV* YRS_EDUCATION_INDV* EDUC1_WIFE_* EDUC1_HEAD_* EDUC_WIFE_* EDUC_HEAD_* LABOR_INCOME_T1_WIFE_* LABOR_INCOME_T2_WIFE_* WAGES_T1_WIFE_* LABOR_INCOME_T1_HEAD_* LABOR_INCOME_T2_HEAD_* WAGES_T1_HEAD_* TAXABLE_T1_HEAD_WIFE_* WEEKLY_HRS1_T1_WIFE_* WEEKLY_HRS_T1_WIFE_* WEEKLY_HRS1_T1_HEAD_* WEEKLY_HRS_T1_HEAD_* HOUSEWORK_HEAD_* HOUSEWORK_WIFE_* TOTAL_HOUSEWORK_T1_HW_* MOST_HOUSEWORK_T1* EMPLOY_STATUS_HEAD_* EMPLOY_STATUS1_HEAD_* EMPLOY_STATUS2_HEAD_* EMPLOY_STATUS3_HEAD_* EMPLOY_STATUS_WIFE_* EMPLOY_STATUS1_WIFE_* EMPLOY_STATUS2_WIFE_* EMPLOY_STATUS3_WIFE_* NUM_CHILDREN_* AGE_YOUNG_CHILD_* AGE_HEAD_* AGE_WIFE_* TOTAL_INCOME_T1_FAMILY_* FAMILY_INTERVIEW_NUM_* EMPLOY_STATUS_T2_HEAD_* EMPLOY_STATUS_T2_WIFE_* WEEKLY_HRS_T2_HEAD_* WEEKLY_HRS_T2_WIFE_* START_YR_EMPLOYER_HEAD_* START_YR_EMPLOYER_WIFE_* START_YR_CURRENT_HEAD_* START_YR_CURRENT_WIFE_* START_YR_PREV_HEAD_* START_YR_PREV_WIFE_* YRS_CURRENT_EMPLOY_HEAD_* YRS_CURRENT_EMPLOY_WIFE_*  WEEKLY_HRS_T2_INDV_* ANNUAL_HOURS_T1_INDV_* ANNUAL_HOURS_T1_HEAD* ANNUAL_HOURS_T1_WIFE* EMPLOYMENT_INDV* LABOR_INCOME_T1_INDV* LABOR_INCOME_T2_INDV* TOTAL_INCOME_T1_INDV* BIRTH_YR_INDV_* RACE_* HOUSEWORK_INDV_* HISPANICITY_* CHILDCARE_HEAD_* CHILDCARE_WIFE_* ADULTCARE_HEAD_* ADULTCARE_WIFE_* TOTAL_INCOME_T2_FAMILY_* WEEKS_WORKED_T2_INDV_* NUM_IN_HH_* NEW_WIFE_YEAR_* MOVED_* MOVED_YEAR_* MOVED_MONTH_* SPLITOFF_YEAR_* SPLITOFF_MONTH_* DATA_RECORD_TYPE_* SPLITOFF_* FAMILY_ID_SO_* COMPOSITION_CHANGE_* NEW_HEAD_* NEW_WIFE_* NEW_WIFE_YEAR_* BIRTHS_T1_HEAD_* BIRTHS_T1_WIFE_* BIRTHS_T1_BOTH_*
 
 gen partner_id = unique_id
 
@@ -925,11 +925,6 @@ browse weekly_hrs_t_focal1996 weekly_hrs_t_focal1997 weekly_hrs_t1_focal1996 wee
 tab weekly_hrs_t_focal2001 employed_focal2001, m // so there are people with hours but are employed 0
 tab weekly_hrs_t_focal2000 employed_focal2000, m // the t-1 ones are better, because I think they are based off of each other.
 
-// before reshaping, get last race observed to use for later
-egen last_race_focal=rowlast(raceth_focal*) // tie break with last reported
-browse last_race_focal raceth_focal*
-label values last_race_focal raceth
-
 // try to get rolling count of not in sample to use for later and trying to figure out permanent attrition
 gen yrs_non_sample1986=.
 replace yrs_non_sample1986=0 if in_sample_1986==1
@@ -965,10 +960,20 @@ forvalues y=1998(2)2020{
 
 browse in_sample_1986 in_sample_1987 in_sample_1988 in_sample_2001 in_sample_2003 yrs_non_sample1986 yrs_non_sample1987 yrs_non_sample1988 yrs_non_sample2001 yrs_non_sample2003
 
+// add on HH births here so I can add to the reshape later
+merge m:1 main_fam_id using "$created_data_psid\hh_birth_history_file.dta", keepusing(hh_births*)
+drop if _merge==2
+drop _merge
+
+// before reshaping, get last race observed to use for later
+egen last_race_focal=rowlast(raceth_focal*) // tie break with last reported
+browse last_race_focal raceth_focal*
+label values last_race_focal raceth
+
 ********************************************************************************
 * BACK to long so can recenter on duration and fill in some missings
 ********************************************************************************
-reshape long in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved moved_sp partnered partnered_sp yrs_non_sample any_births_focal any_births_hh ///
+reshape long in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved moved_sp partnered partnered_sp yrs_non_sample any_births_focal any_births_hh hh_births_ ///
 , i(unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(survey_yr)
 
 browse unique_id survey_yr rel_start_all rel_end_all min_dur max_dur relationship_ in_sample_ weekly_hrs_t_focal weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
@@ -1076,12 +1081,44 @@ tab partnered_imp, m
 tab partnered partnered_imp, m
 
 // try to fill in number of children that are missing - same thing, this will be easier for OFF years v. many missing years
-// also - do I need to do this at birth history level and create a HH indicator of ANY births?! actually maybe yes. GAH
-browse unique_id survey_yr in_sample_ relationship_ NUM_CHILDREN_ NUM_IN_HH_ FIRST_BIRTH_YR any_births_focal any_births_hh COMPOSITION_CHANGE
+merge m:1 unique_id using "$created_data_psid\birth_history_wide.dta" // now get person specific births
+drop if _merge==2
+drop _merge 
+
+label values  NUM_CHILDREN_ NUM_IN_HH_ .
+
+gen rolling_births=0
+forvalues y=1968/2021{
+	forvalues c=1/20{
+		replace rolling_births = rolling_births + 1 if survey_yr==`y' & inrange(cah_child_birth_yr`c',1900,`y') 
+	}	
+}
+
+gen had_birth=0
+forvalues y=1968/2021{
+	forvalues c=1/20{
+		replace had_birth = 1 if survey_yr==`y' & cah_child_birth_yr`c'==`y'
+	}	
+}
+
+browse unique_id survey_yr rolling_births had_birth cah_child_birth_yr*
+gen num_children_imp = NUM_CHILDREN_
+replace num_children_imp = num_children_imp[_n-1] if had_birth==0 & num_children_imp==. & unique_id == unique_id[_n-1] & survey_yr == survey_yr[_n-1]+1
+replace num_children_imp = num_children_imp[_n-1] + 1 if had_birth==1 & num_children_imp==. & unique_id == unique_id[_n-1] & survey_yr == survey_yr[_n-1]+1
+
+browse unique_id survey_yr in_sample_ num_children_imp NUM_CHILDREN_ NUM_IN_HH_ had_birth rolling_births hh_births_ FIRST_BIRTH_YR any_births_focal any_births_hh cah_child_birth_yr* COMPOSITION_CHANGE
+
+inspect NUM_CHILDREN_
+inspect num_children_imp
+
+tab num_children_imp in_sample_,m 
+
+// do I want to try to update education here or later?
+browse unique_id survey_yr educ_focal educ_change
 
 **# Here the data is now long, by duration - only the durations I want.
 tab duration, m
-keep if duration >=-4 // keep up to 5 years prior, jic
+keep if duration >=-2 // only keeping up to 2 years prior, bc there are so many missing pre duration 0, it's not very stable.
 keep if duration <=12 // up to 10/11 for now - but adding a few extra years so I can do the lookups below and still retain up to 20
 
 save "$created_data\individs_by_duration_long.dta", replace

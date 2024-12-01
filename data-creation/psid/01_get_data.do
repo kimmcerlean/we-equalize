@@ -155,3 +155,40 @@ forvalues n=1/20{
 }
    
 save "$created_data_psid\birth_history_wide.dta", replace
+
+// can I reshape wide AGAIN so it's by HH and use later to get incremental number of children??
+use "$created_data_psid\birth_history_wide.dta", clear
+
+keep int_number per_num cah_child_birth_yr*
+rename int_number main_fam_id 
+
+bysort int_number: egen per_id = rank(per_num)
+drop per_num
+
+foreach var in cah_child_birth_yr*{
+	rename `var' `var'_x
+}
+
+reshape wide cah_child_birth_yr*, i(main_fam_id) j(per_id)
+
+gen hh_births_pre1968 = 0
+forvalues p=1/128{
+	forvalues c=1/20{
+		replace hh_births_pre1968 = hh_births_pre1968 + 1 if inrange(cah_child_birth_yr`c'_x`p',1900,1967)
+	}
+}
+
+browse main_fam_id hh_births_pre1968 cah*
+
+forvalues y=1968/2021{
+	gen hh_births_`y' = 0
+	forvalues p=1/128{
+		forvalues c=1/20{
+			replace hh_births_`y' = hh_births_`y' + 1 if cah_child_birth_yr`c'_x`p'==`y'
+		}
+	}	
+}
+
+browse main_fam_id hh_births_pre1968 hh_births_2001 cah*
+
+save "$created_data_psid\hh_birth_history_file.dta", replace
