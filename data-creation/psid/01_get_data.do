@@ -70,3 +70,88 @@ local reshape_vars "RELEASE_ X1968_PERSON_NUM_ INTERVIEW_NUM_ RELATION_ AGE_INDV
 reshape long `reshape_vars', i(id unique_id sample_type stratum cluster) j(survey_yr)
 
 save "$temp_psid\PSID_full_long.dta", replace
+
+********************************************************************************
+**# Prep childbirth history files
+********************************************************************************
+use "$PSID/cah_85_21.dta", clear
+
+gen unique_id = (CAH3*1000) + CAH4
+browse CAH3 CAH4 unique_id
+gen unique_id_child = (CAH10*1000) + CAH11
+
+/* first rename relevant variables for ease*/
+rename CAH3 int_number
+rename CAH4 per_num
+rename CAH10 child_int_number
+rename CAH11 child_per_num
+rename CAH2 event_type
+rename CAH106 num_children
+rename CAH5 parent_sex
+rename CAH7 parent_birth_yr
+rename CAH6 parent_birth_mon
+rename CAH8 parent_marital_status
+rename CAH9 birth_order
+rename CAH12 child_sex
+rename CAH15 child_birth_yr
+rename CAH13 child_birth_mon
+rename CAH27 child_hispanicity
+rename CAH28 child_race1
+rename CAH29 child_race2
+rename CAH30 child_race3
+rename CAH100 mom_wanted
+rename CAH101 mom_timing
+rename CAH102 dad_wanted
+rename CAH103 dad_timing
+
+label define wanted 1 "Yes" 5 "No"
+label values mom_wanted dad_wanted wanted
+replace mom_wanted = . if inlist(mom_wanted,8,9)
+replace dad_wanted = . if inlist(dad_wanted,8,9)
+
+label define timing 1 "Not at that time" 2 "None" 3 "Didn't matter"
+label values mom_timing dad_timing timing
+replace mom_timing = . if inlist(mom_timing,8,9)
+replace dad_timing = . if inlist(dad_timing,8,9)
+
+gen no_children=0
+replace no_children=1 if child_int_number==0 & child_per_num==0 
+
+// this is currently LONG - one record per birth. want to make WIDE
+local birthvars "int_number per_num unique_id child_int_number child_per_num unique_id_child event_type num_children parent_sex parent_birth_yr parent_birth_mon parent_marital_status birth_order child_sex child_birth_yr child_birth_mon child_hispanicity child_race1 child_race2 child_race3 mom_wanted mom_timing dad_wanted dad_timing"
+
+keep `birthvars'
+
+rename parent_birth_yr parent_birth_yr_0
+bysort unique_id: egen parent_birth_yr = min(parent_birth_yr_0)
+drop parent_birth_yr_0
+
+rename parent_birth_mon parent_birth_mon_0
+bysort unique_id: egen parent_birth_mon = min(parent_birth_mon_0)
+drop parent_birth_mon_0
+
+browse unique_id birth_order * // looks like the 98s are causing problems
+sort unique_id birth_order
+by unique_id: egen birth_rank = rank(birth_order), unique
+browse unique_id birth_order birth_rank child_birth_yr * 
+tab birth_rank birth_order
+
+reshape wide child_int_number child_per_num unique_id_child event_type parent_marital_status num_children child_sex child_birth_yr child_birth_mon child_hispanicity child_race1 child_race2 child_race3 mom_wanted mom_timing dad_wanted dad_timing birth_order, i(int_number per_num unique_id parent_sex parent_birth_yr parent_birth_mon)  j(birth_rank)
+
+gen INTERVIEW_NUM_1968 = int_number
+
+foreach var in *{
+	rename `var' cah_`var' // so I know where it came from
+}
+
+rename cah_int_number int_number
+rename cah_per_num per_num
+rename cah_unique_id unique_id
+rename cah_INTERVIEW_NUM_1968 INTERVIEW_NUM_1968
+gen partner_id = unique_id
+
+forvalues n=1/20{
+	rename cah_parent_marital_status`n' cah_parent_marst`n' // think getting too long for what I want to work
+}
+   
+save "$created_data_psid\birth_history_wide.dta", replace
