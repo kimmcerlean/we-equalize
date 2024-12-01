@@ -1121,6 +1121,8 @@ tab duration, m
 keep if duration >=-2 // only keeping up to 2 years prior, bc there are so many missing pre duration 0, it's not very stable.
 keep if duration <=12 // up to 10/11 for now - but adding a few extra years so I can do the lookups below and still retain up to 20
 
+replace partnered_imp=. if partnered_imp==.x
+
 save "$created_data\individs_by_duration_long.dta", replace
 
 // 
@@ -1232,9 +1234,6 @@ tab weekly_hrs_t_focal5 employed_focal_rec5, m
 
 tab employed_focal5, m
 tab employed_focal_rec5, m
-
-// revisit education
-browse unique_id partner_id survey_yr educ_focal*
 
 **# Here the data is now reshaped wide, by duration
 save "$created_data\individs_by_duration_wide.dta", replace
