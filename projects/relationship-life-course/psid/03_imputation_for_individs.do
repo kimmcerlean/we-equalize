@@ -45,7 +45,7 @@ drop if raceth_fixed_focal==. // for now, just so this is actually complete
 ********************************************************************************
 mi set wide
 mi register imputed weekly_hrs_t_focal* housework_focal* employed_focal* earnings_t_focal* educ_focal* college_focal* children* NUM_CHILDREN_* AGE_YOUNG_CHILD_* relationship_* partnered* TOTAL_INCOME_T_FAMILY*
-mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type
+mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type rel_type_constant
 
 #delimit ;
 

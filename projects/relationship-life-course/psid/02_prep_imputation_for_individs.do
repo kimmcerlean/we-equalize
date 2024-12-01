@@ -1123,8 +1123,11 @@ keep if duration <=12 // up to 10/11 for now - but adding a few extra years so I
 
 save "$created_data\individs_by_duration_long.dta", replace
 
+// 
+use "$created_data\individs_by_duration_long.dta", clear
+
 unique unique_id partner_id
-// egen couple_id = group(unique_id partner_id)
+egen couple_id = group(unique_id partner_id)
 browse couple_id unique_id partner_id duration SEX
 
 // make it rectangular then fill in fixed characteristics for those added
@@ -1136,7 +1139,7 @@ bysort couple_id (SEX): replace SEX=SEX[1] if SEX==.
 bysort couple_id (unique_id): replace unique_id=unique_id[1] if unique_id==.
 bysort couple_id (partner_id): replace partner_id=partner_id[1] if partner_id==.
 
-foreach var in rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR sample_type last_race_focal{
+foreach var in rel_start_all min_dur max_dur rel_end_all last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR sample_type last_race_focal rel_type_constant  main_fam_id SAMPLE educ_change has_psid_gene first_survey_yr_focal  last_survey_yr_focal{
 	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
 }
 
@@ -1158,7 +1161,7 @@ replace survey_yr = survey_yr[_n-1]+1 if survey_yr==.
 replace age_focal=survey_yr - birth_yr_all if age_focal==.
 
 // get ready to reshape back
-gen duration_rec=duration+4 // negatives won't work in reshape or with sq commands - so make -4 0
+gen duration_rec=duration+2 // negatives won't work in reshape or with sq commands - so make -2 0
 
 sort couple_id duration
 browse couple_id duration weekly_hrs_t1_focal housework_focal _fillin
@@ -1200,23 +1203,25 @@ histogram weekly_hrs_t1_focal, width(1)
 histogram weekly_hrs_t1_focal if weekly_hrs_t1_focal>0, width(1)
 histogram housework_focal, width(1)
 
+/*
 gen partnered=.
 replace partnered=0 if MARITAL_PAIRS_==0
 replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
+*/
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children num_children_imp FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered_imp TOTAL_INCOME_T_FAMILY sample_type, stats(mean sd p50) columns(statistics)
 
 ********************************************************************************
 * reshaping wide for imputation purposes
 ********************************************************************************
 
-drop survey_yr duration _fillin MARITAL_PAIRS_
+drop survey_yr duration _fillin MARITAL_PAIRS_ *_sp *_sp* cah_* mh_* hh_births_pre1968 rel*_start rel*_end marr*_start marr*_end coh*_start coh*_end hh*_start hh*_end MOVED_YEAR_ MOVED_YEAR_sp_ moved moved_sp any_births_focal any_births_hh *_est SPLITOFF* COMPOSITION_CHANGE_ NUM_IN_HH_ DATA_RECORD_TYPE_  SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION permanent_attrit lt_attrit YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST yrs_non_sample change_yr in_marital_history int_number per_num INTERVIEW_NUM_1968
 
-reshape wide in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal ///
-, i(couple_id unique_id partner_id rel_start_all min_dur max_dur rel_end_yr last_yr_observed ended SEX) j(duration_rec)
+reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp num_children_imp rolling_births* had_birth hh_births* ///
+, i(couple_id unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(duration_rec)
 
-forvalues d=0/16{
-	// gen employed_focal_rec`d' = employed_focal`d'
+forvalues d=0/14{
+	gen employed_focal_rec`d' = employed_focal`d'
 	replace employed_focal_rec`d' = 1 if employed_focal`d'==0 & weekly_hrs_t_focal`d' > 0 & weekly_hrs_t_focal`d'!=. // so, put them as employed if there are hours
 	replace employed_focal_rec`d' = 1 if employed_focal`d'==. & weekly_hrs_t_focal`d' > 0 & weekly_hrs_t_focal`d'!=. // so, put them as employed if there are hours
 	replace employed_focal_rec`d' = 0 if employed_focal`d'==. & weekly_hrs_t_focal`d' == 0 // so, put them as unemployed if hours are 0 and employment is missing
@@ -1229,7 +1234,7 @@ tab employed_focal5, m
 tab employed_focal_rec5, m
 
 // revisit education
-browse unique_id partner_id survey_yr educ_focal 
+browse unique_id partner_id survey_yr educ_focal*
 
 **# Here the data is now reshaped wide, by duration
 save "$created_data\individs_by_duration_wide.dta", replace
