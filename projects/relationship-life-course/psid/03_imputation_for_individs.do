@@ -525,6 +525,8 @@ mi set wide
 mi register imputed weekly_hrs_t_focal* housework_focal* employed_focal* earnings_t_focal* educ_focal* college_focal* children* NUM_CHILDREN_* AGE_YOUNG_CHILD_* relationship_* partnered* TOTAL_INCOME_T_FAMILY* num_children_imp*
 mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type rel_type_constant
 
+log using "$logdir\mi_education_help.log", replace
+
 // start imputation
 #delimit ;
 
@@ -715,6 +717,8 @@ mi impute chained
 
 ;
 #delimit cr
+
+log close
 
 // = i.FIRST_BIRTH_YR i.birth_yr_all i.rel_start_all i.raceth_fixed_focal i.sample_type i.SEX, chaindots add(1) rseed(12345) noimputed augment noisily force // dryrun
 
@@ -1250,4 +1254,8 @@ logit employed_focal4 i.employed_focal0 i.employed_focal1 i.employed_focal2 i.em
 					 
 ologit educ_focal4 i.educ_focal0 i.educ_focal1 i.educ_focal2 i.educ_focal3 i.educ_focal5 i.educ_focal6 i.educ_focal7 i.educ_focal8 i.educ_focal9 i.educ_focal10 i.educ_focal11 i.educ_focal12 i.educ_focal13 i.educ_focal14     weekly_hrs_t_focal4 i.employed_focal4 housework_focal4 earnings_t_focal4 num_children_imp4 AGE_YOUNG_CHILD_4 i.partnered_imp4 TOTAL_INCOME_T_FAMILY4
 
+forvalues e=0/14{
+	display "duration=`e'"
+	tab educ_focal_imp`e', m
+}
 
