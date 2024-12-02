@@ -1235,6 +1235,21 @@ tab weekly_hrs_t_focal5 employed_focal_rec5, m
 tab employed_focal5, m
 tab employed_focal_rec5, m
 
+// try to fill in education if unchanged throughout observation
+browse unique_id educ_focal*
+
+egen min_educ = rowmin(educ_focal*)
+egen max_educ = rowmax(educ_focal*)
+
+browse unique_id min_educ max_educ educ_focal*
+
+forvalues d=0/14{
+	gen educ_focal_imp`d' = educ_focal`d'
+	replace educ_focal_imp`d' = max_educ if min_educ==max_educ & educ_focal_imp`d'==.
+}
+
+browse unique_id min_educ max_educ educ_focal_imp* educ_focal*
+
 **# Here the data is now reshaped wide, by duration
 save "$created_data\individs_by_duration_wide.dta", replace
 // use "$created_data\individs_by_duration_wide.dta", clear
