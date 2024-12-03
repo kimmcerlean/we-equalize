@@ -77,7 +77,7 @@ clear mata
 set maxvar 32000
 
 * Open all collected variables in wide format:
-use "${psidshelf_root}/Construction_Files/Data/Merge/datagen_shelf_02_all_collected_variables_wide.dta", clear
+use "$temp_psid/datagen_shelf_01_education_wide.dta", clear // just opening the education variables
 
 
 *-------------------------------------------------------------------------*
@@ -86,7 +86,7 @@ use "${psidshelf_root}/Construction_Files/Data/Merge/datagen_shelf_02_all_collec
 
 * Set macro for every survey year of the PSID: 1968/1997, 1999(2)2019
 * (I.e., to accommodate the PSID's annual/biennial data structure.)
-numlist "1968/1997 1999(2)2019"
+numlist "1968/1997 1999(2)2021"
 global year = r(numlist)
 global n_year = wordcount("$year")
 di "N years = ${n_year}; years: ${year}."
@@ -762,4 +762,12 @@ codebook id
 compress
 
 * Save the education measures in wide format:
-save "${psidshelf_root}/Construction_Files/Data/Merge/datagen_shelf_03_education_wide.dta", replace
+save "$created_data_psid/datagen_shelf_03_education_wide.dta", replace
+
+* Reshape to long
+reshape long eduyearrep educompreprp educomprepsp eduhsgradrepsp eduhsgradreprp eduanycolreprp eduanycolrepsp edudegreereprp edudegreerepsp edufinstreprp edufinstrepsp edufdegreereprp edufdegreerepsp eduyear eduyearrp eduyearsp eduyearrc eduyearmaxrp eduyearmaxsp eduyearmaxrc edulevel edulevelrp edulevelsp edulevelrc edulevelmaxrp edulevelmaxsp edulevelmaxrc educomp eduhsgrad eduanycol edudegree edufinst edufdegree, i(id eduyearmax edulevelmax) j(survey_yr)
+
+rename id unique_id
+
+save "$created_data_psid/datagen_shelf_03_education_long.dta", replace
+

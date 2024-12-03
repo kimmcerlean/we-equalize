@@ -52,6 +52,7 @@
 * Zahid Samancioglu, Andreja Siliunas, and Brittany Vasquez.
 */
 
+* This file has been updated by KM to use my data downloaded as well as data through 2021
 
 *-------------------------------------------------------------------------*
 * Open the PSID Complete Main Study, 1968–2019
@@ -64,7 +65,7 @@ clear mata
 set maxvar 120000
 
 * Open the PSID Complete Main Study:
-use "${data_psid_cms_root}/PSID_COMPLETE_MAIN_STUDY_1968_2019.dta", clear
+use "$PSID/educ_vars_SHELF.dta", clear
 
 
 *-------------------------------------------------------------------------*
@@ -73,10 +74,160 @@ use "${data_psid_cms_root}/PSID_COMPLETE_MAIN_STUDY_1968_2019.dta", clear
 
 * Set macro for every survey year of the PSID: 1968/1997, 1999(2)2019
 * (I.e., to accommodate the PSID's annual/biennial data structure.)
-numlist "1968/1997 1999(2)2019"
+numlist "1968/1997 1999(2)2021"
 global year = r(numlist)
 global n_year = wordcount("$year")
 di "N years = ${n_year}; years: ${year}."
+
+*-------------------------------------------------------------------------*
+*ID variables (skipping that step)
+*-------------------------------------------------------------------------*
+
+gen id=((ER30001*1000)+ER30002)
+lab var id "Unique ID [(ER30001*1000)+ER30002]"
+
+*-------------------------------------------------------------------------*
+* (4) fid - Family ID, wave-specific
+*-------------------------------------------------------------------------*
+
+* Collect the original variables that correspond to each survey year:
+global var_fid /*
+                0           1           2           3           4           5           6           7           8           9             
+       196X */                                                                                                  ER30001     ER30020     /*
+       197X */  ER30043     ER30067     ER30091     ER30117     ER30138     ER30160     ER30188     ER30217     ER30246     ER30283     /*
+       198X */  ER30313     ER30343     ER30373     ER30399     ER30429     ER30463     ER30498     ER30535     ER30570     ER30606     /*
+       199X */  ER30642     ER30689     ER30733     ER30806     ER33101     ER33201     ER33301     ER33401                 ER33501     /*
+       200X */              ER33601                 ER33701                 ER33801                 ER33901                 ER34001     /*
+       201X */              ER34101                 ER34201                 ER34301                 ER34501                 ER34701     /*
+	   202X */				ER34901
+
+/*
+* Note: There are two sets of original variables that provide Family ID, wave-specific: the
+* variables from the family data (e.g., V3 for 1968) and the variables from the
+* cross-year IND data (e.g., ER30001 for 1968). I have decided to use the
+* latter variable, because it includes the 1968 family ID for panel families 
+* that were added in subsequent samples (i.e., the 1997 immigrant sample, the 
+* 2017 immigrant sample, and the 1990 Latino sample), whereas the family data
+* in each survey year only includes the Family ID, wave-specifics for current panel families.
+*/
+
+* Loop through the original variables that are available in each survey year:
+capture noisily drop fid*
+capture noisily drop FID*
+foreach i of numlist 1/$n_year {
+	local y:   word `i' of ${year}
+	local var: word `i' of ${var_fid}
+    
+    * Generate a new variable for the SHELF data:
+    gen fid`y'=(`var')
+	replace fid`y'=. if inlist(`var', 0)
+	lab var fid`y' "Family ID, wave-specific, `y' [`var']"
+}
+
+* Describe the newly created variables:
+summarize fid*
+
+
+*-------------------------------------------------------------------------*
+* (7) relx - Ind's relation to ref person, extended
+*-------------------------------------------------------------------------*
+
+* Collect the original variables that correspond to each survey year:
+global var_relx /*
+                0           1           2           3           4           5           6           7           8           9             
+       196X */                                                                                                  ER30003     ER30022     /*
+       197X */  ER30045     ER30069     ER30093     ER30119     ER30140     ER30162     ER30190     ER30219     ER30248     ER30285     /*
+       198X */  ER30315     ER30345     ER30375     ER30401     ER30431     ER30465     ER30500     ER30537     ER30572     ER30608     /*
+       199X */  ER30644     ER30691     ER30735     ER30808     ER33103     ER33203     ER33303     ER33403                 ER33503     /*
+       200X */              ER33603                 ER33703                 ER33803                 ER33903                 ER34003     /*
+       201X */              ER34103                 ER34203                 ER34303                 ER34503                 ER34703     /*
+	   202X */				ER34903
+
+* Loop through the original variables that are available in each survey year:
+capture noisily drop relx*
+foreach i of numlist 1/$n_year {
+	local y:   word `i' of ${year}
+	local var: word `i' of ${var_relx}
+    
+    * Generate a new variable for the SHELF data:
+    gen relx`y'=-1      /* (Note: All value labels should be assigned (ranging 0 to 999); therefore, if any variable includes a minimum value of -1, it means that one or more value labels were not assigned.) */
+    lab var relx`y' "Ind's relation to ref person, extended, `y' [`var']"
+
+    replace relx`y'=100 if inlist(`var', 1, 10)            /* Reference person */
+    
+    replace relx`y'=200 if inlist(`var', 2, 20)            /* Partner of ref person */
+    replace relx`y'=201 if inlist(`var', 22)
+    replace relx`y'=208 if inlist(`var', 9, 90)               
+    replace relx`y'=209 if inlist(`var', 92)
+    
+    replace relx`y'=300 if inlist(`var', 3, 30)            /* Child of ref person */
+    replace relx`y'=301 if inlist(`var', 33)
+    replace relx`y'=302 if inlist(`var', 35)
+    
+    replace relx`y'=401 if inlist(`var', 88)               /* Other member: first-year cohabitor of ref */
+    replace relx`y'=402 if inlist(`var', 38)               /* Other member: child of first-year cohabitor */
+    
+    replace relx`y'=410 if inlist(`var', 83)               /* Other member: foster child or child-in-law of ref */
+    replace relx`y'=411 if inlist(`var', 37)
+
+    replace relx`y'=420 if inlist(`var', 5, 50)            /* Other member: parent of ref, spouse, or partner */
+    replace relx`y'=421 if inlist(`var', 57)
+    replace relx`y'=422 if inlist(`var', 58)
+    replace relx`y'=430 if inlist(`var', 6, 60)            /* Other member: grandchild or great-grandchild of ref or spouse */
+    replace relx`y'=431 if inlist(`var', 65)              
+    
+    replace relx`y'=440 if inlist(`var', 66)               /* Other member: grandparent or great-grandparent of ref or spouse */
+    replace relx`y'=441 if inlist(`var', 67)
+    replace relx`y'=442 if inlist(`var', 68)
+    replace relx`y'=443 if inlist(`var', 69)
+    
+    replace relx`y'=450 if inlist(`var', 4, 40)            /* Other member: other fam members, specified relationship */
+    replace relx`y'=451 if inlist(`var', 47)
+    replace relx`y'=452 if inlist(`var', 48)
+    replace relx`y'=453 if inlist(`var', 70)
+    replace relx`y'=454 if inlist(`var', 71)
+    replace relx`y'=455 if inlist(`var', 74)
+    replace relx`y'=456 if inlist(`var', 75)
+    replace relx`y'=457 if inlist(`var', 72)
+    replace relx`y'=458 if inlist(`var', 73)
+
+    replace relx`y'=480 if inlist(`var', 7)                /* Other member: other fam members */
+    replace relx`y'=481 if inlist(`var', 95)
+    replace relx`y'=482 if inlist(`var', 96)
+    replace relx`y'=483 if inlist(`var', 97)
+    
+    replace relx`y'=490 if inlist(`var', 8, 98)            /* Other member: other nonfamily member or unspecified relationship */
+    
+    replace relx`y'=999 if inlist(`var', 0)                /* N/A: to be recoded to missing */
+	    
+    * Hand-code inconsistent values:
+    replace relx`y'=208 if inlist(`var', 8) & inrange(`y', 1968, 1968)   /* (Note: Values of 8 were coded as "Husband or Wife of Head" in 1968 (N=1) and "Nonrelative" from 1969–onward.) */
+    replace relx`y'=490 if inlist(`var', 9) & inrange(`y', 1968, 1968)   /* (Note: Values of 9 were coded as "NA" in 1968 (N=1) and "Husband of Head" from 1969–onward.) */
+}
+
+* Loop through the original variables that are available in each survey year:
+foreach i of numlist 1/$n_year {
+	local y:   word `i' of ${year}
+	local var: word `i' of ${var_relx}
+    
+    * Change label for not applicable values to missing:
+    replace relx`y'=. if (relx`y'==999)
+    
+    * Check that all relationships were assigned a value:
+    tab `var' relx`y' if (relx`y'==.), m 
+}
+
+* Loop through the original variables that are available in each survey year:
+foreach i of numlist 1/$n_year {
+	local y:   word `i' of ${year}
+    
+    * Assign value labels to the newly created variable:
+    lab val relx`y' relx_35cat
+}
+
+* Describe the newly created variables:
+tab1 relx1968 relx2019, m
+summarize relx*
 
 
 *-------------------------------------------------------------------------*
@@ -183,7 +334,8 @@ global var_eduyearrep /*
        198X */  ER30326     ER30356     ER30384     ER30413     ER30443     ER30478     ER30513     ER30549     ER30584     ER30620     /*
        199X */  ER30657     ER30703     ER30748     ER30820     ER33115     ER33215     ER33315     ER33415                 ER33516     /*
        200X */              ER33616                 ER33716                 ER33817                 ER33917                 ER34020     /*
-       201X */              ER34119                 ER34230                 ER34349                 ER34548                 ER34752     
+       201X */              ER34119                 ER34230                 ER34349                 ER34548                 ER34752     /*
+	   202X */				ER34952
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -225,13 +377,15 @@ global var_educompreprp /*
        198X */  V7433       V8085       V8709       V9395       V11042      V12400      V13640      V14687      V16161      V17545      /*
        199X */  V18898      .           .           .           .           .           .           .                       .           /*
        200X */              .                       .                       .                       .                       .           /*
-       201X */              .                       .                       .                       .                       .           
+       201X */              .                       .                       .                       .                       .           /*
+	   202X */				.
+
 
 
 * Prepare to loop through a subset of survey years, by setting three required
 * inputs to run the program that generates a subset of PSID survey years:
 local set_psid_yr_all    "${year}"
-local set_psid_yr_miss   "1991/1997 1999(2)2019" /* (Note: Specify the survey years in which the variable is missing; do not include years in which the survey was not conducted: i.e., 1998(2)2018.) */
+local set_psid_yr_miss   "1991/1997 1999(2)2021" /* (Note: Specify the survey years in which the variable is missing; do not include years in which the survey was not conducted: i.e., 1998(2)2018.) */
 local set_psid_var_avail "${var_educompreprp}"
 
 * Run the program that generates the a subset of PSID survey years:
@@ -275,13 +429,14 @@ global var_educomprepsp /*
        198X */  V7434       V8086       V8710       V9396       V11043      V12401      V13641      V14688      V16162      V17546      /*
        199X */  V18899      .           .           .           .           .           .           .                       .           /*
        200X */              .                       .                       .                       .                       .           /*
-       201X */              .                       .                       .                       .                       .           
+       201X */              .                       .                       .                       .                       .           /*
+	   202X */				.
 
 
 * Prepare to loop through a subset of survey years, by setting three required
 * inputs to run the program that generates a subset of PSID survey years:
 local set_psid_yr_all    "${year}"
-local set_psid_yr_miss   "1969/1971 1991/1997 1999(2)2019" /* (Note: Specify the survey years in which the variable is missing; do not include years in which the survey was not conducted: i.e., 1998(2)2018.) */
+local set_psid_yr_miss   "1969/1971 1991/1997 1999(2)2021" /* (Note: Specify the survey years in which the variable is missing; do not include years in which the survey was not conducted: i.e., 1998(2)2018.) */
 local set_psid_var_avail "${var_educomprepsp}"
 
 * Run the program that generates the a subset of PSID survey years:
@@ -312,7 +467,6 @@ foreach i of numlist 1/`=r(n_year_avail)' {
 * Describe the newly created variables:
 summarize educomprepsp*
 
-
 *-------------------------------------------------------------------------*
 * (4) eduhsgradreprp - RP has reported graduating high school?
 *-------------------------------------------------------------------------*
@@ -325,7 +479,8 @@ global var_eduhsgradreprp /*
        198X */  .           .           .           .           .           V11945      V13568      V14615      V16089      V17486      /*
        199X */  V18817      V20117      V21423      V23279      ER3948      ER6818      ER9064      ER11854                 ER15937     /*
        200X */              ER19998                 ER23435                 ER27402                 ER40574                 ER46552     /*
-       201X */              ER51913                 ER57669                 ER64821                 ER70893                 ER76908     
+       201X */              ER51913                 ER57669                 ER64821                 ER70893                 ER76908     /*
+	   202X */				ER81155
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -365,7 +520,6 @@ foreach i of numlist 1/`=r(n_year_avail)' {
 * Describe the newly created variables:
 summarize eduhsgradreprp*
 
-
 *-------------------------------------------------------------------------*
 * (5) eduanycolreprp - RP has reported entering college?
 *-------------------------------------------------------------------------*
@@ -378,7 +532,8 @@ global var_eduanycolreprp /*
        198X */  .           .           .           .           .           V11956      V13579      V14626      V16100      V17497      /*
        199X */  V18828      V20128      V21434      V23290      ER3959      ER6829      ER9075      ER11865                 ER15948     /*
        200X */              ER20009                 ER23446                 ER27413                 ER40585                 ER46563     /*
-       201X */              ER51924                 ER57680                 ER64832                 ER70904                 ER76919     
+       201X */              ER51924                 ER57680                 ER64832                 ER70904                 ER76919     /*
+	   202X */				ER81166
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -429,7 +584,8 @@ global var_edudegreereprp /*
        198X */  .           .           .           .           .           V11961      V13584      V14631      V16105      V17502      /*
        199X */  V18833      V20133      V21439      V23295      ER3964      ER6834      ER9080      ER11870                 ER15953     /*
        200X */              ER20014                 ER23451                 ER27418                 ER40590                 ER46568     /*
-       201X */              ER51929                 ER57685                 ER64837                 ER70909                 ER76924     
+       201X */              ER51929                 ER57685                 ER64837                 ER70909                 ER76924     /*
+	   202X */				ER81171
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -481,7 +637,8 @@ global var_eduhsgradrepsp /*
        198X */  .           .           .           .           .           V12300      V13503      V14550      V16024      V17421      /*
        199X */  V18752      V20052      V21358      V23215      ER3887      ER6757      ER9003      ER11766                 ER15845     /*
        200X */              ER19906                 ER23343                 ER27306                 ER40481                 ER46458     /*
-       201X */              ER51819                 ER57559                 ER64682                 ER70755                 ER76763     
+       201X */              ER51819                 ER57559                 ER64682                 ER70755                 ER76763     /*
+	   202X */				ER81028
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -521,7 +678,6 @@ foreach i of numlist 1/`=r(n_year_avail)' {
 * Describe the newly created variables:
 summarize eduhsgradrepsp*
 
-
 *-------------------------------------------------------------------------*
 * (8) eduanycolrepsp - SP has reported entering college?
 *-------------------------------------------------------------------------*
@@ -534,7 +690,8 @@ global var_eduanycolrepsp /*
        198X */  .           .           .           .           .           V12311      V13510      V14557      V16031      V17428      /*
        199X */  V18759      V20059      V21365      V23222      ER3894      ER6764      ER9010      ER11777                 ER15856     /*
        200X */              ER19917                 ER23354                 ER27317                 ER40492                 ER46469     /*
-       201X */              ER51830                 ER57570                 ER64693                 ER70766                 ER76774     
+       201X */              ER51830                 ER57570                 ER64693                 ER70766                 ER76774     /*
+	   202X */				ER81039
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -573,6 +730,7 @@ foreach i of numlist 1/`=r(n_year_avail)' {
 summarize eduanycolrepsp*
 
 
+
 *-------------------------------------------------------------------------*
 * (9) edudegreerepsp - SP's reported highest degree attained
 *-------------------------------------------------------------------------*
@@ -585,7 +743,8 @@ global var_edudegreerepsp /*
        198X */  .           .           .           .           .           V12316      V13514      V14561      V16035      V17432      /*
        199X */  V18763      V20063      V21369      V23226      ER3898      ER6768      ER9014      ER11782                 ER15861     /*
        200X */              ER19922                 ER23359                 ER27322                 ER40497                 ER46474     /*
-       201X */              ER51835                 ER57575                 ER64698                 ER70771                 ER76779     
+       201X */              ER51835                 ER57575                 ER64698                 ER70771                 ER76779     /*
+	   202X */				ER81044
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -637,7 +796,8 @@ global var_edufinstreprp /*
        198X */  .           .           .           .           .           .           .           .           .           .           /*
        199X */  .           .           .           .           .           .           .           ER11853                 ER15936     /*
        200X */              ER19997                 ER23434                 ER27401                 ER40573                 ER46551     /*
-       201X */              ER51912                 ER57668                 ER64820                 ER70892                 ER76907     
+       201X */              ER51912                 ER57668                 ER64820                 ER70892                 ER76907     /*
+	   202X */				ER81154
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -688,7 +848,8 @@ global var_edufdegreereprp /*
        198X */  .           .           .           .           .           .           .           .           .           .           /*
        199X */  .           .           .           .           .           .           .           ER11875                 ER15957     /*
        200X */              ER20018                 .                       ER27422                 ER40594                 ER46572     /*
-       201X */              ER51933                 ER57689                 ER64847                 ER70919                 ER76938     
+       201X */              ER51933                 ER57689                 ER64847                 ER70919                 ER76938     /*
+	   202X */				ER81185
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -746,7 +907,8 @@ global var_edufinstrepsp /*
        198X */  .           .           .           .           .           .           .           .           .           .           /*
        199X */  .           .           .           .           .           .           .           ER11765                 ER15844     /*
        200X */              ER19905                 ER23342                 ER27305                 ER40480                 ER46457     /*
-       201X */              ER51818                 ER57558                 ER64681                 ER70754                 ER76762     
+       201X */              ER51818                 ER57558                 ER64681                 ER70754                 ER76762     /*
+	   202X */				ER81027
 
 
 * Prepare to loop through a subset of survey years, by setting three required
@@ -797,7 +959,8 @@ global var_edufdegreerepsp /*
        198X */  .           .           .           .           .           .           .           .           .           .           /*
        199X */  .           .           .           .           .           .           .           ER11787                 .           /*
        200X */              .                       .                       ER27326                 ER40501                 ER46478     /*
-       201X */              ER51839                 ER57579                 ER64708                 ER70781                 ER76793     
+       201X */              ER51839                 ER57579                 ER64708                 ER70781                 ER76793     /*
+	   202X */				ER81058
 
 * Prepare to loop through a subset of survey years, by setting three required
 * inputs to run the program that generates a subset of PSID survey years:
@@ -858,10 +1021,12 @@ global var_collect_education
        eduanycolrepsp*
        edudegreereprp*
        edudegreerepsp*
-       edufinstreprp*
+		edufinstreprp*
        edufinstrepsp*
        edufdegreereprp*
        edufdegreerepsp*
+	   relx*
+	   fid*
 ;
 global n_var_collect_education = wordcount("${var_collect_education}")
 ;
@@ -876,7 +1041,7 @@ di "N (sets of) vars total = ${n_var_collect_education}"
 *-------------------------------------------------------------------------*
 
 * Rename unique ID to lowercase:
-rename ID, lower
+// rename ID, lower
 
 * Keep and reorder variables:
 keep id ${var_collect_education}
@@ -893,4 +1058,4 @@ codebook id
 compress
 
 * Save the education variables in wide format:
-save "${psidshelf_root}/Construction_Files/Data/Merge/datagen_shelf_01_education_wide.dta", replace
+save "$temp_psid/datagen_shelf_01_education_wide.dta", replace
