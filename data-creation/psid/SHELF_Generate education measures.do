@@ -769,5 +769,14 @@ reshape long eduyearrep educompreprp educomprepsp eduhsgradrepsp eduhsgradreprp 
 
 rename id unique_id
 
-save "$created_data_psid/datagen_shelf_03_education_long.dta", replace
+browse unique_id survey_yr edulevel edulevelmax eduyear eduyearmax // individ vars	
 
+label define educ 1 "LTHS" 2 "HS" 3 "Some College" 4 "College+"
+foreach var in edulevel edulevelmax edulevelrp edulevelmaxrp edulevelsp edulevelmaxsp{
+	recode `var' (0=1)(1=2)(2=3)(3/4=4), gen(`var'_match)
+	label values `var'_match educ
+}
+
+browse unique_id survey_yr *match 
+
+save "$created_data_psid/datagen_shelf_03_education_long.dta", replace
