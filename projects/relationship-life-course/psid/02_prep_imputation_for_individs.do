@@ -1417,6 +1417,8 @@ replace educ_focal_imp2 = min_educ if educ_focal_imp2==.
 tab educ_focal_imp2, m
 browse unique_id min_educ max_educ educ_focal_imp* if educ_focal_imp2==.
 
+gen fixed_education=educ_focal_imp2 // duration 0
+
 **# Here the data is now reshaped wide, by duration
 save "$created_data\individs_by_duration_wide.dta", replace
 // use "$created_data\individs_by_duration_wide.dta", clear
