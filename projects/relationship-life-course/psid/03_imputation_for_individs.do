@@ -739,9 +739,9 @@ tabstat weekly_hrs_t_focal housework_focal if SEX==1, by(imputed) stats(mean sd 
 tabstat weekly_hrs_t_focal housework_focal if SEX==2, by(imputed) stats(mean sd p50)
 
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type if imputed==0, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all fixed_education raceth_focal raceth_fixed_focal children num_children_imp FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered_imp TOTAL_INCOME_T_FAMILY sample_type if imputed==0, stats(mean sd p50) columns(statistics)
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type if imputed==1, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all fixed_education raceth_focal raceth_fixed_focal children num_children_imp FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered_imp TOTAL_INCOME_T_FAMILY sample_type if imputed==1, stats(mean sd p50) columns(statistics)
 
 histogram weekly_hrs_t_focal, width(1)
 twoway (histogram weekly_hrs_t_focal if imputed==0, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
@@ -756,7 +756,7 @@ preserve
 
 collapse (mean) weekly_hrs_t_focal housework_focal, by(duration_rec imputed)
 
-twoway (line weekly_hrs_t_focal duration_rec if imputed==0) (line weekly_hrs_t_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration")
+twoway (line weekly_hrs_t_focal duration_rec if imputed==0) (line weekly_hrs_t_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration") //  yscale(range(30 40))
 twoway (line housework_focal duration_rec if imputed==0) (line housework_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration")
 
 restore
