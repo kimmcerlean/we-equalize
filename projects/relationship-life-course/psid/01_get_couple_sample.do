@@ -17,27 +17,70 @@
 ********************************************************************************
 use "$created_data_psid\PSID_partners_cleaned.dta", clear
 // use "G:\Other computers\My Laptop\Documents\Research Projects\Growth Curves\PAA 2025 submission\data\PSID_partners_cleaned.dta", clear
+// browse if inlist(unique_id, 16032, 16176)
 
 // first create partner ids before I drop partners
 gen id_ref=.
-replace id_ref = unique_id if inlist(RELATION_,1,10) 
+replace id_ref = unique_id if inlist(RELATION_,1,10) & SEQ_NUMBER_==1
+replace id_ref = unique_id if inlist(RELATION_,1,10) & survey_yr==1968
 bysort survey_yr FAMILY_INTERVIEW_NUM_ (id_ref): replace id_ref = id_ref[1]
 
 gen id_wife=.
-replace id_wife = unique_id if inlist(RELATION_,2,20,22) 
+replace id_wife = unique_id if inlist(RELATION_,2,20,22) & SEQ_NUMBER_==2
+replace id_wife = unique_id if inlist(RELATION_,2,20,22) & survey_yr==1968
 bysort survey_yr FAMILY_INTERVIEW_NUM_ (id_wife): replace id_wife = id_wife[1]
 
 sort unique_id survey_yr
 browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr RELATION_ id_ref id_wife
 
-gen partner_id=.
-replace partner_id = id_ref if inlist(RELATION_,2,20,22)  // so need opposite id
-replace partner_id = id_wife if inlist(RELATION_,1,10)
+gen partner_id_v1=.
+replace partner_id_v1 = id_ref if inlist(RELATION_,2,20,22) & SEQ_NUMBER_==2 // so need opposite id
+replace partner_id_v1 = id_ref if inlist(RELATION_,2,20,22) & survey_yr==1968 // so need opposite id
+replace partner_id_v1 = id_wife if inlist(RELATION_,1,10) & SEQ_NUMBER_==1
+replace partner_id_v1 = id_wife if inlist(RELATION_,1,10) & survey_yr==1968
+
+// okay,I think this is actually flawed, see what happens when I use marital pairs? Except, most are in couple 1? so is maybe not necessary
+tab MARITAL_PAIRS_,m 
+
+gen id_mp1_m=.
+replace id_mp1_m= unique_id if SEX==1 & MARITAL_PAIRS_==1
+gen id_mp1_w=.
+replace id_mp1_w=unique_id if SEX==2 & MARITAL_PAIRS_==1
+
+gen id_mp2_m=.
+replace id_mp2_m= unique_id if SEX==1 & MARITAL_PAIRS_==2
+gen id_mp2_w=.
+replace id_mp2_w=unique_id if SEX==2 & MARITAL_PAIRS_==2
+
+gen id_mp3_m=.
+replace id_mp3_m= unique_id if SEX==1 & MARITAL_PAIRS_==3
+gen id_mp3_w=.
+replace id_mp3_w=unique_id if SEX==2 & MARITAL_PAIRS_==3
+
+
+foreach var in id_mp1_m id_mp1_w id_mp2_m id_mp2_w id_mp3_m id_mp3_w{
+	bysort survey_yr FAMILY_INTERVIEW_NUM_ (`var'): replace `var' = `var'[1]
+}
+
+gen partner_id_v2=.
+replace partner_id_v2=id_mp1_w if SEX==1 & MARITAL_PAIRS_==1
+replace partner_id_v2=id_mp1_m if SEX==2 & MARITAL_PAIRS_==1
+replace partner_id_v2=id_mp2_w if SEX==1 & MARITAL_PAIRS_==2
+replace partner_id_v2=id_mp2_m if SEX==2 & MARITAL_PAIRS_==2
+replace partner_id_v2=id_mp3_w if SEX==1 & MARITAL_PAIRS_==3
+replace partner_id_v2=id_mp3_m if SEX==2 & MARITAL_PAIRS_==3
+
+browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr SEQ_NUMBER_ partner_id_v1 partner_id_v2  RELATION_ MARITAL_PAIRS_ id_ref id_wife id_mp1_m id_mp1_w id_mp2_m id_mp2_w id_mp3_m id_mp3_w rel_start_yr
+sort unique_id survey_yr
+
+gen id_check=.
+replace id_check=0 if partner_id_v1!=partner_id_v2
+replace id_check=1 if partner_id_v1==partner_id_v2 & partner_id_v1!=. & partner_id_v2!=.
+
+gen partner_id=partner_id_v2
+replace partner_id=partner_id_v1 if partner_id==.
 
 egen couple_id = group(unique_id partner_id)
-
-browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr RELATION_ partner_id couple_id id_ref id_wife rel_start_yr
-sort unique_id survey_yr
 
 // start to get data ready to deduplicate
 tab SEX marital_status_updated if SEX_HEAD_==1
@@ -115,6 +158,8 @@ unique unique_id if rel_start_yr_couple >= 1980 // compromise with 1980? ugh idk
 bysort unique_id partner_id: egen min_dur = min(dur)
 bysort unique_id partner_id: egen max_dur = max(dur)
 bysort unique_id partner_id: egen last_yr_observed = max(survey_yr)
+
+browse unique_id partner_id survey_yr SEQ_NUMBER_ main_fam_id FAMILY_INTERVIEW_NUM_ min_dur max_dur rel_start_all rel_start_yr_couple rel_start_yr RELATION_ MARITAL_PAIRS_   if inlist(unique_id, 16032, 16170, 16176)
 
 browse unique_id partner_id survey_yr rel_start_all rel_end_all last_yr_observed relationship_duration min_dur max_dur 
 keep if rel_start_all >= 1990 & inlist(min_dur,0,1) // keeping up to two, because if got married in 2001, say, might not appear in survey until 2003, which is a problem. 

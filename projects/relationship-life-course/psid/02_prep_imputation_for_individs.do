@@ -36,6 +36,8 @@ rename X1968_INTERVIEW_NUM_1968 main_fam_id
 gen unique_id = (main_fam_id*1000) + main_per_id // (ER30001 * 1000) + ER30002
 browse main_per_id main_fam_id unique_id
 
+browse RELATION_* YRS_EDUC* AGE_INDV_* if inlist(unique_id, 16032, 16176)
+
 // want to see if I can make this time-fixed sample status
 recode main_fam_id (1/2999 = 1 "SRC cross-section") (3001/3441 = 2 "Immigrant 97") (3442/3511 = 3 "Immigrant 99") (4001/4851 = 4 "Immigrant 17/19") (5001/6999  = 5 "1968 Census") (7001/9043 = 6 "Latino 90") (9044/9308 = 7 "Latino 92"), gen(sample_type) 
 /* from FAQ:

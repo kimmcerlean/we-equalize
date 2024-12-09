@@ -16,6 +16,7 @@
 * Stata MI Impute
 ********************************************************************************
 use "$created_data\individs_by_duration_wide.dta", clear
+browse if inlist(unique_id, 16032, 16176)
 misstable summarize FIRST_BIRTH_YR age_focal* birth_yr_all SEX raceth_fixed_focal sample_type rel_start_all, all
 
 egen nmis_workhrs = rmiss(weekly_hrs_t1_focal*)
@@ -727,6 +728,15 @@ inspect weekly_hrs_t_focal if imputed==1
 inspect housework_focal if imputed==0
 inspect housework_focal if imputed==1
 
+// recode some vars for ease
+mi rename AGE_YOUNG_CHILD_ age_young_child
+mi rename TOTAL_INCOME_T_FAMILY family_income_t
+mi rename relationship_ relationship
+mi rename in_sample_ in_sample
+mi rename hh_status_ hh_status
+
+mi update
+
 // mi register regular n
 
 save "$created_data/psid_individs_imputed_long_bysex", replace
@@ -739,9 +749,9 @@ tabstat weekly_hrs_t_focal housework_focal if SEX==1, by(imputed) stats(mean sd 
 tabstat weekly_hrs_t_focal housework_focal if SEX==2, by(imputed) stats(mean sd p50)
 
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all fixed_education raceth_focal raceth_fixed_focal children num_children_imp FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered_imp TOTAL_INCOME_T_FAMILY sample_type if imputed==0, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all fixed_education raceth_focal raceth_fixed_focal children num_children_imp FIRST_BIRTH_YR age_young_child relationship partnered_imp family_income_t sample_type if imputed==0, stats(mean sd p50) columns(statistics)
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all fixed_education raceth_focal raceth_fixed_focal children num_children_imp FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered_imp TOTAL_INCOME_T_FAMILY sample_type if imputed==1, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all fixed_education raceth_focal raceth_fixed_focal children num_children_imp FIRST_BIRTH_YR age_young_child relationship partnered_imp family_income_t sample_type if imputed==1, stats(mean sd p50) columns(statistics)
 
 histogram weekly_hrs_t_focal, width(1)
 twoway (histogram weekly_hrs_t_focal if imputed==0, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
