@@ -1,6 +1,6 @@
 
 ********************************************************************************
-* Project: Relationship Growth Curves
+* Project: Relationship Life Course Analysis
 * Owner: Kimberly McErlean
 * Started: September 2024
 * File: get_couple_sample
