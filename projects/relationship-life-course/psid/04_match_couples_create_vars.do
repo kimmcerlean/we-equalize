@@ -218,24 +218,27 @@ mi estimate: proportion couple_hw_hrs
 mi merge m:1 unique_id partner_id rel_start_all rel_end_all rel_type_constant using "$created_data\couple_list_individ.dta", keep(match) // get the info about transition yr to fill in whether cohab or married
 mi update
 
+gen duration = duration_rec - 2
+browse duration duration_rec
+
 mi passive: gen dur_transitioned=.
 mi passive: replace dur_transitioned = transition_yr_est - rel_start_all
 
-browse unique_id partner_id duration_rec min_dur max_dur rel_start_all transition_yr_est dur_transitioned
+browse unique_id partner_id duration min_dur max_dur rel_start_all transition_yr_est dur_transitioned
 
 mi passive: gen rel_type=.
 mi passive: replace rel_type = 1 if rel_type_constant== 1
-mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration_rec >= dur_transitioned
+mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration >= dur_transitioned
 mi passive: replace rel_type = 2 if rel_type_constant== 2
-mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration_rec < dur_transitioned
-mi passive: replace rel_type = 0 if duration_rec > max_dur
+mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration < dur_transitioned
+mi passive: replace rel_type = 0 if duration > max_dur
 
 label define rel_type 0 "Not together" 1 "Married" 2 "Cohab"
 label values rel_type rel_type
 
 mi estimate: proportion rel_type
 
-browse unique_id partner_id duration_rec rel_start_all rel_end_all max_dur rel_type dur_transitioned transition_yr_est weekly_hrs_woman weekly_hrs_man in_sample in_sample_sp
+browse unique_id partner_id duration rel_start_all rel_end_all max_dur rel_type dur_transitioned transition_yr_est weekly_hrs_woman weekly_hrs_man in_sample in_sample_sp
 
 * number of children
 mi passive: egen couple_num_children = rowmax(num_children_woman num_children_man)
@@ -282,6 +285,8 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work cou
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
 foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow couple_hw couple_hw_hrs couple_num_children_gp family_type{
+	capture drop `var'_end
+	mi update
 	mi passive: gen `var'_end = `var'
 	mi passive: replace `var'_end = 99 if rel_type==0
 }
@@ -299,15 +304,45 @@ save "$created_data/psid_couples_imputed_long.dta", replace
 ********************************************************************************
 **# Quick descriptives for full sample while long
 ********************************************************************************
-mi passive: gen duration = duration_rec - 2
-browse duration duration_rec
-
-drop if duration < 0 & duration > 10
+drop if duration < 0 | duration > 10
 drop duration_rec
 
 mi update
 
+desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/mi_desc") stats(mimean)
+// desctable i.ft_pt_woman i.overwork_woman i.ft_pt_man i.overwork_man i.couple_work i.couple_work_ow i.couple_hw i.couple_hw_hrs i.rel_type i.couple_num_children_gp i.family_type, filename("$results/mi_desc_all") stats(mimean)  // modify - okay can't use modify but want to see if this replaces the previous or adds a new sheet. okay it replaces the previous oops
+
+mi estimate: proportion couple_work_ow_end family_type_end // validate that this matches. it does
+
 ********************************************************************************
 **# Reshape back to wide to see the data by duration
 ********************************************************************************
-ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_num_children_gp_end family_type_end
+// or should I just loop through durations? should I confirm the numbers are the same either way? - so here, try to loop through durations
+
+forvalues d=0/10{
+	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/mi_desc_`d'") stats(mimean)
+}
+
+mi estimate: proportion couple_work_ow_end family_type_end if duration==0
+mi estimate: proportion couple_work_ow_end family_type_end if duration==5
+
+/* oh, wait, I think I can actually just group by duration?? ah, no you cannot do that with mi. i knew this
+desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/mi_desc_dur") stats(mimean) group(duration)
+*/
+
+keep  ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m
+
+mi update
+
+mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end rel_type couple_num_children_gp_end family_type_end, i(unique_id partner_id rel_start_all rel_end_all) j(duration)
+
+mi convert wide, clear
+
+save "$created_data/psid_couples_imputed_wide.dta", replace
+
+unique unique_id partner_id
+
+browse unique_id partner_id min_dur max_dur rel_type*
+
+mi estimate: proportion rel_type0 couple_work_ow_end0 family_type_end0
+mi estimate: proportion rel_typ5 couple_work_ow_end5 family_type_end5
