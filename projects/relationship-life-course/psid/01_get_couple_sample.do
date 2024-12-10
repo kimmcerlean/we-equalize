@@ -141,6 +141,25 @@ quietly unique rel_type_constant, by(couple_id)
 bysort couple_id (_Unique): replace _Unique = _Unique[1]
 tab _Unique, m
 replace rel_type_constant=3 if _Unique==2
+
+browse unique_id partner_id survey_yr rel_start_all marital_status_updated marr_trans
+gen transition_yr = survey_yr if marr_trans == 1 // this is the year they are married; year prior is partnered
+bysort unique_id partner_id (transition_yr): replace transition_yr = transition_yr[1]
+
+gen transition_yr_est = .
+forvalues m=1/9{
+	replace transition_yr_est = mh_yr_married`m' if rel_type_constant==3 & marital_status_updated==1 & survey_yr >=mh_yr_married`m' & survey_yr <=mh_yr_end`m'
+}
+
+bysort unique_id partner_id (transition_yr_est): replace transition_yr_est = transition_yr_est[1]
+
+tab transition_yr rel_type_constant, m
+tab transition_yr_est rel_type_constant if rel_start_all > 1990, m col
+
+replace transition_yr_est = transition_yr if rel_type_constant==3 & transition_yr_est==. // this is more accurate if it occurs in non-survey year
+
+browse unique_id partner_id survey_yr rel_start_all marital_status_updated marr_trans transition_yr transition_yr_est mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 if rel_type_constant==3 & transition_yr_est==. & rel_start_all > 1990 // these seem to be people actually partnered the whole time?
+
 // unique unique_id partner_id
 // unique unique_id partner_id rel_type_constant
 // browse unique_id partner_id survey_yr rel_type_constant marital_status_updated ever_transition marr_trans if _Unique==2
@@ -184,7 +203,7 @@ unique unique_id partner_id
 
 preserve
 
-collapse (first) rel_start_all rel_end_all rel_type_constant min_dur max_dur last_yr_observed ended, by(unique_id partner_id)
+collapse (first) rel_start_all rel_end_all rel_type_constant min_dur max_dur last_yr_observed ended transition_yr_est, by(unique_id partner_id)
 
 save "$created_data\couple_list_individ.dta", replace
 
