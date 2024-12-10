@@ -323,6 +323,8 @@ forvalues d=0/10{
 	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/mi_desc_`d'") stats(mimean)
 }
 
+mi xeq: proportion couple_hw_end if duration==5 // troubleshooting bc this is where the code stalled. I think this is because some have "neither HW" and some don't. okay, yes that is the problem
+
 mi estimate: proportion couple_work_ow_end family_type_end if duration==0
 mi estimate: proportion couple_work_ow_end family_type_end if duration==5
 
@@ -338,7 +340,7 @@ mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_en
 
 mi convert wide, clear
 
-save "$created_data/psid_couples_imputed_wide.dta", replace
+save "$created_data/psid_couples_imputed_wide.dta", replace // this seems to mess up some observations, so I might have done something wrong in the reshape. will revisit this, but I think getting via long format is fine for now. I wonder if this is because of the category things?
 
 unique unique_id partner_id
 
