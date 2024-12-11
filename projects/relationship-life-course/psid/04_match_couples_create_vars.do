@@ -93,6 +93,7 @@ mi passive: replace partnered_man=partnered_imp_sp if SEX==2
 *number of children
 tab num_children_imp num_children_imp_sp if partnered_imp==1 & partnered_imp_sp==1 // hmm - so they don't always have the same number of children...
 tab num_children_imp num_children_imp_sp if partnered_imp==1 & partnered_imp_sp==1 & imputed==0
+tab NUM_CHILDREN_ num_children_imp
 
 mi passive: gen num_children_woman=num_children_imp if SEX==2
 mi passive: replace num_children_woman=num_children_imp_sp if SEX==1

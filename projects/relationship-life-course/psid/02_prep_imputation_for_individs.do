@@ -1103,11 +1103,6 @@ forvalues y=1998(2)2020{
 
 browse in_sample_1986 in_sample_1987 in_sample_1988 in_sample_2001 in_sample_2003 yrs_non_sample1986 yrs_non_sample1987 yrs_non_sample1988 yrs_non_sample2001 yrs_non_sample2003
 
-// add on HH births here so I can add to the reshape later
-merge m:1 main_fam_id using "$created_data_psid\hh_birth_history_file.dta", keepusing(hh_births_1985 hh_births_1986 hh_births_1987 hh_births_1988 hh_births_1989 hh_births_199* hh_births_20*)
-drop if _merge==2
-drop _merge
-
 // before reshaping, get last race observed to use for later
 egen last_race_focal=rowlast(raceth_focal*) // tie break with last reported
 browse last_race_focal raceth_focal*
@@ -1121,7 +1116,7 @@ label values first_educ_focal educ
 ********************************************************************************
 * BACK to long so can recenter on duration and fill in some missings
 ********************************************************************************
-reshape long in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal max_educ_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved moved_sp partnered partnered_sp yrs_non_sample any_births_focal any_births_hh hh_births_ under18 edulevel_match edulevelmax_match new_in_hh ///
+reshape long in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal max_educ_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved moved_sp partnered partnered_sp yrs_non_sample any_births_focal any_births_hh under18 edulevel_match edulevelmax_match new_in_hh ///
 , i(unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(survey_yr)
 
 browse unique_id survey_yr rel_start_all rel_end_all min_dur max_dur relationship_ in_sample_ weekly_hrs_t_focal weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
@@ -1229,6 +1224,15 @@ tab partnered_imp, m
 tab partnered partnered_imp, m
 
 // try to fill in number of children that are missing - same thing, this will be easier for OFF years v. many missing years
+sort unique_id survey_yr
+browse unique_id FAMILY_INTERVIEW_NUM_  in_sample_
+
+// first add on the HH births 
+merge m:1 FAMILY_INTERVIEW_NUM_ survey_yr using "$created_data_psid\hh_birth_history_file.dta", keepusing(hh* indiv*)
+drop if _merge==2
+drop _merge
+
+// add on full history??
 merge m:1 unique_id using "$created_data_psid\birth_history_wide.dta" // now get person specific births
 drop if _merge==2
 drop _merge 

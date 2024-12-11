@@ -156,6 +156,61 @@ forvalues n=1/20{
    
 save "$created_data_psid\birth_history_wide.dta", replace
 
+********************************************************************************
+**# Attempt to get births by individual HH / survey year
+********************************************************************************
+use "$temp_psid\PSID_full_long.dta", clear
+
+keep main_fam_id unique_id survey_yr FAMILY_INTERVIEW_NUM_ SEQ_NUMBER_ AGE_INDV_ NUM_IN_HH_ NUM_CHILDREN_ NUM_NONFU_IN_HH_ AGE_YOUNG_CHILD_ AGE_OLDEST_CHILD_
+
+merge m:1 unique_id using "$created_data_psid\birth_history_wide.dta", keepusing(cah_child_birth_yr*)
+tab AGE_INDV _merge, m row
+tab survey_yr _merge, m row
+
+gen child_history_match=0
+replace child_history_match=1 if _merge==3
+drop _merge
+
+// browse unique_id cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4
+
+gen indiv_births_pre1968 = 0
+forvalues c=1/20{
+	replace indiv_births_pre1968 = indiv_births_pre1968 + 1 if inrange(cah_child_birth_yr`c',1900,1967)
+}
+
+gen individ_birth_in_yr=0
+forvalues c=1/20{
+	replace individ_birth_in_yr = individ_birth_in_yr + 1 if cah_child_birth_yr`c'==survey_yr
+}
+
+browse unique_id survey_yr indiv_births_pre1968 individ_birth_in_yr cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 cah_child_birth_yr*
+
+forvalues y=1968/2021{
+	gen individ_birth_`y' = 0
+	forvalues c=1/20{
+		replace individ_birth_`y' = individ_birth_`y' + 1 if cah_child_birth_yr`c'==`y'
+	}
+}	
+
+browse unique_id survey_yr cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 individ_birth_* 
+
+bysort survey_yr FAMILY_INTERVIEW_NUM_: egen hh_births_in_yr = total(individ_birth_in_yr)
+bysort survey_yr FAMILY_INTERVIEW_NUM_: egen hh_births_pre1968 = total(indiv_births_pre1968)
+
+forvalues y=1968/2021{
+	bysort survey_yr FAMILY_INTERVIEW_NUM_: egen hh_births_`y' = total(individ_birth_`y')
+}
+
+inspect FAMILY_INTERVIEW_NUM_ if SEQ_NUMBER!=0
+
+browse  unique_id FAMILY_INTERVIEW_NUM_ survey_yr hh_births_in_yr individ_birth_in_yr hh_births_pre1968 indiv_births_pre1968 cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 cah_child_birth_yr*
+browse  unique_id FAMILY_INTERVIEW_NUM_ survey_yr cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 hh_births_* individ_birth_*
+
+save "$created_data_psid\hh_birth_history_file.dta", replace
+
+********************************************************************************
+**# This is births by 1968 fam id but not helpful for splitoffs and such
+********************************************************************************
 // can I reshape wide AGAIN so it's by HH and use later to get incremental number of children??
 use "$created_data_psid\birth_history_wide.dta", clear
 
@@ -191,4 +246,4 @@ forvalues y=1968/2021{
 
 browse main_fam_id hh_births_pre1968 hh_births_2001 cah*
 
-save "$created_data_psid\hh_birth_history_file.dta", replace
+save "$created_data_psid\1968hh_birth_history_file.dta", replace
