@@ -121,11 +121,46 @@ browse unique_id partner_id survey_yr rel_start_yr_couple rel_end_yr_couple mari
 bysort unique_id partner_id: egen rel_start_all = min(rel_start_yr_couple)
 gen dur=survey_yr - rel_start_all
 bysort unique_id partner_id: egen rel_end_all = max(rel_end_yr_couple)
-browse unique_id partner_id survey_yr marital_status_updated rel_start_all rel_end_all rel_start_yr_couple rel_end_yr_couple dur relationship_duration
 
 tab dur, m
 tab relationship_duration, m
 unique unique_id partner_id, by(marital_status_updated)
+
+// trying to fill in missing end dates and status, at least for the relevant sample here
+label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
+label values rel_status mh_status* rel_status
+
+gen rel_end_all_orig = rel_end_all // let's retain the original with missing, and I'll work on filling in a new version below based on attrition info
+gen rel_status_orig = rel_status
+
+inspect rel_end_all if rel_start_all >=1990
+inspect rel_status if rel_start_all >=1990
+tab rel_end_all rel_status if rel_start_all >=1990, m col
+tab rel_end_all marital_status_updated if rel_start_all >=1990, m col // is this largely cohab?
+tab rel_status marital_status_updated if rel_start_all >=1990, m col
+
+	*if observed as partnered in 2021, will put end date as 9999 and consider intact
+	gen observed_2021 = .
+	replace observed_2021 = 1 if survey_yr==2021
+	bysort unique_id partner_id (observed_2021): replace observed_2021 = observed_2021[1]
+	// browse unique_id partner_id survey_yr observed_2021 rel_start_all rel_end_all rel_status
+	replace rel_end_all=9999 if observed_2021 == 1 & rel_end_all==.
+	replace rel_status=1 if observed_2021 == 1 & rel_status==.
+	* their years of nonresponse are not accurate if died, so will update with mine for that
+	replace rel_end_all=last_survey_yr if permanent_attrit == 2 & rel_end_all==.
+	replace rel_status=3 if permanent_attrit == 2 & rel_status==.
+	replace rel_end_all=last_survey_yr if permanent_attrit == 1 & rel_end_all==.
+	replace rel_status=6 if permanent_attrit == 1 & rel_status==.
+	* so, want to update rel_end_all with attrition year if they attrited and we don't know what happened (even though pernament attrit not labeled)
+	replace rel_end_all=last_survey_yr if rel_end_all==.
+	replace rel_status=6 if rel_status==. // these people left over are definitely attrition ftm
+
+sort unique_id partner_id survey_yr
+browse unique_id partner_id survey_yr dur marital_status_updated rel_start_all rel_end_all rel_status rel_start_yr_couple rel_end_yr_couple dur relationship_duration mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST last_survey_yr permanent_attrit ANY_ATTRITION MOVED_ MOVED_YEAR_ SEQ_NUMBER_ if rel_start_all >=1990 & rel_end_all==.
+
+tab rel_status marital_status_updated if rel_start_all >=1990, m col  // I think some people who are married but intact might actually be attrition? For cohab, that was obvious, because I didn't have the end date to use from history. leave for now, but perhaps update in later stage
+tab last_survey_yr if rel_end_all==9999, m // so, about half are in intact AND in the last survey yr
+browse unique_id partner_id survey_yr dur marital_status_updated rel_start_all rel_end_all rel_status last_survey_yr RELATION_ if rel_start_all >=1990 & rel_end_all==9999
 
 // want to create at time-constant indicator of relationship type
 bysort unique_id partner_id (marr_trans): egen ever_transition = max(marr_trans)
@@ -142,6 +177,7 @@ bysort couple_id (_Unique): replace _Unique = _Unique[1]
 tab _Unique, m
 replace rel_type_constant=3 if _Unique==2
 
+// and an indicator of year transitioned from cohab to marriage for later
 browse unique_id partner_id survey_yr rel_start_all marital_status_updated marr_trans
 gen transition_yr = survey_yr if marr_trans == 1 // this is the year they are married; year prior is partnered
 bysort unique_id partner_id (transition_yr): replace transition_yr = transition_yr[1]
@@ -168,10 +204,6 @@ browse unique_id partner_id survey_yr rel_start_all marital_status_updated marr_
 tab survey_yr marital_status_updated
 tab rel_start_yr marital_status_updated, m
 
-unique unique_id
-unique unique_id if rel_start_yr_couple >= 1990 // nearly half of sample goes away. okay let's decide later...
-unique unique_id if rel_start_all >= 1990 // nearly half of sample goes away. okay let's decide later...
-unique unique_id if rel_start_yr_couple >= 1980 // compromise with 1980? ugh idk
 * we want to keep people who started after 1990, who we observed their start, and who started before 2011, so we have 10 years of observations
 * first, min and max duration
 bysort unique_id partner_id: egen min_dur = min(dur)
@@ -195,15 +227,29 @@ sort unique_id partner_id survey_yr
 browse unique_id partner_id survey_yr rel_type_constant rel_start_all rel_end_all last_yr_observed rel_status ended relationship_duration min_dur max_dur // these rel_end rel_status only cover marriage not cohab bc from marital history
 tab min_dur rel_type_constant, col // this is the problem. for cohab, I need to make a choice. if not married in 2001, and appear married 2003, and I don't have other info, which date do I use? i was using the earlier date because that seems to align with HH info? but I feel like it's maybe the off year? which I don't always know?
 
+// make sure couple info is unique one last time
+unique unique_id partner_id
+unique unique_id partner_id rel_start_all rel_end_all // okay, so rel_status is the problem - duh KIM - for people hwo transitioned from cohab to marriage
+unique unique_id partner_id rel_start_all rel_end_all rel_status 
+
+quietly unique rel_start_all rel_end_all rel_status, by(couple_id) gen(info_count)
+bysort couple_id (info_count): replace info_count = info_count[1]
+
+tab rel_type_constant info_count
+
+bysort unique_id partner_id: egen max_rel_status = max (rel_status_orig)
+replace rel_status = max_rel_status if info_count> 1
+
+sort unique_id partner_id survey
+browse unique_id partner_id survey_yr marital_status_updated rel_start_all rel_end_all rel_status rel_status_orig max_rel_status rel_type_constant min_dur max_dur last_yr_observed ended transition_yr_est info_count if info_count > 1
+
+
 ********************************************************************************
 **# get NON-deduped list of couples to match their info on later
 ********************************************************************************
-
-unique unique_id partner_id
-
 preserve
 
-collapse (first) rel_start_all rel_end_all rel_type_constant min_dur max_dur last_yr_observed ended transition_yr_est, by(unique_id partner_id)
+collapse (first) rel_start_all rel_end_all rel_status rel_type_constant min_dur max_dur last_yr_observed ended transition_yr_est, by(unique_id partner_id)
 
 save "$created_data\couple_list_individ.dta", replace
 
@@ -229,7 +275,7 @@ unique unique_id partner_id
 
 preserve
 
-collapse (first) rel_start_all rel_end_all rel_type_constant min_dur max_dur last_yr_observed ended, by(unique_id partner_id)
+collapse (first) rel_start_all rel_end_all rel_status rel_type_constant min_dur max_dur last_yr_observed ended transition_yr_est, by(unique_id partner_id)
 
 save "$created_data\couple_list.dta", replace
 

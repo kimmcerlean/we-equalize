@@ -39,7 +39,8 @@ gen year = survey_yr if SEQ_NUMBER_!=0
 bysort unique_id (year): egen first_survey_yr = min(year)
 bysort unique_id (year): egen last_survey_yr = max(year)
 
-browse unique_id main_per_id survey_yr SEQ_NUMBER_ SAMPLE first_survey_yr last_survey_yr
+sort unique_id survey_yr
+browse unique_id main_per_id survey_yr SEQ_NUMBER_ SAMPLE first_survey_yr last_survey_yr YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST PERMANENT_ATTRITION ANY_ATTRITION
 
 keep if SEQ_NUMBER_!=0 | SAMPLE==1 // dropping non-sample years
 drop if SEQ_NUMBER_==0 & survey_yr!=1968

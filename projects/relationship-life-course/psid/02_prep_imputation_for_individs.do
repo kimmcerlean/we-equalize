@@ -1333,7 +1333,7 @@ bysort couple_id (SEX): replace SEX=SEX[1] if SEX==.
 bysort couple_id (unique_id): replace unique_id=unique_id[1] if unique_id==.
 bysort couple_id (partner_id): replace partner_id=partner_id[1] if partner_id==.
 
-foreach var in rel_start_all min_dur max_dur rel_end_all last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR sample_type last_race_focal rel_type_constant  main_fam_id SAMPLE has_psid_gene first_survey_yr_focal  last_survey_yr_focal first_educ_focal max_educ_focal transition_yr_est{
+foreach var in rel_start_all min_dur max_dur rel_end_all last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR sample_type last_race_focal rel_type_constant  main_fam_id SAMPLE has_psid_gene first_survey_yr_focal  last_survey_yr_focal first_educ_focal max_educ_focal transition_yr_est rel_status{
 	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
 }
 
@@ -1456,6 +1456,11 @@ gen fixed_education=educ_focal_imp2 // duration 0
 save "$created_data\individs_by_duration_wide.dta", replace
 // use "$created_data\individs_by_duration_wide.dta", clear
 
+// make sure all of these variables exist in final file: rel_start_all rel_end_all rel_status rel_type_constant min_dur max_dur last_yr_observed ended transition_yr
+
+********************************************************************************
+* Exploration
+********************************************************************************
 // first, let's just get a sense of missings
 unique unique_id
 unique unique_id partner_id
@@ -1521,9 +1526,52 @@ putexcel A1 = matrix(r(table))
 // sdchronogram hours_type_t1_focal0-hours_type_t1_focal16 // this is not working; I am not sure why
 
 ********************************************************************************
+**# Before I impute, want to match and explore child variables
+********************************************************************************
+use "$created_data\individs_by_duration_long.dta", clear
+
+keep unique_id partner_id survey_yr duration rel_start_all min_dur max_dur NUM_CHILDREN_ num_children_imp_focal num_children_imp_hh had_birth increment_birth cah_child_birth_yr*
+
+save "$temp\kids_long.dta", replace
+
+keep unique_id partner_id survey_yr NUM_CHILDREN_ num_children_imp_focal num_children_imp_hh had_birth increment_birth cah_child_birth_yr*
+foreach var in NUM_CHILDREN_ num_children_imp_focal num_children_imp_hh had_birth increment_birth cah_child_birth_yr*{
+	rename `var' `var'_sp
+}
+
+rename partner_id x
+rename unique_id partner_id
+rename x unique_id
+
+save "$temp\kids_long_tomatch.dta", replace
+
+use "$temp\kids_long.dta", clear
+merge 1:1 unique_id partner_id survey_yr using "$temp\kids_long_tomatch.dta" // okay, so 485 didn't match
+drop if _merge ==2
+drop _merge
+
+save "$temp\partner_kids_long.dta", replace
+
+tab NUM_CHILDREN_ NUM_CHILDREN__sp, m // these already don't match
+browse unique_id partner_id survey_yr duration rel_start_all min_dur max_dur
+
+tab NUM_CHILDREN_ NUM_CHILDREN__sp if duration>=min_dur & duration<=max_dur, m // okay, this is much closer
+
+// tab num_children_imp_focal num_children_imp_focal_sp, m
+tab num_children_imp_focal num_children_imp_focal_sp if duration>=min_dur & duration<=max_dur, m // okay, this is much closer
+
+// tab num_children_imp_hh num_children_imp_hh_sp, m 
+tab num_children_imp_hh num_children_imp_hh_sp if duration>=min_dur & duration<=max_dur, m // okay, this is much closer - okay they are basically the same amount of accuracy. here, there are just more kids, which makes sense because it doesn't restrict to JUST the focal people, which is what the variable essentally is
+
+tab had_birth had_birth_sp if duration>=min_dur & duration<=max_dur, m 
+tab increment_birth increment_birth_sp if duration>=min_dur & duration<=max_dur, m // so these match a bit more than births above
+
+browse unique_id partner_id survey_yr duration NUM_CHILDREN_ NUM_CHILDREN__sp num_children_imp_focal num_children_imp_focal_sp num_children_imp_hh num_children_imp_hh_sp had_birth had_birth_sp increment_birth increment_birth_sp cah_child_birth_yr1 cah_child_birth_yr1_sp
+
+********************************************************************************
 **# MICT Exploration
 ********************************************************************************
-
+/*
 ** Looking at steps in Halpin 2016
 mict_prep weekly_hrs_t1_focal, id(couple_id)
 
@@ -1583,3 +1631,4 @@ end
 mict_impute, maxgap(6) maxitgap(3) 
 
 browse couple_id weekly_hrs_t1_focal* _mct_iter
+*/
