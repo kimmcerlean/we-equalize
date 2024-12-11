@@ -1113,10 +1113,16 @@ egen first_educ_focal=rowfirst(educ_focal*)
 browse first_educ_focal educ_focal*
 label values first_educ_focal educ
 
+// and add in children info and see if I can get this to work
+merge m:1 unique_id using "$created_data_psid\hh_birth_history_file_byUNIQUE.dta", keepusing(hh_births_1985 hh_births_1986 hh_births_1987 hh_births_1988 hh_births_1989 hh_births_199* hh_births_2* individ_birth_1985 individ_birth_1986 individ_birth_1987 individ_birth_1989 individ_birth_1989 individ_birth_199* individ_birth_2*)
+
+drop if _merge==2
+drop _merge
+
 ********************************************************************************
 * BACK to long so can recenter on duration and fill in some missings
 ********************************************************************************
-reshape long in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal max_educ_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved moved_sp partnered partnered_sp yrs_non_sample any_births_focal any_births_hh under18 edulevel_match edulevelmax_match new_in_hh ///
+reshape long in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal max_educ_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved moved_sp partnered partnered_sp yrs_non_sample any_births_focal any_births_hh under18 edulevel_match edulevelmax_match new_in_hh individ_birth_ hh_births_ ///
 , i(unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(survey_yr)
 
 browse unique_id survey_yr rel_start_all rel_end_all min_dur max_dur relationship_ in_sample_ weekly_hrs_t_focal weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
@@ -1227,12 +1233,7 @@ tab partnered partnered_imp, m
 sort unique_id survey_yr
 browse unique_id FAMILY_INTERVIEW_NUM_  in_sample_
 
-// first add on the HH births 
-merge m:1 FAMILY_INTERVIEW_NUM_ survey_yr using "$created_data_psid\hh_birth_history_file.dta", keepusing(hh* indiv*)
-drop if _merge==2
-drop _merge
-
-// add on full history??
+// add on full history birth history for respondent
 merge m:1 unique_id using "$created_data_psid\birth_history_wide.dta" // now get person specific births
 drop if _merge==2
 drop _merge 
@@ -1253,17 +1254,42 @@ forvalues y=1968/2021{
 	}	
 }
 
-browse unique_id survey_yr rolling_births had_birth cah_child_birth_yr*
-gen num_children_imp = NUM_CHILDREN_
-replace num_children_imp = num_children_imp[_n-1] if had_birth==0 & num_children_imp==. & unique_id == unique_id[_n-1] & survey_yr == survey_yr[_n-1]+1
-replace num_children_imp = num_children_imp[_n-1] + 1 if had_birth==1 & num_children_imp==. & unique_id == unique_id[_n-1] & survey_yr == survey_yr[_n-1]+1
+tab hh_births_
+gen hh_births_est = hh_births_
+replace hh_births_est = hh_births_ / 2 if inlist(hh_births_,2,4,6,8)
+tab hh_births_est, m
+tab had_birth individ_birth_, m
 
-browse unique_id survey_yr in_sample_ num_children_imp NUM_CHILDREN_ NUM_IN_HH_ had_birth rolling_births hh_births_ FIRST_BIRTH_YR any_births_focal any_births_hh cah_child_birth_yr* COMPOSITION_CHANGE
+gen increment_birth = .
+replace increment_birth = 0 if had_birth==0 & hh_births_est==0
+replace increment_birth = 1 if had_birth==1
+replace increment_birth = 1 if hh_births_est>=1 & hh_births_est!=. & increment_birth==.
+tab increment_birth, m
+
+browse unique_id partner_id survey_yr NUM_CHILDREN_ AGE_YOUNG_CHILD_ rolling_births increment_birth had_birth individ_birth_ hh_births_est cah_child_birth_yr*
+
+gen num_children_imp_focal = NUM_CHILDREN_
+replace num_children_imp_focal = num_children_imp_focal[_n-1] if had_birth==0 & num_children_imp_focal==. & unique_id == unique_id[_n-1] & survey_yr == survey_yr[_n-1]+1
+replace num_children_imp_focal = num_children_imp_focal[_n-1] + 1 if had_birth==1 & num_children_imp_focal==. & unique_id == unique_id[_n-1] & survey_yr == survey_yr[_n-1]+1
+
+gen num_children_imp_hh = NUM_CHILDREN_
+replace num_children_imp_hh = num_children_imp_hh[_n-1] if increment_birth==0 & num_children_imp_hh==. & unique_id == unique_id[_n-1] & survey_yr == survey_yr[_n-1]+1
+replace num_children_imp_hh = num_children_imp_hh[_n-1] + 1 if increment_birth==1 & num_children_imp_hh==. & unique_id == unique_id[_n-1] & survey_yr == survey_yr[_n-1]+1
+
+tab NUM_CHILDREN_
+tab num_children_imp_focal
+tab num_children_imp_hh
+
+tab num_children_imp_hh num_children_imp_focal, m // good alignment, just sometimes the HH has more, which makes sense
+replace num_children_imp_hh = num_children_imp_focal if num_children_imp_hh==.
+
+browse unique_id survey_yr in_sample_ num_children_imp_focal num_children_imp_hh NUM_CHILDREN_ NUM_IN_HH_ increment_birth had_birth rolling_births hh_births_est FIRST_BIRTH_YR any_births_focal any_births_hh cah_child_birth_yr* COMPOSITION_CHANGE
 
 inspect NUM_CHILDREN_
-inspect num_children_imp
+inspect num_children_imp_focal
+inspect num_children_imp_hh
 
-tab num_children_imp in_sample_,m 
+tab num_children_imp_hh in_sample_,m 
 
 // do I want to try to update education here or later?
 bysort unique_id (max_educ_focal): replace max_educ_focal=max_educ_focal[1]
@@ -1307,7 +1333,7 @@ bysort couple_id (SEX): replace SEX=SEX[1] if SEX==.
 bysort couple_id (unique_id): replace unique_id=unique_id[1] if unique_id==.
 bysort couple_id (partner_id): replace partner_id=partner_id[1] if partner_id==.
 
-foreach var in rel_start_all min_dur max_dur rel_end_all last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR sample_type last_race_focal rel_type_constant  main_fam_id SAMPLE has_psid_gene first_survey_yr_focal  last_survey_yr_focal first_educ_focal max_educ_focal{
+foreach var in rel_start_all min_dur max_dur rel_end_all last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR sample_type last_race_focal rel_type_constant  main_fam_id SAMPLE has_psid_gene first_survey_yr_focal  last_survey_yr_focal first_educ_focal max_educ_focal transition_yr_est{
 	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
 }
 
@@ -1377,15 +1403,16 @@ replace partnered=0 if MARITAL_PAIRS_==0
 replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
 */
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children num_children_imp FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered_imp TOTAL_INCOME_T_FAMILY sample_type, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children num_children_imp_focal num_children_imp_hh FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered_imp TOTAL_INCOME_T_FAMILY sample_type, stats(mean sd p50) columns(statistics)
 
 ********************************************************************************
 * reshaping wide for imputation purposes
 ********************************************************************************
+rename transition_yr_est transition_yr
 
-drop survey_yr duration _fillin MARITAL_PAIRS_ *_sp *_sp* cah_* mh_* rel*_start rel*_end marr*_start marr*_end coh*_start coh*_end hh*_start hh*_end MOVED_YEAR_ MOVED_YEAR_sp_ moved moved_sp any_births_focal any_births_hh *_est SPLITOFF* COMPOSITION_CHANGE_ NUM_IN_HH_ DATA_RECORD_TYPE_  SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION permanent_attrit lt_attrit YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST yrs_non_sample change_yr in_marital_history int_number per_num INTERVIEW_NUM_1968 // hh_births_pre1968
+drop survey_yr duration _fillin MARITAL_PAIRS_ *_sp *_sp* cah_* mh_* rel*_start rel*_end marr*_start marr*_end coh*_start coh*_end hh*_start hh*_end MOVED_YEAR_ MOVED_YEAR_sp_ moved moved_sp any_births_focal any_births_hh *_est SPLITOFF* COMPOSITION_CHANGE_ NUM_IN_HH_ DATA_RECORD_TYPE_  SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION permanent_attrit lt_attrit YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST yrs_non_sample change_yr in_marital_history int_number per_num INTERVIEW_NUM_1968 individ_birth_ // hh_births_pre1968
 
-reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal max_educ_focal educ_focal educ_focal_imp college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp num_children_imp rolling_births* had_birth hh_births* under18 edulevel_match edulevelmax_match new_in_hh ///
+reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal max_educ_focal educ_focal educ_focal_imp college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp num_children_imp_focal num_children_imp_hh rolling_births* had_birth hh_births* increment_birth under18 edulevel_match edulevelmax_match new_in_hh ///
 , i(couple_id unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(duration_rec)
 
 forvalues d=0/14{

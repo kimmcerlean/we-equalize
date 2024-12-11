@@ -161,7 +161,16 @@ save "$created_data_psid\birth_history_wide.dta", replace
 ********************************************************************************
 use "$temp_psid\PSID_full_long.dta", clear
 
-keep main_fam_id unique_id survey_yr FAMILY_INTERVIEW_NUM_ SEQ_NUMBER_ AGE_INDV_ NUM_IN_HH_ NUM_CHILDREN_ NUM_NONFU_IN_HH_ AGE_YOUNG_CHILD_ AGE_OLDEST_CHILD_
+gen relationship=.
+replace relationship=0 if RELATION_==0
+replace relationship=1 if inlist(RELATION_,1,10)
+replace relationship=2 if inlist(RELATION_,2,20,22,88)
+replace relationship=3 if inrange(RELATION_,23,87) | inrange(RELATION_,90,98) | inrange(RELATION_,3,9)
+
+label define relationship 0 "not in sample" 1 "head" 2 "partner" 3 "other"
+label values relationship relationship
+
+keep main_fam_id unique_id survey_yr relationship FAMILY_INTERVIEW_NUM_ SEQ_NUMBER_ AGE_INDV_ NUM_IN_HH_ NUM_CHILDREN_ NUM_NONFU_IN_HH_ AGE_YOUNG_CHILD_ AGE_OLDEST_CHILD_
 
 merge m:1 unique_id using "$created_data_psid\birth_history_wide.dta", keepusing(cah_child_birth_yr*)
 tab AGE_INDV _merge, m row
@@ -207,6 +216,21 @@ browse  unique_id FAMILY_INTERVIEW_NUM_ survey_yr hh_births_in_yr individ_birth_
 browse  unique_id FAMILY_INTERVIEW_NUM_ survey_yr cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 hh_births_* individ_birth_*
 
 save "$created_data_psid\hh_birth_history_file.dta", replace
+
+sort unique_id survey_yr
+drop if FAMILY_INTERVIEW_NUM_==.
+drop if survey_yr < 1985 // so removes those in 1968 family of origin, i think *this* is causing problems
+
+forvalues y=1968/2021{
+	drop hh_births_`y'
+	bysort survey_yr FAMILY_INTERVIEW_NUM_: egen hh_births_`y' = total(individ_birth_`y')
+}
+
+browse  unique_id main_fam_id FAMILY_INTERVIEW_NUM_ survey_yr relationship hh_births_199* individ_birth_199* cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 
+
+collapse (max) hh_births_1* hh_births_2* individ_birth_1* individ_birth_2*, by(unique_id)
+
+save "$created_data_psid\hh_birth_history_file_byUNIQUE.dta", replace
 
 ********************************************************************************
 **# This is births by 1968 fam id but not helpful for splitoffs and such
