@@ -23,7 +23,7 @@ use "$created_data/psid_individs_imputed_long_bysex", clear
 
 // just keep necessary variables
 
-local partnervars "weekly_hrs_t_focal housework_focal earnings_t_focal age_young_child num_children_imp partnered_imp family_income_t relationship in_sample hh_status FIRST_BIRTH_YR age_focal birth_yr_all SEX raceth_fixed_focal sample_type SAMPLE has_psid_gene fixed_education max_educ_focal childcare_focal adultcare_focal new_in_hh rolling_births had_birth first_survey_yr_focal last_survey_yr_focal imputed"
+local partnervars "weekly_hrs_t_focal housework_focal earnings_t_focal age_young_child num_children_imp_hh partnered_imp family_income_t relationship in_sample hh_status FIRST_BIRTH_YR age_focal birth_yr_all SEX raceth_fixed_focal sample_type SAMPLE has_psid_gene fixed_education max_educ_focal childcare_focal adultcare_focal new_in_hh rolling_births had_birth first_survey_yr_focal last_survey_yr_focal imputed"
 
 keep unique_id partner_id rel_start_all rel_end_all duration_rec _mi_miss _mi_m _mi_id  `partnervars'
 mi rename partner_id x
@@ -91,15 +91,15 @@ mi passive: gen partnered_man=partnered_imp if SEX==1
 mi passive: replace partnered_man=partnered_imp_sp if SEX==2
 
 *number of children
-tab num_children_imp num_children_imp_sp if partnered_imp==1 & partnered_imp_sp==1 // hmm - so they don't always have the same number of children...
-tab num_children_imp num_children_imp_sp if partnered_imp==1 & partnered_imp_sp==1 & imputed==0
-tab NUM_CHILDREN_ num_children_imp
+tab num_children_imp_hh num_children_imp_hh_sp if partnered_imp==1 & partnered_imp_sp==1 // hmm - so they don't always have the same number of children...
+tab num_children_imp_hh num_children_imp_hh_sp if partnered_imp==1 & partnered_imp_sp==1 & imputed==0 // much closer for non-imputed, so some of this is the imputation
+tab NUM_CHILDREN_ num_children_imp_hh, m
 
-mi passive: gen num_children_woman=num_children_imp if SEX==2
-mi passive: replace num_children_woman=num_children_imp_sp if SEX==1
+mi passive: gen num_children_woman=num_children_imp_hh if SEX==2
+mi passive: replace num_children_woman=num_children_imp_hh_sp if SEX==1
 
-mi passive: gen num_children_man=num_children_imp if SEX==1
-mi passive: replace num_children_man=num_children_imp_sp if SEX==2
+mi passive: gen num_children_man=num_children_imp_hh if SEX==1
+mi passive: replace num_children_man=num_children_imp_hh_sp if SEX==2
 
 // Stata assert command to check new variables created from imputed  
 foreach var in weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man{  
@@ -248,11 +248,26 @@ twoway (histogram housework_woman if couple_hw==3 & housework_woman < 50, width(
 ** investigating she does all HW
 histogram housework_woman if couple_hw==1 & housework_woman < 50
 sum housework_woman if couple_hw==1, det
+sum housework_woman, det
 
+// alt cutpoints: within she does all
+	mi passive: egen hw_hilow_woman_gp1 = cut(housework_woman) if housework_woman!=0 & couple_hw==1, group(2)
+	tab hw_hilow_woman_gp1 if couple_hw==1
+	tabstat housework_woman, by(hw_hilow_woman_gp1)
+	tab hw_hilow_woman if couple_hw==1
+	tabstat housework_woman, by(hw_hilow_woman)
+		
 ** investigating she does most HW
 histogram housework_woman if couple_hw==2 & housework_woman < 50
 sum housework_woman if couple_hw==2, det
 
+// alt cutpoints: within she does most
+	mi passive: egen hw_hilow_woman_gp2 = cut(housework_woman) if housework_woman!=0 & couple_hw==2, group(3)
+	tab hw_hilow_woman_gp2 if couple_hw==2
+	tabstat housework_woman, by(hw_hilow_woman_gp2)
+	tab hw_terc_woman if couple_hw==2
+	tabstat housework_woman, by(hw_terc_woman)
+	
 ** investigating she does most OR all HW
 histogram housework_woman if inlist(couple_hw,1,2) & housework_woman < 50
 sum housework_woman if inlist(couple_hw,1,2), det
@@ -263,7 +278,13 @@ twoway (histogram housework_woman if couple_hw==1 & housework_woman < 50, width(
 histogram housework_man if couple_hw==4 & housework_man < 50
 sum housework_man if couple_hw==4, det
 
-* adding consideration of how many hours she does
+	mi passive: egen hw_hilow_man_gp4 = cut(housework_man) if housework_man!=0 & couple_hw==4, group(2)
+	tab hw_hilow_man_gp4  if couple_hw==4
+	tabstat housework_man, by(hw_hilow_man_gp4)
+	tab hw_hilow_man  if couple_hw==4
+	tabstat housework_man, by(hw_hilow_man)
+
+* adding consideration of how many hours she does - this is based on TOTAL distribution of HW, not within each bucket
 mi passive: gen couple_hw_hrs=.
 mi passive: replace couple_hw_hrs = 1 if couple_hw==1 & hw_hilow_woman==1
 mi passive: replace couple_hw_hrs = 2 if couple_hw==1 & hw_hilow_woman==0
@@ -279,12 +300,29 @@ mi passive: replace couple_hw_hrs = 7 if housework_woman==0 & housework_man==0 /
 label define couple_hw_hrs 1 "Woman All: High" 2 "Woman All: Low" 3 "Woman Most: High" 4 "Woman Most: Med" 5 "Woman Most: Low" 6 "Equal: High" 7 "Equal: Low" 8 "Man Most: High" 9 "Man Most: Low" // rationale for splitting women most into three and the others into two is that it is the largest group (about 52%)
 label values couple_hw_hrs couple_hw_hrs
 
-mi estimate: proportion couple_hw_hrs couple_hw
+// mi estimate: proportion couple_hw_hrs couple_hw
 
-	capture drop couple_hw_hrs_end
-	mi update
-	mi passive: gen couple_hw_hrs_end = couple_hw_hrs
-	mi passive: replace couple_hw_hrs_end = 99 if rel_type==0
+* Now adding consideration of how many hours - based on distribution of hours WITHIN each bucket of HW
+mi passive: gen couple_hw_hrs_alt=.
+mi passive: replace couple_hw_hrs_alt = 1 if couple_hw==1 & hw_hilow_woman_gp1==1
+mi passive: replace couple_hw_hrs_alt = 2 if couple_hw==1 & hw_hilow_woman_gp1==0
+mi passive: replace couple_hw_hrs_alt = 3 if couple_hw==2 & hw_hilow_woman_gp2==2
+mi passive: replace couple_hw_hrs_alt = 4 if couple_hw==2 & hw_hilow_woman_gp2==1
+mi passive: replace couple_hw_hrs_alt = 5 if couple_hw==2 & hw_hilow_woman_gp2==0
+mi passive: replace couple_hw_hrs_alt = 6 if couple_hw==3 & couple_hw_total > =20 & couple_hw_total < 500
+mi passive: replace couple_hw_hrs_alt = 7 if couple_hw==3 & couple_hw_total < 20
+mi passive: replace couple_hw_hrs_alt = 8 if couple_hw==4 & hw_hilow_man_gp4==1
+mi passive: replace couple_hw_hrs_alt = 9 if couple_hw==4 & hw_hilow_man_gp4==0
+mi passive: replace couple_hw_hrs_alt = 7 if housework_woman==0 & housework_man==0 // neither is so small, just put in equal low
+
+label values couple_hw_hrs_alt couple_hw_hrs
+
+mi estimate: proportion couple_hw couple_hw_hrs couple_hw_hrs_alt 
+
+//	capture drop couple_hw_hrs_end
+//	mi update
+//	mi passive: gen couple_hw_hrs_end = couple_hw_hrs
+//	mi passive: replace couple_hw_hrs_end = 99 if rel_type==0
 
 /*
 * adding consideration of how many hours she does - old, less detailed version
@@ -304,42 +342,54 @@ mi estimate: proportion couple_hw_hrs
 
 // family channel
 * relationship type
-mi merge m:1 unique_id partner_id rel_start_all rel_end_all rel_type_constant using "$created_data\couple_list_individ.dta", keep(match) // get the info about transition yr to fill in whether cohab or married
-mi update
-
 gen duration = duration_rec - 2
 browse duration duration_rec
 
 mi passive: gen dur_transitioned=.
-mi passive: replace dur_transitioned = transition_yr_est - rel_start_all
+mi passive: replace dur_transitioned = transition_yr - rel_start_all
 
-browse unique_id partner_id duration min_dur max_dur rel_start_all transition_yr_est dur_transitioned
+browse unique_id partner_id duration min_dur max_dur rel_start_all transition_yr dur_transitioned
+
+label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
+label values rel_status rel_status
 
 mi passive: gen rel_type=.
 mi passive: replace rel_type = 1 if rel_type_constant== 1
 mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration >= dur_transitioned
 mi passive: replace rel_type = 2 if rel_type_constant== 2
 mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration < dur_transitioned
-mi passive: replace rel_type = 0 if duration > max_dur
+mi passive: replace rel_type = 3 if duration > max_dur & rel_status==1 // intact but past end of relationship
+mi passive: replace rel_type = 3 if duration > max_dur & rel_status==6 & in_sample!=1 & in_sample_sp!=1 // attrited and both partners not in sample
+mi passive: replace rel_type = 4 if duration > max_dur & inlist(rel_status,3,4,5) // observed end
+mi passive: replace rel_type = 4 if duration > max_dur & rel_status==6 & (in_sample==1 & in_sample_sp!=1) // marked as attrit, but one still in sample, so presume broken up (largely cohab where it's less clear)
+mi passive: replace rel_type = 4 if duration > max_dur & rel_status==6 & (in_sample!=1 & in_sample_sp==1) // marked as attrit, but one still in sample, so presume broken up (largely cohab where it's less clear)
+// mi passive: replace rel_type = 0 if duration > max_dur
+// mi passive: replace rel_type = 0 if duration < min_dur
 
-label define rel_type 0 "Not together" 1 "Married" 2 "Cohab"
+// label define rel_type 0 "Not together" 1 "Married" 2 "Cohab"
+label define rel_type 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
 label values rel_type rel_type
 
+tab rel_type, m
 mi estimate: proportion rel_type
 
-browse unique_id partner_id duration rel_start_all rel_end_all max_dur rel_type dur_transitioned transition_yr_est weekly_hrs_woman weekly_hrs_man in_sample in_sample_sp
+tab rel_type rel_status, row
+
+browse unique_id partner_id duration rel_start_all rel_end_all min_dur max_dur rel_type dur_transitioned transition_yr rel_status last_yr_observed last_survey_yr_focal* in_sample in_sample_sp weekly_hrs_woman weekly_hrs_man 
 
 * number of children
+tab num_children_woman num_children_man if inlist(rel_type,1,2) & duration>=0, m
 mi passive: egen couple_num_children = rowmax(num_children_woman num_children_man)
 tab couple_num_children, m
 
+// okay, decided we will use women's number of children
 mi passive: gen couple_num_children_gp=.
-mi passive: replace couple_num_children_gp = 0 if couple_num_children==0
-mi passive: replace couple_num_children_gp = 1 if couple_num_children==1
-mi passive: replace couple_num_children_gp = 2 if couple_num_children==2
-mi passive: replace couple_num_children_gp = 3 if couple_num_children>=3 & couple_num_children < 15
+mi passive: replace couple_num_children_gp = 0 if num_children_woman==0
+mi passive: replace couple_num_children_gp = 1 if num_children_woman==1
+mi passive: replace couple_num_children_gp = 2 if num_children_woman==2
+mi passive: replace couple_num_children_gp = 3 if num_children_woman>=3 & num_children_woman < 15
 
-tab couple_num_children couple_num_children_gp
+tab num_children_woman couple_num_children_gp
 
 mi estimate: proportion couple_num_children_gp
 
@@ -347,7 +397,7 @@ tab rel_type couple_num_children_gp
 
 * combined
 mi passive: gen family_type=.
-mi passive: replace family_type=0 if rel_type==0
+mi passive: replace family_type=0 if inlist(rel_type,3,4)
 mi passive: replace family_type=1 if rel_type==1 & couple_num_children_gp==0
 mi passive: replace family_type=2 if rel_type==1 & couple_num_children_gp==1
 mi passive: replace family_type=3 if rel_type==1 & couple_num_children_gp==2
@@ -363,24 +413,29 @@ label values family_type family_type
 
 mi estimate: proportion family_type
 
+tab family_type rel_type
+
+browse unique_id partner_id duration rel_start_all rel_end_all min_dur max_dur family_type rel_type rel_status couple_num_children_gp in_sample in_sample_sp
+
 // check
 inspect woman_hw_share if couple_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
 inspect hw_terc_woman if housework_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
 
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow couple_hw_total couple_hw couple_hw_hrs rel_type couple_num_children couple_num_children_gp family_type{  
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow couple_hw_total couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp rel_type family_type{  
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_hw couple_hw_hrs couple_num_children_gp family_type{
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children_gp family_type{
 	capture drop `var'_end
 	mi update
 	mi passive: gen `var'_end = `var'
-	mi passive: replace `var'_end = 99 if rel_type==0
+	mi passive: replace `var'_end = 98 if rel_type==4 // dissolve
+	mi passive: replace `var'_end = 99 if rel_type==3 // attrit
 }
 
-foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_num_children_gp_end family_type_end{
+foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_num_children_gp_end family_type_end{
 	assert `var' !=. if _mi_m!=0
 }
 
@@ -390,6 +445,7 @@ label values couple_work_end couple_work
 label values couple_work_ow_end couple_work_ow
 label values couple_hw_end couple_hw
 label values couple_hw_hrs_end couple_hw_hrs
+label values couple_hw_hrs_alt_end couple_hw_hrs
 label values family_type_end family_type
 
 // cross-tabs to explore to figure out potential new variables
@@ -412,18 +468,49 @@ drop duration_rec
 
 mi update
 
-desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/mi_desc") stats(mimean)
+// need to get rid of one record per couple; currently deduplicated
+browse unique_id partner_id couple_id duration FAMILY_INTERVIEW_NUM_ main_fam_id if inlist(duration,0,1) // ah, okay, will not always have fam interview number because some of these are off years and imputed. Use fam interview number at either time 0 / 1 and use that to indicate same couple? will main fam id work? or only when in same HH? because there are many couples that come from same 1968 id...
+inspect FAMILY_INTERVIEW_NUM_ if duration==0
+inspect FAMILY_INTERVIEW_NUM_ if duration==1
+
+mi passive: gen fam_id =  FAMILY_INTERVIEW_NUM_ if duration==1
+mi passive: replace fam_id = FAMILY_INTERVIEW_NUM_ if fam_id==. & duration==0
+bysort unique_id partner_id (fam_id): replace fam_id = fam_id[1]
+sort unique_id partner_id imputed _mi_m duration
+inspect fam_id
+
+browse unique_id partner_id couple_id duration fam_id FAMILY_INTERVIEW_NUM_ main_fam_id
+unique unique_id partner_id
+unique fam_id
+unique unique_id partner_id fam_id
+
+bysort fam_id duration _mi_m : egen per_id = rank(couple_id)
+tab per_id, m
+bysort fam_id duration _mi_m : egen num_couples = max(per_id)
+
+sort unique_id partner_id imputed _mi_m duration
+browse unique_id partner_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0
+browse unique_id partner_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & num_couples > 4
+browse unique_id partner_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & inlist(fam_id, 1602,6443,6978)
+browse unique_id partner_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & fam_id==3448 // 7255 3448
+
+keep if inlist(per_id,1,3,5,7,9,11)
+unique unique_id partner_id //4363, was 8714
+
+mi update
+
+save "$created_data/psid_couples_imputed_long_deduped.dta", replace
+
+// descriptives at all durations
+desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/mi_desc") stats(mimean)
 // desctable i.ft_pt_woman i.overwork_woman i.ft_pt_man i.overwork_man i.couple_work i.couple_work_ow i.couple_hw i.couple_hw_hrs i.rel_type i.couple_num_children_gp i.family_type, filename("$results/mi_desc_all") stats(mimean)  // modify - okay can't use modify but want to see if this replaces the previous or adds a new sheet. okay it replaces the previous oops
 
 mi estimate: proportion couple_work_ow_end family_type_end // validate that this matches. it does
 
-********************************************************************************
-**# Reshape back to wide to see the data by duration
-********************************************************************************
-// or should I just loop through durations? should I confirm the numbers are the same either way? - so here, try to loop through durations
+// should I just loop through durations while long? should I confirm the numbers are the same either way? - so here, try to loop through durations
 
 forvalues d=0/10{
-	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/mi_desc_`d'") stats(mimean)
+	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/mi_desc_`d'") stats(mimean) decimals(4)
 }
 
 mi xeq: proportion couple_hw_end if duration==5 // troubleshooting bc this is where the code stalled. I think this is because some have "neither HW" and some don't. okay, yes that is the problem
@@ -435,9 +522,13 @@ mi estimate: proportion couple_work_ow_end family_type_end if duration==5
 desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/mi_desc_dur") stats(mimean) group(duration)
 */
 
-keep  ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m
+keep  ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m
 
 mi update
+
+********************************************************************************
+**# Reshape back to wide to see the data by duration and compare to long estimates
+********************************************************************************
 
 mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end rel_type couple_num_children_gp_end family_type_end, i(unique_id partner_id rel_start_all rel_end_all) j(duration)
 
