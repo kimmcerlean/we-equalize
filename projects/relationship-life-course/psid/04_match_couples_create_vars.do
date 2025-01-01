@@ -513,7 +513,7 @@ forvalues d=0/10{
 	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/mi_desc_`d'") stats(mimean) decimals(4)
 }
 
-mi xeq: proportion couple_hw_end if duration==5 // troubleshooting bc this is where the code stalled. I think this is because some have "neither HW" and some don't. okay, yes that is the problem
+// mi xeq: proportion couple_hw_end if duration==5 // troubleshooting bc this is where the code stalled. I think this is because some have "neither HW" and some don't. okay, yes that is the problem
 
 mi estimate: proportion couple_work_ow_end family_type_end if duration==0
 mi estimate: proportion couple_work_ow_end family_type_end if duration==5
@@ -522,7 +522,8 @@ mi estimate: proportion couple_work_ow_end family_type_end if duration==5
 desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/mi_desc_dur") stats(mimean) group(duration)
 */
 
-keep  ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m
+// use "$created_data/psid_couples_imputed_long_deduped.dta", clear
+keep ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m SEX in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man rel_status rel_type_constant transition_yr FIRST_BIRTH_YR sample_type has_psid_gene birth_yr_all raceth_fixed_focal fixed_education SEX_sp in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp  FIRST_BIRTH_YR_sp sample_type_sp has_psid_gene_sp birth_yr_all_sp raceth_fixed_focal_sp fixed_education_sp // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
 
 mi update
 
@@ -530,7 +531,7 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end rel_type couple_num_children_gp_end family_type_end, i(unique_id partner_id rel_start_all rel_end_all) j(duration)
+mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp, i(unique_id partner_id rel_start_all rel_end_all) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
 
 mi convert wide, clear
 
@@ -538,7 +539,8 @@ save "$created_data/psid_couples_imputed_wide.dta", replace // this seems to mes
 
 unique unique_id partner_id
 
-browse unique_id partner_id min_dur max_dur rel_type*
+browse unique_id partner_id min_dur max_dur rel_type* *rel_*
 
-mi estimate: proportion rel_type0 couple_work_ow_end0 family_type_end0
-mi estimate: proportion rel_typ5 couple_work_ow_end5 family_type_end5
+mi estimate: proportion rel_type0 couple_work_ow_end0 family_type_end0 // okay NOW there are the right number of couples AND they match what I did when long
+mi estimate: proportion rel_type5 couple_work_ow_end5 family_type_end5 // same here
+mi estimate: proportion rel_type0 rel_type1 rel_type2 rel_type3 rel_type4 rel_type5 rel_type6 rel_type7 rel_type8 rel_type9 rel_type10 // ensure all have the right number of people now aka 4363
