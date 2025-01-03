@@ -535,7 +535,7 @@ mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_en
 
 mi convert wide, clear
 
-save "$created_data/psid_couples_imputed_wide.dta", replace // this seems to mess up some observations, so I might have done something wrong in the reshape. will revisit this, but I think getting via long format is fine for now. I wonder if this is because of the category things?
+save "$created_data/psid_couples_imputed_wide.dta", replace // this seems to mess up some observations, so I might have done something wrong in the reshape. will revisit this, but I think getting via long format is fine for now. I wonder if this is because of the category things? okay it was because I dropped the imputed variables the passive ones were based off of; I fixed this.
 
 unique unique_id partner_id
 
@@ -544,3 +544,4 @@ browse unique_id partner_id min_dur max_dur rel_type* *rel_*
 mi estimate: proportion rel_type0 couple_work_ow_end0 family_type_end0 // okay NOW there are the right number of couples AND they match what I did when long
 mi estimate: proportion rel_type5 couple_work_ow_end5 family_type_end5 // same here
 mi estimate: proportion rel_type0 rel_type1 rel_type2 rel_type3 rel_type4 rel_type5 rel_type6 rel_type7 rel_type8 rel_type9 rel_type10 // ensure all have the right number of people now aka 4363
+mi estimate: proportion couple_work_ow_end0 couple_work_ow_end1 couple_work_ow_end2 couple_work_ow_end3 couple_work_ow_end4 couple_work_ow_end5 couple_work_ow_end6 couple_work_ow_end7 couple_work_ow_end8 couple_work_ow_end9 couple_work_ow_end10 // ensure all have the right number of people now aka 4363 - wanted to do with created / imputed var, not just a constant one (rel type is constant)
