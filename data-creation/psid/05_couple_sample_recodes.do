@@ -3,7 +3,7 @@
 * Project: Relationship Growth Curves
 * Owner: Kimberly McErlean
 * Started: September 2024
-* File: variable_recodes
+* File: couple_sample_recodes
 ********************************************************************************
 ********************************************************************************
 
