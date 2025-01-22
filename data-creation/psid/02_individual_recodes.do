@@ -950,7 +950,7 @@ drop employ_head employ1_head employ2_head employ3_head employ_wife employ1_wife
 hs_head hs_wife attended_college_head attended_college_wife completed_college_head completed_college_wife completed_college_indv ///
 college_degree_head college_degree_wife educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 race_1_head_rec ///
 race_2_head_rec race_3_head_rec race_4_head_rec race_1_wife_rec race_2_wife_rec race_3_wife_rec race_4_wife_rec race_wife ///
-race_head hispanic_head hispanic_wife MOTHER_MARITALSTATUSB1 RELEASE_NUM_ AGE_HEAD_ SEX_HEAD_ AGE_WIFE_ EMPLOY_STATUS1_HEAD_ ///
+race_head hispanic_head hispanic_wife MOTHER_MARITALSTATUSB1 RELEASE_NUM_ AGE_HEAD_ AGE_WIFE_ EMPLOY_STATUS1_HEAD_ ///
 EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ WORK_MONEY_HEAD_ START_YR_EMPLOYER_HEAD_ WAGES_CURRENT_HEAD_ HRLY_RATE_CURRENT_HEAD_ ///
 YRS_CURRENT_EMPLOY_HEAD_ LABOR_INC_J1_T1_HEAD_ LABOR_INC_J2_T1_HEAD_ LABOR_INC_J3_T1_HEAD_ LABOR_INC_J4_T1_HEAD_ CURRENTLY_WORK_HEAD_ ///
 EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ WORK_MONEY_WIFE_ START_YR_EMPLOYER_WIFE_ WAGES_CURRENT_WIFE_ ///
@@ -975,7 +975,138 @@ LAST_WIDOW_YR_HEAD_ LAST_DIVORCE_YR_HEAD_ LAST_SEPARATED_YR_HEAD_ NUM_MARRIED_WI
 FIRST_DIVORCE_YR_WIFE_ FIRST_SEPARATED_YR_WIFE_ LAST_MARRIAGE_YR_WIFE_ LAST_WIDOW_YR_WIFE_ LAST_DIVORCE_YR_WIFE_ LAST_SEPARATED_YR_WIFE_ ///
 TOTAL_WEEKS_T1_HEAD_ ANNUAL_HOURS2_T1_HEAD_ TOTAL_WEEKS_T1_WIFE_ ANNUAL_HOURS2_T1_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ ///
 START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ WEEKLY_HRS_T2_INDV_ LABOR_INCOME_T2_INDV_ HOUSEWORK_INDV_ WEEKS_WORKED_T2_INDV_ DENOMINATION_HEAD_ ///
-DENOMINATION_WIFE_
+DENOMINATION_WIFE_ id BIRTH_YR_INDV_ AGE_INDV_ RELEASE_ RELEASE_NUM2_ WELFARE_JOINT_ wave religion_1977_focal
 
 save "$created_data_psid\PSID_individ_recodes.dta", replace
+
+********************************************************************************
+**# now reshape back to wide to fill in the off years with t-2 data where possible
+********************************************************************************
+use "$created_data_psid\PSID_individ_recodes.dta", clear
+
+drop earnings_t1_wife earnings_t1_head weekly_hrs_t1_wife weekly_hrs_t1_head  weekly_hrs_t1_indv employed_head employed_wife employed_indv ///
+employed_t1_head employed_t1_wife employed_t1_indv ft_pt_t1_head ft_pt_t1_wife ft_t1_head ft_t1_wife housework_head housework_wife educ_completed ///
+educ_head_est educ_head educ_wife_est educ_wife college_wife college_head college_indv raceth_head raceth_wife raceth_head_fixed last_race_head ///
+raceth_wife_fixed last_race_wife religion_head religion_wife employed_t2_indv employed_t2_head employed_t2_wife 
+
+reshape wide FAMILY_INTERVIEW_NUM_ STATE_ SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ ///
+NUM_NONFU_IN_HH_ X1968_PERSON_NUM_ HOUSE_STATUS_ HOUSE_VALUE_ ///
+RENT_COST_V2_ CHILDCARE_COSTS_ FOOD_STAMPS_ VEHICLE_OWN_ NEW_WIFE_ NEW_HEAD_ RESPONDENT_WHO_ TRANSFER_INCOME_ ///
+TOTAL_INCOME_T1_FAMILY_ VEHICLE_VALUE_ OTHER_ASSETS_ WEALTH_NO_EQUITY_ WEALTH_EQUITY_ TOTAL_HOUSING_ MORTGAGE_COST_ ///
+POVERTY_THRESHOLD_ REGION_ METRO_ MARST_DEFACTO_HEAD_ COUPLE_STATUS_HEAD_ NEW_HEAD_YEAR_ NEW_WIFE_YEAR_ BIRTHS_T1_HEAD_ ///
+BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ SEQ_NUMBER_ RELATION_ MARITAL_PAIRS_ MOVED_ MOVED_MONTH_ MOVED_YEAR_ RESPONDENT_ ///
+SPLITOFF_MONTH_ SPLITOFF_YEAR_ FAMILY_ID_SO_ INTERVIEW_NUM_ TYPE_OF_INCOME_ TOTAL_MONEY_INCOME_ FAMILY_COMPOSITION_ ///
+RENT_COST_V1_ AGE_OLDEST_CHILD_ TYPE_TAXABLE_INCOME_ BANK_ASSETS_ TOTAL_INCOME_T2_FAMILY_ SEX_HEAD_ SEX_WIFE_ children ///
+MARST_LEGAL_HEAD_ CDS_ELIGIBLE_ hh_status_ in_sample relationship partnered moved change_yr entrance_no leave_no ///
+COR_IMM_WT_ LONG_WT_ CROSS_SECTION_WT_ CORE_WEIGHT_ CROSS_SECTION_FAM_WT_ FOLLOW_STATUS_ DATA_RECORD_TYPE_  ///
+weekly_hrs_t1_focal earnings_t1_focal employed_t1_earn_focal any_psid_births_t1_focal any_psid_births_t1_hh ///
+housework_focal childcare_focal adultcare_focal employed_focal educ_focal college_focal age_focal raceth_focal ///
+religion_focal religion_change weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal has_hours_t1 has_earnings_t1 ///
+employed_t1_hrs_focal has_hours_t2 has_earnings_t2 new_in_hh ///
+, i(unique_id first_survey_yr last_survey_yr) j(survey_yr)
+
+misstable summarize *focal*, all
+
+// weekly hours
+// gen weekly_hrs_t1_focal1998=weekly_hrs_t2_focal1999 // so, t-2 for 1999 becomes t-1 for 1998
+
+forvalues y=1998(2)2020{
+	local z=`y'+1
+	gen weekly_hrs_t1_focal`y'=weekly_hrs_t2_focal`z'
+}
+
+browse weekly_hrs_t1_focal1998 weekly_hrs_t1_focal1999 weekly_hrs_t1_focal2000 weekly_hrs_t2_focal1999 weekly_hrs_t2_focal2001
+
+// earnings
+forvalues y=1998(2)2020{
+	local z=`y'+1
+	gen earnings_t1_focal`y'=earnings_t2_focal`z'
+}
+
+browse weekly_hrs_t1_focal1998 earnings_t1_focal1998 weekly_hrs_t2_focal1999 earnings_t2_focal1999
+
+// family income
+forvalues y=1998(2)2020{
+	local z=`y'+1
+	gen long TOTAL_INCOME_T1_FAMILY_`y'=TOTAL_INCOME_T2_FAMILY_`z'
+}
+
+browse TOTAL_INCOME_T1_FAMILY_1998 TOTAL_INCOME_T1_FAMILY_1999 TOTAL_INCOME_T2_FAMILY_1999
+
+// employment status - here, I actually shouldn't need t-2, because I have t? so it needs to be t and t-1?
+tab employed_focal2001 employed_t2_focal2003  // so these should match...but they really don't...
+tab employed_focal1996 employed_t1_hrs_focal1997 // thsee should match -- also don't
+tab employed_focal1996 employed_t1_earn_focal1997 // thsee should match -- also don't. also think it could be based on point in time? v. annual status
+
+forvalues y=1998(2)2020{
+	local z=`y'+1
+	gen employed_focal`y'=employed_t1_hrs_focal`z'
+}
+
+// let's try to fill in education for the years where the surrounding years are the same
+browse unique_id educ_focal*
+
+forvalues y=1998(2)2020{
+	local z=`y'+1
+	local x=`y'-1
+	gen educ_focal`y'=.
+	replace educ_focal`y' = educ_focal`x' if educ_focal`x' == educ_focal`z'
+	label values educ_focal`y' educ
+}
+
+// also need to realign the t-1 variables
+forvalues y=1969/2021{
+	local x=`y'-1
+	gen long TOTAL_INCOME_T_FAMILY`x' = TOTAL_INCOME_T1_FAMILY_`y'
+	gen weekly_hrs_t_focal`x' = weekly_hrs_t1_focal`y'
+	gen earnings_t_focal`x' = earnings_t1_focal`y'
+	capture gen any_psid_births_t_focal`x' = any_psid_births_t1_focal`y'
+	capture gen any_psid_births_t_hh`x' = any_psid_births_t1_hh`y'
+}
+
+browse weekly_hrs_t_focal1996 weekly_hrs_t_focal1997 weekly_hrs_t1_focal1996 weekly_hrs_t1_focal1997 weekly_hrs_t1_focal1998
+
+// before reshaping, get first observed educational
+egen first_educ_focal=rowfirst(educ_focal*)
+browse first_educ_focal educ_focal*
+label values first_educ_focal educ
+
+********************************************************************************
+**# Back to long where i can then merge this to respondent info elsewhere or use as is
+********************************************************************************
+
+reshape long FAMILY_INTERVIEW_NUM_ STATE_ SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ ///
+NUM_NONFU_IN_HH_ X1968_PERSON_NUM_ HOUSE_STATUS_ HOUSE_VALUE_ ///
+RENT_COST_V2_ CHILDCARE_COSTS_ FOOD_STAMPS_ VEHICLE_OWN_ NEW_WIFE_ NEW_HEAD_ RESPONDENT_WHO_ TRANSFER_INCOME_ ///
+TOTAL_INCOME_T1_FAMILY_ VEHICLE_VALUE_ OTHER_ASSETS_ WEALTH_NO_EQUITY_ WEALTH_EQUITY_ TOTAL_HOUSING_ MORTGAGE_COST_ ///
+POVERTY_THRESHOLD_ REGION_ METRO_ MARST_DEFACTO_HEAD_ COUPLE_STATUS_HEAD_ NEW_HEAD_YEAR_ NEW_WIFE_YEAR_ BIRTHS_T1_HEAD_ ///
+BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ SEQ_NUMBER_ RELATION_ MARITAL_PAIRS_ MOVED_ MOVED_MONTH_ MOVED_YEAR_ RESPONDENT_ ///
+SPLITOFF_MONTH_ SPLITOFF_YEAR_ FAMILY_ID_SO_ INTERVIEW_NUM_ TYPE_OF_INCOME_ TOTAL_MONEY_INCOME_ FAMILY_COMPOSITION_ ///
+RENT_COST_V1_ AGE_OLDEST_CHILD_ TYPE_TAXABLE_INCOME_ BANK_ASSETS_ TOTAL_INCOME_T2_FAMILY_ SEX_HEAD_ SEX_WIFE_ children ///
+MARST_LEGAL_HEAD_ CDS_ELIGIBLE_ hh_status_ in_sample relationship partnered moved change_yr entrance_no leave_no ///
+COR_IMM_WT_ LONG_WT_ CROSS_SECTION_WT_ CORE_WEIGHT_ CROSS_SECTION_FAM_WT_ FOLLOW_STATUS_ DATA_RECORD_TYPE_  ///
+weekly_hrs_t1_focal earnings_t1_focal employed_t1_earn_focal any_psid_births_t1_focal any_psid_births_t1_hh ///
+housework_focal childcare_focal adultcare_focal employed_focal educ_focal college_focal age_focal raceth_focal ///
+religion_focal religion_change weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal has_hours_t1 has_earnings_t1 ///
+employed_t1_hrs_focal has_hours_t2 has_earnings_t2 new_in_hh ///
+weekly_hrs_t_focal TOTAL_INCOME_T_FAMILY earnings_t_focal any_psid_births_t_focal any_psid_births_t_hh ///
+, i(unique_id first_survey_yr last_survey_yr) j(survey_yr)
+
+browse unique_id survey_yr relationship in_sample weekly_hrs_t_focal weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
+
+// need to fill in the fixed variables for the missing rows - this might not be necessary since these were all fixed? Let's do just in case. oh yes, this was to make rectangular in other code, but I don't need to do that here
+foreach var in SEX first_survey_yr last_survey_yr birth_yr sample_type stratum cluster main_fam_id main_per_id SEX IN_UNIT SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION SAMPLE YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST NUM_BIRTHS FIRST_BIRTH_YR MARRIAGE_UPDATE NUM_MARRIED FIRST_MARRIAGE_YR_START FIRST_MARRIAGE_STATUS FIRST_MARRIAGE_YR_END FIRST_SEPARATE_YR RECENT_MARRIAGE_YR_START RECENT_MARRIAGE_STATUS RECENT_MARRIAGE_YR_END RECENT_SEPARATE_YR MARITAL_STATUS has_psid_gene permanent_attrit birth_yr max_educ_focal raceth_fixed_focal last_race_focal first_educ_focal{
+	bysort unique_id (`var'): replace `var'=`var'[1] if `var'==.
+}
+
+sort unique_id survey_yr
+
+// figure out education again?
+replace educ_focal = max_educ_focal if educ_focal==. & first_educ_focal==max_educ_focal & max_educ_focal!=. // so if first AND max education are the same, fill in education
+replace educ_focal = first_educ_focal if first_educ_focal==4 & educ_focal==.
+replace educ_focal = max_educ_focal if max_educ_focal==1 & educ_focal==.
+
+browse unique_id survey_yr in_sample educ_focal first_educ_focal max_educ_focal
+
+save "$created_data_psid\PSID_individ_allyears.dta", replace
 
