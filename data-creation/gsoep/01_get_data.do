@@ -1,6 +1,6 @@
 ********************************************************************************
 ********************************************************************************
-* Project: Relationship Growth Curves
+* Project: Data Creation: GSOEP
 * Owner: Kimberly McErlean
 * Started: September 2024
 * File: get_data
@@ -18,10 +18,8 @@ net install soephelp,from("https://git.soep.de/mpetrenz/soephelp/-/raw/master/")
 * First, let's just get a sense of data structure and start to clean up files
 * Individual files
 ********************************************************************************
-set maxvar 10000
-
 // individual file
-use "$GSOEP\pl.dta", clear
+use "$GSOEP/pl.dta", clear
 label language EN
 
 unique pid // 104742, 763223
@@ -159,10 +157,10 @@ rename plh0176 satisfaction_income
 rename plh0175 satisfaction_hhincome
 rename plh0180 satisfaction_family
 
-save "$temp\pl_cleaned.dta", replace
+save "$temp/pl_cleaned.dta", replace
 
 // individual generated variables
-use "$GSOEP\pgen.dta", clear
+use "$GSOEP/pgen.dta", clear
 label language EN
 
 unique pid // 106778, 771210
@@ -188,10 +186,10 @@ rename pguebstd overtime_pg
 rename pgisced11 isced11_pg
 rename pgisced97 isced97_pg
 
-save "$temp\pgen_cleaned.dta", replace
+save "$temp/pgen_cleaned.dta", replace
 
 // individual tracking file
-use "$GSOEP\ppathl.dta", clear
+use "$GSOEP/ppathl.dta", clear
 label language EN
 
 unique pid // 158946, 1285062
@@ -226,7 +224,7 @@ rename sampreg where_germany_pl
 
 browse
 
-save "$temp\ppathl_cleaned.dta", replace
+save "$temp/ppathl_cleaned.dta", replace
 
 // for use later to add partner sample status
 keep pid syear sex_pl status_pl
@@ -234,14 +232,14 @@ rename pid parid // to match to partner id
 rename status_pl status_sp
 rename sex sex_sp
 
-save "$temp\ppathl_partnerstatus.dta", replace
+save "$temp/ppathl_partnerstatus.dta", replace
 
 ********************************************************************************
 **# use ppathl to create base couple-level file to use as my master file 
 * to merge rest of characteristics onto
 ********************************************************************************
 
-use "$GSOEP\ppathl.dta", clear
+use "$GSOEP/ppathl.dta", clear
 label language EN
 
 unique pid parid // 186572
@@ -302,7 +300,7 @@ browse pid syear parid partnered reltype rel_start rel_end* marr_trans
 keep if partnered==1
 keep if parid!=.
 
-merge 1:1 parid syear using "$temp\ppathl_partnerstatus.dta"
+merge 1:1 parid syear using "$temp/ppathl_partnerstatus.dta"
 drop if _merge==2
 drop _merge
 
@@ -326,7 +324,7 @@ rename letztbef lastyr_survey
 rename netto status_detailed
 rename sampreg where_germany
 
-save "$temp\couples_ppathl.dta", replace
+save "$temp/couples_ppathl.dta", replace
 
 ********************************************************************************
 * Relationship history files
@@ -334,7 +332,7 @@ save "$temp\couples_ppathl.dta", replace
 // various relationship history files - figure out if partnership history includes marital history or if these are mutually exclusive? okay def includes marital, and even non-cohab relationships
 
 // couple month \\
-use "$GSOEP\biocouplm.dta", clear
+use "$GSOEP/biocouplm.dta", clear
 label language EN
 
 unique pid // 106432, 183433
@@ -375,10 +373,10 @@ replace intact=1 if inlist(censor,5,9,13) // last spell? okay, yes, see p 14 of 
 gen intact_alt=0
 replace intact_alt=1 if pdeath==0 & divorce==0 // think one problem is divorce is OFFICIAl divorce, not separation AND not cohab relationship end. so might those be not apply also? if not a marital relationship?
 
-save "$temp\biocouplm_cleaned.dta", replace
+save "$temp/biocouplm_cleaned.dta", replace
 
 // couple year \\
-use "$GSOEP\biocouply.dta", clear // this is my preferred file, but the problem is, it is not comprehensive because not until wave 28
+use "$GSOEP/biocouply.dta", clear // this is my preferred file, but the problem is, it is not comprehensive because not until wave 28
 label language EN
 
 unique pid // 48333, 259945
@@ -388,14 +386,14 @@ gen partner_in_hh=0
 replace partner_in_hh =1 if inlist(spelltyp,1,3,7)
 
 // marriage month \\
-use "$GSOEP\biomarsm.dta", clear
+use "$GSOEP/biomarsm.dta", clear
 label language EN
 
 unique pid // 104934, 123937
 unique pid, by(spelltyp) // 64354 married in HH,  coupled in HH - duh doesn't track coupled
 
 // marriage year \\
-use "$GSOEP\biomarsy.dta", clear // okay, so this file essentially categorizes person's whole life into spells based on their legal maritus status - each row is a new status and is bookended by age / year of that spell - so each "spell" is NOT a new partner; it's a new marital status - aka stay in when divorced, for example
+use "$GSOEP/biomarsy.dta", clear // okay, so this file essentially categorizes person's whole life into spells based on their legal maritus status - each row is a new status and is bookended by age / year of that spell - so each "spell" is NOT a new partner; it's a new marital status - aka stay in when divorced, for example
 
 label language EN
 
@@ -403,7 +401,7 @@ unique pid // 105005, 218795
 unique pid, by(spelltyp) // 71272 married in HH,  coupled in HH - duh doesn't track coupled
 
 // look at regular biography also?? to see what THAT has for relationship history? because all of these files are different levels with diff levels of accuracy?
-use "$GSOEP\biol.dta", clear
+use "$GSOEP/biol.dta", clear
 
 unique pid // 94004, 130429
 tab syear  // so it is pid year, but a lot of pids don't have multiple year records. Is this just when the history was updated? the codebook is not v. helpful...
@@ -415,20 +413,20 @@ browse pid syear
 ********************************************************************************
 
 // household file
-use "$GSOEP\hl.dta", clear
+use "$GSOEP/hl.dta", clear
 label language EN
 
 ********************************************************************************
 **# * Attempt to at merge all key individual characteristics
 ********************************************************************************
 // first just merge basic individual characteristics
-use "$temp\pl_cleaned.dta", clear
+use "$temp/pl_cleaned.dta", clear
 
-merge 1:1 pid hid cid syear using "$temp\pgen_cleaned.dta"
+merge 1:1 pid hid cid syear using "$temp/pgen_cleaned.dta"
 drop if _merge==2
 drop _merge
 
-merge 1:1 pid hid cid syear using "$temp\ppathl_cleaned.dta"
+merge 1:1 pid hid cid syear using "$temp/ppathl_cleaned.dta"
 drop if _merge==2
 drop _merge
 
@@ -472,4 +470,4 @@ tab partnered_pg partnered, m // these match less good...
 
 // then need to do some variable cleanup / recoding / inspecting for core variables before merging with partner info
 
-save "$temp\individ_data.dta", replace
+save "$temp/individ_data.dta", replace

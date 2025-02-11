@@ -1,20 +1,20 @@
+set maxvar 10000
 
+* Set home directory based on computing environment. 
+if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global homedir `"C:/Users/mcerl/OneDrive - Istituto Universitario Europeo"' // One Drive on Kim's PC
+if `"`c(hostname)'"' == "PPRC-STATS-P01" global homedir `"T:"' // PRC Stats Server
+if `"`c(hostname)'"' == "60018D" global homedir `"C:/Users/kmcerlea/OneDrive - Istituto Universitario Europeo"' // One Drive on EUI Computer
 
-* Note that these directories will contain all "created" files - including intermediate data, results, and log files.
-global homedir "G:\Other computers\My Laptop\Documents"
-// global homedir "T:" // PRC server
-// global homedir_EUI "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\projects" // EUI computer
-
-* This is the base directory with the setup files.
-* It is the directory you should change into before executing any files
-global code "$homedir/github/we-equalize/data-creation/gsoep"
+* This is where your code is. It is the directory you should change into before executing any files
+global code "G:/Other computers/My Laptop/Documents/GitHub/we-equalize/data-creation/gsoep"
 
 * This locations of folders containing the original data files
-global GSOEP "$homedir/data/GSOEP"
+global GSOEP "$homedir/datasets/GSOEP/Stata"
 
 * created data files
-global created_data_gsoep "$homedir/WeEqualize (Postdoc)/Compiled Data/GSOEP"
+global created_data_gsoep "$homedir/datasets/GSOEP/created data"
 
-* temporary data files (they get deleted without a second thought)
-global temp_gsoep "$homedir/WeEqualize (Postdoc)/Temp Data/GSOEP"
+* temporary data processing files
+global temp_gsoep "$homedir/datasets/GSOEP/temp data"
 
+cd "$code"
