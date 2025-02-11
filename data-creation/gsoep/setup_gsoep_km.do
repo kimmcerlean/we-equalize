@@ -6,7 +6,8 @@ if `"`c(hostname)'"' == "PPRC-STATS-P01" global homedir `"T:"' // PRC Stats Serv
 if `"`c(hostname)'"' == "60018D" global homedir `"C:/Users/kmcerlea/OneDrive - Istituto Universitario Europeo"' // One Drive on EUI Computer
 
 * This is where your code is. It is the directory you should change into before executing any files
-global code "G:/Other computers/My Laptop/Documents/GitHub/we-equalize/data-creation/gsoep"
+if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global code "G:/Other computers/My Laptop/Documents/GitHub/we-equalize/data-creation/gsoep"
+if `"`c(hostname)'"' == "60018D" global code "\\bfsrv2\home$\kmcerlea\PersonalData\Documents\GitHub\we-equalize\data-creation\gsoep"
 
 * This locations of folders containing the original data files
 global GSOEP "$homedir/datasets/GSOEP/Stata"

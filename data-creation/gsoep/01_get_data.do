@@ -91,7 +91,7 @@ rename pli0019_h childcare_saturdays
 rename pli0022_h childcare_sundays
 rename pli0043_h housework_weekdays
 rename pli0012_h housework_saturdays
-rename pli0016_h housework_sundayss
+rename pli0016_h housework_sundays
 rename pli0049_h repair_weekdays
 rename pli0031_h repair_saturdays
 rename pli0034_v1 repair_sundays_v1
@@ -157,7 +157,7 @@ rename plh0176 satisfaction_income
 rename plh0175 satisfaction_hhincome
 rename plh0180 satisfaction_family
 
-save "$temp/pl_cleaned.dta", replace
+save "$temp_gsoep/pl_cleaned.dta", replace
 
 // individual generated variables
 use "$GSOEP/pgen.dta", clear
@@ -186,7 +186,7 @@ rename pguebstd overtime_pg
 rename pgisced11 isced11_pg
 rename pgisced97 isced97_pg
 
-save "$temp/pgen_cleaned.dta", replace
+save "$temp_gsoep/pgen_cleaned.dta", replace
 
 // individual tracking file
 use "$GSOEP/ppathl.dta", clear
@@ -224,7 +224,7 @@ rename sampreg where_germany_pl
 
 browse
 
-save "$temp/ppathl_cleaned.dta", replace
+save "$temp_gsoep/ppathl_cleaned.dta", replace
 
 // for use later to add partner sample status
 keep pid syear sex_pl status_pl
@@ -232,7 +232,7 @@ rename pid parid // to match to partner id
 rename status_pl status_sp
 rename sex sex_sp
 
-save "$temp/ppathl_partnerstatus.dta", replace
+save "$temp_gsoep/ppathl_partnerstatus.dta", replace
 
 ********************************************************************************
 **# use ppathl to create base couple-level file to use as my master file 
@@ -267,7 +267,7 @@ replace parid=. if parid==-2
 gen partnered=0
 replace partnered=1 if inrange(partner,1,4)
 replace partnered=. if partner==-2
-inspect parid if partnered==1
+inspect parid if partnered==1 // k most have a partner id
 inspect parid if partnered==0
 
 gen reltype=.
@@ -300,16 +300,18 @@ browse pid syear parid partnered reltype rel_start rel_end* marr_trans
 keep if partnered==1
 keep if parid!=.
 
-merge 1:1 parid syear using "$temp/ppathl_partnerstatus.dta"
+merge 1:1 parid syear using "$temp_gsoep/ppathl_partnerstatus.dta"
 drop if _merge==2
 drop _merge
 
-// browse pid syear parid status status_sp
+// browse pid syear parid status status_sp rel_end_pre
 tab status status_sp, m
 
-keep if status==1 | status_sp==1 // keep if at least one of them is in sample for now. can decide later if should only keep those where *both* in sample.
+// keep if status==1 | status_sp==1 // keep if at least one of them is in sample for now. can decide later if should only keep those where *both* in sample.
+// alternatively, will I impute the years when they aren't in sample? let's NOT do this for now
 drop if inlist(sex,-3,-1)
 drop if inlist(sex_sp,-3,-1)
+drop if sex==sex_sp & sex!=.
 
 // now just clean up variables
 keep pid syear hid cid sex sex_sp parid partner gebjahr todjahr eintritt erstbefr austritt letztbef psample status status_sp netto sampreg germborn partnered reltype rel_start rel_end rel_end_pre marr_trans prgroup pbleib phrf phrf0 phrf1
@@ -324,7 +326,9 @@ rename letztbef lastyr_survey
 rename netto status_detailed
 rename sampreg where_germany
 
-save "$temp/couples_ppathl.dta", replace
+// browse pid syear partner_id status status_sp rel_end_pre where_germany firstyr_contact firstyr_survey lastyr_contact lastyr_survey // want to see if this info recorded in non-sample years and it is. perhaps not true for variables in pl file; we will find out
+
+save "$temp_gsoep/couples_ppathl.dta", replace
 
 ********************************************************************************
 * Relationship history files
@@ -373,7 +377,7 @@ replace intact=1 if inlist(censor,5,9,13) // last spell? okay, yes, see p 14 of 
 gen intact_alt=0
 replace intact_alt=1 if pdeath==0 & divorce==0 // think one problem is divorce is OFFICIAl divorce, not separation AND not cohab relationship end. so might those be not apply also? if not a marital relationship?
 
-save "$temp/biocouplm_cleaned.dta", replace
+save "$temp_gsoep/biocouplm_cleaned.dta", replace
 
 // couple year \\
 use "$GSOEP/biocouply.dta", clear // this is my preferred file, but the problem is, it is not comprehensive because not until wave 28
@@ -420,13 +424,13 @@ label language EN
 **# * Attempt to at merge all key individual characteristics
 ********************************************************************************
 // first just merge basic individual characteristics
-use "$temp/pl_cleaned.dta", clear
+use "$temp_gsoep/pl_cleaned.dta", clear
 
-merge 1:1 pid hid cid syear using "$temp/pgen_cleaned.dta"
+merge 1:1 pid hid cid syear using "$temp_gsoep/pgen_cleaned.dta"
 drop if _merge==2
 drop _merge
 
-merge 1:1 pid hid cid syear using "$temp/ppathl_cleaned.dta"
+merge 1:1 pid hid cid syear using "$temp_gsoep/ppathl_cleaned.dta"
 drop if _merge==2
 drop _merge
 
@@ -470,4 +474,4 @@ tab partnered_pg partnered, m // these match less good...
 
 // then need to do some variable cleanup / recoding / inspecting for core variables before merging with partner info
 
-save "$temp/individ_data.dta", replace
+save "$temp_gsoep/individ_data.dta", replace
