@@ -25,7 +25,7 @@ if `"`c(hostname)'"' == "60018D" global code "//bfsrv2/home$/kmcerlea/PersonalDa
 ********************************************************************************
 // raw data
 global UKHLS "$root/UKDA-6614-stata/stata/stata13_se" // Main data
-global UKHLS_mh "$root/UKDA-8473-stata/stata/stata13" // Cohab / marriage history
+global UKHLS_mh "$root/UKDA-8473-stata/stata" // Cohab / marriage history
 global egoalt "$root/UKDA-6614-stata/stata/egoalt (all waves)" // Ego alt relationship matrices
 
 // created data

@@ -17,7 +17,7 @@ ssc install moremata, replace
 ********************************************************************************
 * Input data and restrict to matched couples
 ********************************************************************************
-use "$created_data_ukhls/UKHLS_matched_cleaned.dta", clear // created in step d.
+use "$created_data_ukhls/UKHLS_matched_cleaned.dta", clear // created in step c.
 
 // variables: all work hours - total_hours total_hours_sp paid_couple_total_ot
 // variables: housework - howlng howlng_sp unpaid_couple_total

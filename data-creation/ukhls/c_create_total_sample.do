@@ -14,12 +14,12 @@
 * Consider age restrictions based on who answers the relevant questions
 
 use "$created_data_ukhls/UKHLS_matched.dta", clear // okay file I created at end of step b has ALL people and their potential partner matches, even if not partnered, so use this to start.
-unique pidp // 109651, 772472 total py
-unique pidp partner_id // 126305	
-unique pidp, by(sex) // 52397 m, 57362 w
-unique pidp, by(partnered) // 55858 0, 68410 1
+unique pidp // 118405, 807942 total py
+unique pidp partner_id // 135496	
+unique pidp, by(sex) // 56297 m, 62216 w
+unique pidp, by(partnered) // 59866 0, 73581 1
 
-tab partnered partner_match, m
+tab partnered partner_match, m row
 // tabstat jbhrs, by(age_all) // is there an age before which they don't ask these questions? I guess, the age of the survey respondents is only 15+, so I guess not; they seem to ask everyone
 
 sort pidp year
@@ -74,8 +74,8 @@ tab marital_status_defacto_wom if woman_record==1, m
 
 keep pidp hidp age_all sex hiqual_dv dob_year college_degree country_all partnered marital_status_defacto sex_sp year wavename intdatey intdatem survey partner_id partner_match *_wom *_man *_hh // okay want a few basic records for the reference person. can easily compile later, but let's do here so I know it's accurate
 
-tab partnered_wom partnered_man
-tab partnered_wom partnered_man if partner_match==1
+tab partnered_wom partnered_man, m
+tab partnered_wom partnered_man if partner_match==1, m
 
 bysort pidp: egen first_year_observed = min(year)
 bysort pidp: egen last_year_observed = max(year)
@@ -180,17 +180,17 @@ browse pidp year partner_match marital_status_defacto_wom marital_status_defacto
 // this pidp did have transition 16339 - okay confirmed it worked. okay but I dont see them in here, gah, did something go wrong somewhere? they are missing years 1999-2006. is that not true elsewhere?
 
 // this was being weird before, see if better now that i moved some steps:
-tab rel_no_wom if inlist(marital_status_defacto_wom,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
+tab rel_no_wom if inlist(marital_status_defacto_wom,1,2), m // so about 2% missing
 tab rel_no_man if inlist(marital_status_defacto_man,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
 
 // validate relationship info for couples and add duration info
 browse pidp partner_id partner_match year current_rel_start_year_wom current_rel_start_year_man rel_no_wom rel_no_man mh_starty1_wom mh_starty1_man mh_starty2_wom mh_starty2_man mh_starty3_wom mh_starty3_man // okay, sooo they don't always match (could this be a marriage cohab thing?) and sometimes one is missing while the other is not (and vice versa)
 
 gen partner_start_date_match=0
-replace partner_start_date_match=1 if current_rel_start_year_wom==current_rel_start_year_man & current_rel_start_year_man!=. & current_rel_start_year_wom!=.
-replace partner_start_date_match=2 if current_rel_start_year_wom-current_rel_start_year_man==1 & current_rel_start_year_man!=. & current_rel_start_year_wom!=.
-replace partner_start_date_match=2 if current_rel_start_year_man-current_rel_start_year_wom==1 & current_rel_start_year_man!=. & current_rel_start_year_wom!=.
-replace partner_start_date_match=3 if partner_match==1 & current_rel_start_year_wom!=. & current_rel_start_year_man==.
+replace partner_start_date_match=1 if current_rel_start_year_wom==current_rel_start_year_man & current_rel_start_year_man!=. & current_rel_start_year_wom!=. // match
+replace partner_start_date_match=2 if current_rel_start_year_wom-current_rel_start_year_man==1 & current_rel_start_year_man!=. & current_rel_start_year_wom!=. // within 1 year
+replace partner_start_date_match=2 if current_rel_start_year_man-current_rel_start_year_wom==1 & current_rel_start_year_man!=. & current_rel_start_year_wom!=. // within 1 year
+replace partner_start_date_match=3 if partner_match==1 & current_rel_start_year_wom!=. & current_rel_start_year_man==. // one partner is missing, other is not
 replace partner_start_date_match=3 if partner_match==1 & current_rel_start_year_wom==. & current_rel_start_year_man!=.
 
 tab partner_start_date_match, m
@@ -257,19 +257,20 @@ replace partner_int_date_match=1 if int_year_wom==int_year_man & int_year_wom!=.
 tab partner_int_date_match if partner_match==1
 
 gen current_rel_duration=.
-replace current_rel_duration = year-current_rel_start_year if partner_match==1 // & int_year_wom <=current_rel_end_year
+replace current_rel_duration = int_year_wom-current_rel_start_year if partner_match==1 & int_year_wom > 0 & int_year_wom!=. 
+replace current_rel_duration = year-current_rel_start_year if partner_match==1 & current_rel_duration==.
 
-browse pidp partner_id year current_rel_duration current_rel_start_year current_rel_end_year
+browse pidp partner_id year int_year_wom current_rel_duration current_rel_start_year current_rel_end_year
 
 save "$created_data_ukhls/UKHLS_full_sample.dta", replace
 
 // another check - oh, duh will be slightly less bc dropped same-sex couples and the missing sex people
-unique pidp // 109651, 772472 total py
-unique pidp partner_id // 126305	
-unique pidp partner_id if partner_match==1 // 64360 438156
-unique pidp, by(sex) // 52397 m, 57362 w
-unique pidp, by(partnered) // 55858 0, 68410 1
-unique pidp, by(partner_match) // 67831 0, 62448 1
+unique pidp // 118405, 807942 total py
+unique pidp partner_id // 135496	
+unique pidp partner_id if partner_match==1 // 67690 455561
+unique pidp, by(sex) // 56297 m, 62216 w
+unique pidp, by(partnered) // 59866 0, 73581 1
+unique pidp, by(partner_match) // 73804 0, 65741 1
 
 ********************************************************************************
 * Get rid of deduplicated records
@@ -291,7 +292,7 @@ browse hidp pidp record_type partner_id year age_all hhsize_hh current_rel_durat
 bysort year hidp : egen per_id = rank(pidp) if record_type==3 // so only want to rank couples
 tab per_id, m // so there can be two couples in HH? so keep per id 1 and 3? but do I know that 2 is defintely the partner?
 // does this work also once I sort again by pidp?? is this going to cause problems later if one year one pidp is kept and another year the other is? I guess not bc of pidp hierarchy? and we aren't using this longitudinally?
-replace per_id=0 if per_id==.
+replace per_id=0 if per_id==. // I didn't rank individs or non-matched couples
 
 browse year hidp pidp record_type partner_id record_type per_id
 sort pidp year
@@ -302,8 +303,18 @@ keep if inlist(per_id,0,1,3,5,7) // 0 = individual records, 1 = first couple rec
 save "$created_data_ukhls/UKHLS_full_sample_deduped.dta", replace
 
 // should be cut in half?
-unique pidp partner_id if partner_match==1 // 64360 438156 -- now 32,304 219,092. AND the abstract for PAA said 32,174 / 218,652 so this feels v close and right, but we will check
-unique pidp, by(partner_match) // 67831 0, 62448 1 -- now 31,566
+unique pidp partner_id if partner_match==1 // 67690 455561-- now 33975 227795. AND the abstract for PAA said 32,174 / 218,652 so this feels v close and right, but we will check
+// and this matches like almost identically: display 67690
+// display 455561 / 2
+unique pidp, by(partner_match)  // 73804 0, 65741 1 -- now 1 is 33212 (0 is the same bc non matched)
+
+// compare to file before I added wave 14
+tab record_type
+tab record_type if wavename!=14 // so matched is 219082 and spreadsheet says 218652 so it's nearly perfect
+unique pidp partner_id, by(record_type)
+unique pidp partner_id if wavename!=14, by(record_type) // so matched is 32,297 and spreadsheet says 32,174 so it's nearly perfect
+
+// can I just use this and drop everyone except matched couples? like why did I redo all of this in step d? I think it's because I did step d first?
 
 // compare to previous
 preserve

@@ -17,7 +17,7 @@
 ********************************************************************************
 * Going to try to first update spouse id for BHPS so it's pidp NOT pid
 ********************************************************************************
-use "$UKHLS\xwaveid_bh.dta", clear
+use "$UKHLS/xwaveid_bh.dta", clear
 
 keep pidp pid
 rename pid sppid_bh
@@ -34,7 +34,7 @@ foreach var in status* partner* starty* startm* endy* endm* divorcey* divorcem* 
 	rename `var' mh_`var' // renaming for ease of finding later, especially when matching partner info
 }
 
-save "$temp_ukhls\partner_history_tomatch.dta", replace
+save "$temp_ukhls/partner_history_tomatch.dta", replace
 
 ********************************************************************************
 * Import data (created in step a) and do some data cleaning / recoding before creating a file to match partners
@@ -62,24 +62,25 @@ replace year=2018 if wavename==10
 replace year=2019 if wavename==11
 replace year=2020 if wavename==12
 replace year=2021 if wavename==13
-replace year=1991 if wavename==14
-replace year=1992 if wavename==15
-replace year=1993 if wavename==16
-replace year=1994 if wavename==17
-replace year=1995 if wavename==18
-replace year=1996 if wavename==19
-replace year=1997 if wavename==20
-replace year=1998 if wavename==21
-replace year=1999 if wavename==22
-replace year=2000 if wavename==23
-replace year=2001 if wavename==24
-replace year=2002 if wavename==25
-replace year=2003 if wavename==26
-replace year=2004 if wavename==27
-replace year=2005 if wavename==28
-replace year=2006 if wavename==29
-replace year=2007 if wavename==30
-replace year=2008 if wavename==31
+replace year=2022 if wavename==14
+replace year=1991 if wavename==15
+replace year=1992 if wavename==16
+replace year=1993 if wavename==17
+replace year=1994 if wavename==18
+replace year=1995 if wavename==19
+replace year=1996 if wavename==20
+replace year=1997 if wavename==21
+replace year=1998 if wavename==22
+replace year=1999 if wavename==23
+replace year=2000 if wavename==24
+replace year=2001 if wavename==25
+replace year=2002 if wavename==26
+replace year=2003 if wavename==27
+replace year=2004 if wavename==28
+replace year=2005 if wavename==29
+replace year=2006 if wavename==30
+replace year=2007 if wavename==31
+replace year=2008 if wavename==32
 
 // key DoL variables: husits howlng hubuys hufrys huiron humops jbhrs huboss (but in less waves of the old survey)
 // key other variables: scend_dv jbstat mastat mastat_dv nchild_dv marstat age age_dv doby doby_dv qfhigh_dv hiqual_dv racel_dv ethn_dv sex sex_dv
@@ -88,8 +89,8 @@ replace year=2008 if wavename==31
 
 ** Demographic and related variables
 gen survey=.
-replace survey=1 if inrange(wavename,1,13)
-replace survey=2 if inrange(wavename,14,31)
+replace survey=1 if inrange(wavename,1,14)
+replace survey=2 if inrange(wavename,15,32)
 label define survey 1 "UKHLS" 2 "BHPS"
 label values survey survey
 
@@ -242,14 +243,16 @@ replace partnered=1 if inlist(marital_status_defacto,1,2)
 
 inspect ppid
 inspect ppid if partnered==1 // this is only ukhls
+inspect ppid if partnered==1 & survey==1 // this is only ukhls
 inspect sppid if partnered==1 // okay this is also only ukhls and is just spouses
 inspect sppid_bh if partnered==1 // okay this is bhps but includes spouses and partners
+inspect sppid_bh if partnered==1 & survey==2 
 
-merge m:1 sppid_bh using "$temp_ukhls\spid_lookup.dta"
+merge m:1 sppid_bh using "$temp_ukhls/spid_lookup.dta"
 drop if _merge==2
 browse survey pidp pid sppid_bh partner_pidp_bh _merge
-inspect sppid_bh if partnered==1
-inspect partner_pidp_bh if partnered==1
+inspect sppid_bh if partnered==1 & survey==2 
+inspect partner_pidp_bh if partnered==1 & survey==2
 drop _merge
 
 browse pidp wavename survey marital_status_defacto partnered ppid sppid sppid_bh
@@ -302,25 +305,19 @@ recode fimnlabnet_dv (-9=.)(-1=.)
 recode paynu_dv (-9=.)(-7=.)(-8=0)
 
 // unpaid labor variables
-tab hubuys, m
-tab hubuys if wavename==12 // why did this coding change?
-gen hubuys_v0 = hubuys
-replace hubuys = 1 if wavename==12 & inlist(hubuys_v0,1,2) // 1 = mostly self
-replace hubuys = 2 if wavename==12 & inlist(hubuys_v0,4,5) // 2 = mostly partner
-replace hubuys = 3 if wavename==12 & inlist(hubuys_v0,3) // 3 = shared
-replace hubuys = 97 if wavename==12 & inlist(hubuys_v0,6,7) // 97 = other
-replace hubuys=. if hubuys_v0==8
-fre hubuys
+foreach var in hubuys hufrys huiron humops{ // coding changed starting wave 12 (and then only asked every other year)
+	gen `var'_v0 = `var'
+	replace `var' = 1 if inlist(wavename,12,14) & inlist(`var'_v0,1,2) // 1 = mostly self
+	replace `var' = 2 if inlist(wavename,12,14) & inlist(`var'_v0,4,5) // 2 = mostly partner
+	replace `var' = 3 if inlist(wavename,12,14) & inlist(`var'_v0,3) // 3 = shared
+	replace `var' = 97 if inlist(wavename,12,14) & inlist(`var'_v0,6,7) // 97 = other
+	replace `var'=. if `var'_v0==8
+	replace `var'=. if `var'==5
+	tab `var', m
+	
+}
 
-tab hufrys, m
-tab hufrys if wavename==12 // okay so I think coding changed on all of these
-gen hufrys_v0 = hufrys
-replace hufrys = 1 if wavename==12 & inlist(hufrys_v0,1,2) // 1 = mostly self
-replace hufrys = 2 if wavename==12 & inlist(hufrys_v0,4,5) // 2 = mostly partner
-replace hufrys = 3 if wavename==12 & inlist(hufrys_v0,3) // 3 = shared
-replace hufrys = 97 if wavename==12 & inlist(hufrys_v0,6,7) // 97 = other
-replace hufrys=. if hufrys_v0==8
-
+/* leaving one old code for reference
 tab huiron, m
 tab huiron if wavename==12 // okay so I think coding changed on all of these
 gen huiron_v0 = huiron
@@ -330,19 +327,18 @@ replace huiron = 3 if wavename==12 & inlist(huiron_v0,3) // 3 = shared
 replace huiron = 97 if wavename==12 & inlist(huiron_v0,6,7) // 97 = other
 replace huiron=. if huiron_v0==8
 replace huiron=. if huiron==5
-
-tab humops, m
-tab humops if wavename==12 // okay so I think coding changed on all of these
-gen humops_v0 = humops
-replace humops = 1 if wavename==12 & inlist(humops_v0,1,2) // 1 = mostly self
-replace humops = 2 if wavename==12 & inlist(humops_v0,4,5) // 2 = mostly partner
-replace humops = 3 if wavename==12 & inlist(humops_v0,3) // 3 = shared
-replace humops = 97 if wavename==12 & inlist(humops_v0,6,7) // 97 = other
-replace humops=. if humops_v0==8
-replace humops=. if humops==5
+*/
 
 tab huboss, m
 replace huboss=97 if huboss==4 // other was 4 in bhps
+
+gen howlng_flag=0
+replace howlng_flag = 1 if inlist(wavename,1,2,4,6,8,10,12,14) | inrange(wavename,16,32) // when howlng (continuous HW) is asked
+// 1,2,4,6,8,10,12,BH02,BH03,BH04,BH05,BH06,BH07,BH08,BH09,BH10,BH11,BH12,BH13,BH14,BH15,BH16,BH17,BH18
+
+gen housework_flag=0
+replace housework_flag = 1 if inlist(wavename,2,4,6,8,10,12,14,15) | inrange(wavename,18,32) // when HW categorical vars are asked
+// 2,4,6,8,10,12,BH01,BH04,BH05,BH06,BH07,BH08,BH09,BH10,BH11,BH12,BH13,BH14,BH15,BH16,BH17,BH18
 
 tab aidhh survey, m
 tab aidxhh survey, m
@@ -360,11 +356,12 @@ tab husits if partnered==1, m
 tab husits if nchild_dv!=0, m
 tab wavename husits if nchild_dv!=0, m // still a lot of missing..oh, well, i guess they could have child AND not be partnered DUH
 tab wavename husits if nchild_dv!=0 & partnered==1, m // still a lot of missing..oh, well, i guess they could have child AND not be partnered. okay still a lot of missing, might be proxy surveys
-tab hubuys if partnered==1, m
-tab hufrys if partnered==1, m
-tab huiron if partnered==1, m
-tab humops if partnered==1, m
-tab huboss if partnered==1, m
+tab howlng howlng_flag, m col
+tab hubuys housework_flag if partnered==1, m col
+tab hufrys housework_flag if partnered==1, m col
+tab huiron housework_flag if partnered==1, m col
+tab humops housework_flag if partnered==1, m col
+tab huboss housework_flag if partnered==1, m col
 
 browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng hubuys hufrys huiron humops jbhrs
 
@@ -374,11 +371,12 @@ browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng
 ********************************************************************************
 
 merge m:1 pidp using "$temp_ukhls\partner_history_tomatch.dta", keepusing(mh_*)
-tab marital_status_defacto _merge, row // so def some missing that shouldn't be... but not a lot
+tab marital_status_defacto _merge, row // so def some missing that shouldn't be... but not a lot (like coverage is 97-98% for those cohab / married, a little less for those dissolved)
 drop if _merge==2
 drop _merge
 
-browse pidp sex marital_status_defacto partner_id mh_partner1 mh_status1 mh_partner2 mh_status2 mh_partner3 mh_status3 mh_partner4 mh_status4
+sort pidp year
+browse pidp year sex marital_status_defacto partner_id mh_partner1 mh_status1 mh_starty1 mh_endy1 mh_partner2 mh_status2 mh_starty2 mh_endy2 mh_partner3 mh_status3 mh_partner4 mh_status4 mh_lastinty
 
 label define status_new 1 "Marriage" 2 "Cohab"
 foreach var in mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6 mh_status7 mh_status8 mh_status9 mh_status10 mh_status11 mh_status12 mh_status13 mh_status14{
@@ -389,12 +387,42 @@ foreach var in mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6
 	label values `var' status_new
 }
 
-gen rel_no=. // add this to get lookup for current relationship start and end dates
+gen rel_no=. // add this to get lookup for current relationship start and end dates - or should this also be based on survey yr being between relationship start and end dates? Because of the people who are missing partner ids? But I guess they are not useful if missing partner ids?
 forvalues r=1/14{
 	replace rel_no = `r' if mh_status`r' == marital_status_defacto & mh_partner`r' == partner_id & partner_id!=.
 }
 
+gen rel_no_alt=.
+forvalues r=1/14{
+	replace rel_no_alt = `r' if istrtdaty >= mh_starty`r' & istrtdaty <= mh_endy`r' & mh_starty`r'!=. & mh_endy`r'!=.
+}
+
+replace rel_no = rel_no_alt if rel_no==. & partner_id!=.
+
 tab rel_no if inlist(marital_status_defacto,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
+tab rel_no_alt if inlist(marital_status_defacto,1,2), m // okay so in total sample there are less missing but for partnered, there are more missing lol
+
+browse pidp year sex marital_status_defacto partner_id rel_no rel_no_alt mh_partner1 mh_status1 mh_starty1 mh_endy1 mh_partner2 mh_status2 mh_starty2 mh_endy2 mh_partner3 mh_status3 mh_partner4 mh_status4 mh_lastinty
+
+// manually created relationship transitions, just to have for reference and potentially help fill in missing relationship dates
+sort pidp year
+
+*enter
+gen rel_start=0
+replace rel_start=1 if (inlist(marital_status_defacto,1,2) & inlist(marital_status_defacto[_n-1],3,4,5,6)) & pidp==pidp[_n-1] & year==year[_n-1]+1
+
+*exit
+gen rel_end=0
+replace rel_end=1 if (inlist(marital_status_defacto,3,4,5,6) & inlist(marital_status_defacto[_n-1],1,2)) & pidp==pidp[_n-1] & year==year[_n-1]+1
+
+gen rel_end_pre=0
+replace rel_end_pre=1 if (inlist(marital_status_defacto,1,2) & inlist(marital_status_defacto[_n+1],3,4,5,6)) & pidp==pidp[_n+1] & year==year[_n+1]-1
+
+*cohab to marr
+gen marr_trans=0
+replace marr_trans=1 if (marital_status_defacto==1 & marital_status_defacto[_n-1]==2) & pidp==pidp[_n-1] & partner_id==partner_id[_n-1] & year==year[_n-1]+1
+
+// browse pidp sex year marital_status_defacto partner_id rel_no rel_start rel_end rel_end_pre marr_trans mh_partner1 mh_status1 mh_starty1 mh_endy1 mh_partner2 mh_status2 mh_starty2 mh_endy2 mh_partner3 mh_status3  mh_starty3 mh_endy3 mh_partner4 mh_status4
 
 // I am going to create individual level versions of these variables for now and then check in next file against partners to make sure they match.
 gen current_rel_start_year=.
@@ -427,25 +455,52 @@ label values current_rel_ongoing ongoing
 label values current_rel_marr_end mrgend
 label values current_rel_coh_end cohend
 
-browse pidp marital_status_defacto partner_id rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
+browse pidp istrtdaty marital_status_defacto partner_id rel_no rel_no_alt current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing rel_start rel_end rel_end_pre current_rel_marr_end current_rel_coh_end mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
+
+// check start dates if I use my manually created ones - to help with later info
+gen rel_start_year_est = istrtdaty if rel_start==1
+bysort pidp partner_id (rel_start_year_est): replace rel_start_year_est=rel_start_year_est[1]  if partner_id!=. // if partner id is missing, this actually doesn't work well
+
+gen rel_end_year_est = istrtdaty if rel_end_pre==1
+bysort pidp partner_id (rel_end_year_est): replace rel_end_year_est=rel_end_year_est[1]  if partner_id!=. // if partner id is missing, this actually doesn't work well
+
+sort pidp year
+
+gen rel_start_check=.
+replace rel_start_check=0 if current_rel_start_year!=rel_start_year_est & current_rel_start_year!=. & rel_start_year_est!=.
+replace rel_start_check=1 if current_rel_start_year==rel_start_year_est & current_rel_start_year!=. & rel_start_year_est!=.
+
+tab rel_start_check // okay not actually a lot of congruence (even when they are both non-missing). this is problematic if the first year observed they are already in a rel. like most are just missing...
+
+replace current_rel_start_year = rel_start_year_est if current_rel_start_year==. & rel_start_year_est!=. & partner_id!=. & istrtdaty>=rel_start_year_est
+replace current_rel_end_year = rel_end_year_est if current_rel_end_year==. & rel_end_year_est!=. & partner_id!=. & istrtdaty<=rel_end_year_est
+
+// check how many relationships have the proper info
+tab current_rel_start_year if partner_id!=. , m // about 5% missing
+tab current_rel_start_year if inlist(marital_status_defacto,1,2), m // about 6% missing
 
 // for those with missing, maybe if only 1 spell, use that info? as long as the status matches and the interview date is within the confines of the spell?
-browse pidp istrtdaty istrtdatm marital_status_defacto partner_id rel_no mh_ttl_spells mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
+// this might have been covered in my "rel no alt" but let's try
+browse pidp istrtdaty marital_status_defacto partner_id rel_no current_rel_start_year rel_start_year_est current_rel_end_year rel_start rel_end rel_end_pre mh_ttl_spells mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
 
-replace current_rel_start_year = mh_starty1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
-replace current_rel_start_month = mh_startm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
-replace current_rel_end_year = mh_endy1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
-replace current_rel_end_month = mh_endm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
-replace current_rel_ongoing = mh_ongoing1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1
 gen rel_no_orig=rel_no
-replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1 // okay this actually didn't add that many more that is fine.
+
+forvalues r=1/14{
+	replace current_rel_start_year = mh_starty`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r'
+	replace current_rel_start_month = mh_startm`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r'
+	replace current_rel_end_year = mh_endy`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r'
+	replace current_rel_end_month = mh_endm`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r'
+	replace current_rel_ongoing = mh_ongoing`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r'
+
+	replace rel_no=`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r' // okay this actually didn't add that many more that is fine.
+}
 
 save "$created_data_ukhls/UKHLS_long_all_recoded.dta", replace
 
-unique pidp // 109651, 772472 total py
-unique pidp partner_id // 126305	
-unique pidp, by(sex) // 52397 m, 57362 w
-unique pidp, by(partnered) // 55858 0, 68410 1
+unique pidp // 118405, 807942 total py
+unique pidp partner_id // 135496	
+unique pidp, by(sex) // 56297 m, 62216 w
+unique pidp, by(partnered) // 59866 0, 73581 1
 
 ********************************************************************************
 **# Now create temporary copy of the data to use to match partner characteristics
@@ -464,8 +519,6 @@ foreach var in `partnervars'{
 generate long apidp = pidp // so this will also work to match ego alt later
 rename pidp partner_id // okay tried to update all to be pidp above - let's see if this will work
 
-// browse if pidp==537205
-browse if pid==537205
 
 // think I have to use pid for BHPS, so try that
 /* trying to match on pidp
@@ -527,5 +580,5 @@ save "$created_data_ukhls/UKHLS_matched.dta", replace
 browse survey wavename pidp pid partner_id hubuys hubuys_sp partner_match if partnered==1
 
 // let's make sure the matching worked
-browse pidp wavename hidp marital_status_defacto partner_id partner_match
-browse pidp pid wavename partner_id partner_match husits husits_sp hubuys hubuys_sp age_all age_all_sp jbhrs jbhrs_sp sex sex_sp if hidp==483786010
+browse pidp wavename hidp marital_status_defacto partner_id partner_match husits husits_sp
+browse pidp pid wavename partner_id partner_match husits husits_sp hubuys hubuys_sp age_all age_all_sp jbhrs jbhrs_sp sex sex_sp if inlist(hidp,149610,483786010)

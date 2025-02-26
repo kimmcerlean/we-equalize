@@ -23,28 +23,16 @@ use "$created_data_ukhls/UKHLS_matched.dta", clear
 ********************************************************************************
 
 sort pidp year
-
-browse pidp year partnered marital_status_defacto partner_id howlng howlng_sp
-
-// identify couples who transitioned from cohab to marriage okay and transitioned into or out of a relationship also
-gen marr_trans=0
-replace marr_trans=1 if (marital_status_defacto==1 & marital_status_defacto[_n-1]==2) & pidp==pidp[_n-1] & partner_id==partner_id[_n-1] & year==year[_n-1]+1
-
-gen rel_start=0
-replace rel_start=1 if (inlist(marital_status_defacto,1,2) & inlist(marital_status_defacto[_n-1],3,4,5,6)) & pidp==pidp[_n-1] & year==year[_n-1]+1 //  & partner_id==partner_id[_n-1]
-
-gen rel_end=0
-replace rel_end=1 if (inlist(marital_status_defacto,3,4,5,6) & inlist(marital_status_defacto[_n-1],1,2)) & pidp==pidp[_n-1] & year==year[_n-1]+1 // partner_id==partner_id[_n-1] - won't have a partner id?
-
 browse pidp year partnered marital_status_defacto rel_start marr_trans rel_end partner_id howlng howlng_sp
-// this pidp did have transition 16339 - okay confirmed it worked.
+// this pidp did have transition 16339 - okay confirmed it worked. (I moved up the relationship transition codes)
 
 // drop people without partners
 keep if partnered==1 | rel_start==1 | marr_trans==1 | rel_end==1
 
 // drop same-sex couples?!
-tab sex sex_sp
+tab sex sex_sp, m
 drop if sex==sex_sp
+drop if inlist(sex,-9,0) | inlist(sex_sp,-9,0)
 
 // okay want to try to figure out things like relationship duration and relationship order, as some might have married prior to entering the survey. not sure if I have to merge partner history.
 tab nmar survey, m // ukhls, but a lot of inapplicable? I think this variable is only for new entrants?! is there one maybe in the cross-wave file, then?!
@@ -52,68 +40,6 @@ tab nmar_bh survey, m // same with bhps
 tab mh_ttl_spells survey, m
 
 browse pidp marital_status_defacto partner_id mh_partner1 mh_status1 mh_partner2 mh_status2 mh_partner3 mh_status3 mh_partner4 mh_status4
-
-/* restructured files and this is redundant atm
-// label define status_new 1 "Marriage" 2 "Cohab"
-foreach var in mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6 mh_status7 mh_status8 mh_status9 mh_status10 mh_status11 mh_status12 mh_status13 mh_status14{
-	gen x_`var' = `var'
-	replace `var' = 1 if inlist(`var',2,3)
-	replace `var' = 2 if `var'==10
-	label values `var' .
-	label values `var' status_new
-}
-
-gen rel_no=. // add this to get lookup for current relationship start and end dates
-forvalues r=1/14{
-	replace rel_no = `r' if mh_status`r' == marital_status_defacto & mh_partner`r' == partner_id
-}
-
-tab rel_no if inlist(marital_status_defacto,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
-browse pidp marital_status_defacto partner_id rel_no mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 // if separated, then divorced, end date is seapration date, and divorce date is against divorcey.
-
-gen current_rel_start_year=.
-gen current_rel_start_month=.
-gen current_rel_end_year=.
-gen current_rel_end_month=.
-gen current_rel_ongoing=.
-// gen current_rel_how_end=.
-gen current_rel_marr_end=.
-gen current_rel_coh_end=.
-
-forvalues r=1/14{
-	replace current_rel_start_year = mh_starty`r' if rel_no==`r'
-	replace current_rel_start_month = mh_startm`r' if rel_no==`r'
-	replace current_rel_end_year = mh_endy`r' if rel_no==`r'
-	replace current_rel_end_month = mh_endm`r' if rel_no==`r'
-	replace current_rel_ongoing = mh_ongoing`r' if rel_no==`r'
-	// replace current_rel_how_end = mrgend`r' if rel_no==`r' & status`r'==1 // if marriage - okay this actually won't work because the codes are different between marriage and cohab
-	// replace current_rel_how_end = cohend`r' if rel_no==`r' & status`r'==2 // if cohab
-	replace current_rel_marr_end = mh_mrgend`r' if rel_no==`r'
-	replace current_rel_coh_end = mh_cohend`r' if rel_no==`r'
-}
-
-replace current_rel_start_year=. if current_rel_start_year==-9
-replace current_rel_start_month=. if current_rel_start_month==-9
-replace current_rel_end_year=. if current_rel_end_year==-9
-replace current_rel_end_month=. if current_rel_end_month==-9
-
-label values current_rel_ongoing mh_ongoing
-label values current_rel_marr_end mh_mrgend
-label values current_rel_coh_end mh_cohend
-
-browse pidp marital_status_defacto partner_id rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
-
-// for those with missing, maybe if only 1 spell, use that info? as long as the status matches and the interview date is within the confines of the spell?
-browse pidp int_year istrtdatm marital_status_defacto partner_id rel_no mh_ttl_spells mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
-
-replace current_rel_start_year = mh_starty1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
-replace current_rel_start_month = mh_startm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
-replace current_rel_end_year = mh_endy1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
-replace current_rel_end_month = mh_endm1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
-replace current_rel_ongoing = mh_ongoing1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & int_year>=mh_starty1 & int_year<=mh_endy1
-gen rel_no_orig=rel_no
-replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==status1 & int_year>=mh_starty1 & int_year<=mh_endy1 // okay this actually didn't add that many more that is fine.
-*/
 
 // okay duration info
 gen current_rel_duration=.
@@ -222,17 +148,13 @@ replace unpaid_dol = 4 if howlng==0 & howlng_sp==0 // neither works
 label define unpaid_dol 1 "Shared" 2 "Wife more" 3 "Husband more" 4 "No one"
 label values unpaid_dol unpaid_dol
 
-tab partner_match unpaid_dol if inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31), m row
+tab partner_match unpaid_dol if howlng_flag==1, m row
 tab wavename unpaid_dol, m
 
-browse partner_match howlng howlng_sp unpaid_couple_total unpaid_wife_pct if unpaid_dol==. & inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31) // okay a lot of missing, even when matched. need to figure out eligibility. okay, at one point says only asked January to June? need to figure it out, because coverage looks very high in the codebook... okay, but did a lot of checks and it actually seems right...
+browse partner_match howlng howlng_sp unpaid_couple_total unpaid_wife_pct if unpaid_dol==. & howlng_flag==1 // okay a lot of missing, even when matched. need to figure out eligibility. okay, at one point says only asked January to June? need to figure it out, because coverage looks very high in the codebook... okay, but did a lot of checks and it actually seems right...
 browse survey year wavename istrtdatm howlng if inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31)
 
-gen unpaid_flag=0
-replace unpaid_flag=1 if inlist(wavename,1,2,4,6,8,10,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31)
-replace unpaid_flag=0 if wavename==1 & inrange(intdatem,8,12)
-tab unpaid_flag
-tab howlng unpaid_flag, m
+tab howlng howlng_flag, m
 
 ********************************************************************************
 * Other recodes
@@ -281,11 +203,15 @@ browse survey year partnered pidp partner_id hidp
 unique pidp partner_id if partner_match==1 & partnered==1
 unique pidp partner_id if partner_match==1 & partnered==1 & sex==2
 unique pidp partner_id if partner_match==1 & partnered==1 & sex==2, by(marital_status_defacto)
+// unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & wavename!=14
+// unique pidp partner_id if partner_match==1 & partnered==1 & sex==2  & wavename!=14, by(marital_status_defacto) // this matches existing codebook exactly
 tab marital_status_defacto if partner_match==1 & partnered==1 & sex==2
 
-unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & unpaid_flag==1
-unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & unpaid_flag==1, by(marital_status_defacto)
-tab marital_status_defacto if partner_match==1 & partnered==1 & sex==2 & unpaid_flag==1
+unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & howlng_flag==1
+unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & howlng_flag==1, by(marital_status_defacto)
+// unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & howlng_flag==1 & wavename!=14
+// unique pidp partner_id if partner_match==1 & partnered==1 & sex==2 & howlng_flag==1 & wavename!=14, by(marital_status_defacto)
+tab marital_status_defacto if partner_match==1 & partnered==1 & sex==2 & howlng_flag==1
 
 // then DoL - but not quite sure what to do when unmatched...
 **Paid / Unpaid
