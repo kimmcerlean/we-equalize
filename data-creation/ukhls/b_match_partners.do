@@ -87,7 +87,7 @@ replace year=2008 if wavename==32
 // key ID variables: pidp hidp pno
 // key linking variables: ppid ppno sppid sppno
 
-** Demographic and related variables
+** Survey variables
 gen survey=.
 replace survey=1 if inrange(wavename,1,14)
 replace survey=2 if inrange(wavename,15,32)
@@ -95,6 +95,32 @@ label define survey 1 "UKHLS" 2 "BHPS"
 label values survey survey
 
 tab wavename survey, m
+
+// individual weights
+tabstat indinus_xw  indinub_xw  indinui_xw  indin91_xw  indin99_xw  indin01_xw, by(wavename)
+
+gen ind_weight=.
+replace ind_weight = indinus_xw if wavename==1
+replace ind_weight = indinub_xw if inrange(wavename,2,5)
+replace ind_weight = indinui_xw if inrange(wavename,6,13)
+replace ind_weight = indin91_xw if inrange(wavename,15,22)
+replace ind_weight = indin99_xw if inrange(wavename,23,24)
+replace ind_weight = indin01_xw if inrange(wavename,25,32)
+
+// household weights
+tabstat hhdenus_xw hhdenub_xw hhdenui_xw hhden91_xw hhden99_xw hhden01_xw, by(wavename)
+
+gen hh_weight=.
+replace hh_weight = hhdenus_xw if wavename==1
+replace hh_weight = hhdenub_xw if inrange(wavename,2,5)
+replace hh_weight = hhdenui_xw if inrange(wavename,6,13)
+replace hh_weight = hhden91_xw if inrange(wavename,15,22)
+replace hh_weight = hhden99_xw if inrange(wavename,23,24)
+replace hh_weight = hhden01_xw if inrange(wavename,25,32)
+
+tabstat ind_weight hh_weight, by(wavename)
+
+** Demographic and related variables
 
 tab sex, m
 recode sex (-9/-1=.)
@@ -495,6 +521,25 @@ forvalues r=1/14{
 	replace rel_no=`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r' // okay this actually didn't add that many more that is fine.
 }
 
+********************************************************************************
+* Why is wave 14 not working?
+********************************************************************************
+merge m:1 pidp using "$UKHLS/n_indresp.dta", keepusing(n_inding2_xw)
+drop if _merge==2
+drop _merge
+
+gen long n_hidp = hidp
+merge m:1 n_hidp using "$UKHLS/n_hhresp.dta", keepusing(n_hhdeng2_xw)
+drop if _merge==2
+drop _merge
+
+replace ind_weight = n_inding2_xw if wavename==14
+replace hh_weight = n_hhdeng2_xw if wavename==14
+
+drop n_hidp
+
+tabstat ind_weight hh_weight, by(wavename)
+
 save "$created_data_ukhls/UKHLS_long_all_recoded.dta", replace
 
 unique pidp // 118405, 807942 total py
@@ -506,7 +551,7 @@ unique pidp, by(partnered) // 59866 0, 73581 1
 **# Now create temporary copy of the data to use to match partner characteristics
 ********************************************************************************
 // just keep necessary variables
-local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata istrtdaty indinub_xw indinus_xw indinus_lw indinub_lw mh_* rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end"
+local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata istrtdaty indinub_xw indinus_xw indinus_lw indinub_lw mh_* rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end hh_weight ind_weight"
 
 keep pidp pid survey wavename year `partnervars'
 

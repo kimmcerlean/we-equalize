@@ -14,6 +14,53 @@
 * decide later if should restrict to just survey years with the unpaid labor questions
 
 ********************************************************************************
+********************************************************************************
+**# Updated file format
+********************************************************************************
+********************************************************************************
+use "$created_data_ukhls/UKHLS_full_sample_deduped.dta", clear
+
+keep if record_type==3
+keep if inlist(wavename, 1, 2, 4, 6, 8, 10, 12, 14) | inrange(wavename, 15, 32) // only keep waves with housework
+
+gen long id_sp = pidp if sex==2
+replace id_sp = partner_id if sex==1 & sex_sp==2
+	
+gen long id_rp = pidp if sex==1
+replace id_rp = partner_id if sex==2 & sex_sp==1
+
+browse pidp partner_id sex sex_sp id_sp id_rp
+
+rename int_year_wom year_sp
+rename int_year_man year_rp
+rename ind_weight_wom weight_sp
+rename ind_weight_man weight_rp
+rename age_all_wom age_sp
+rename age_all_man age_rp
+rename howlng_wom hw_sp
+rename howlng_man hw_rp
+rename hh_weight_hh weight_hh
+rename wavename wave
+
+drop sex_sp
+
+gen sex_sp = 2
+gen sex_rp = 1
+
+keep id_rp id_sp wave year_rp year_sp weight_rp weight_sp weight_hh age_rp age_sp hw_rp hw_sp sex_rp sex_sp
+
+egen hhid = group(id_rp id_sp)
+sort id_rp id_sp year_rp
+
+save "$created_data_ukhls/UKHLS_relative_density.dta", replace
+
+********************************************************************************
+********************************************************************************
+**# Original
+********************************************************************************
+********************************************************************************
+
+********************************************************************************
 * Import data
 ********************************************************************************
 use "$created_data_ukhls/UKHLS_matched.dta", clear
