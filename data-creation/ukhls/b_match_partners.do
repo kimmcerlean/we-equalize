@@ -37,6 +37,34 @@ foreach var in status* partner* starty* startm* endy* endm* divorcey* divorcem* 
 save "$temp_ukhls/partner_history_tomatch.dta", replace
 
 ********************************************************************************
+* Get variables needed from cross wave files
+********************************************************************************
+use "$UKHLS/xwavedat.dta", clear
+
+// why does it still feel like no good race variables
+tab racel_dv xwdat_dv, m col
+tab racel_bh xwdat_dv, m col // very bad coverage
+tab race_bh xwdat_dv, m col // very bad coverage
+tab bornuk_dv xwdat_dv, m col 
+
+local xwave "xwdat_dv sex memorig sampst racel_dv ethn_dv coh1m_dv coh1y_dv evercoh_dv lmar1m_dv lmar1y_dv evermar_dv ch1by_dv anychild_dv bornuk_dv ukborn"
+
+foreach var in `xwave'{
+	fre `var'
+}
+
+foreach var in `xwave'{
+	recode `var' (-9/-1=.)
+	rename `var' xw_`var' // renaming
+}
+
+rename xw_ukborn xw_where_uk
+
+keep pidp xw_* // to match later
+
+save "$temp_ukhls/xwave_tomatch.dta", replace 
+
+********************************************************************************
 * Import data (created in step a) and do some data cleaning / recoding before creating a file to match partners
 ********************************************************************************
 
@@ -95,6 +123,12 @@ label define survey 1 "UKHLS" 2 "BHPS"
 label values survey survey
 
 tab wavename survey, m
+
+// Get variables from xwave file
+merge m:1 pidp using "$temp_ukhls/xwave_tomatch.dta" // only 4 didn't match
+drop if _merge==2
+drop _merge
+// browse pidp year xw_*
 
 // individual weights
 tabstat indinus_xw  indinub_xw  indinui_xw  indin91_xw  indin99_xw  indin01_xw, by(wavename)
@@ -159,8 +193,8 @@ tab qfhigh_dv survey, m // this is only ukhls
 // other educations: qfachi (bhps only) qfedhi (bhps only - details) qfhigh (not v good) qfhigh_dv (ukhls details) hiqual_dv hiqualb_dv (bhps only) isced11_dv (only UKHS, but lots of missing, which is sad bc I think it's what I nee/d?) isced (bhps, might be helpful?)
 
 tab qfhigh_dv hiqual_dv
-tab isced11_dv hiqual_dv // see what bachelors in isced is considered in hiqual // okay so bachelor's / master's in degree. some of bachelor's also in "other higher degree"
-tab isced hiqual_dv // so here 5a and 6 are in degree. 5b is what is in other degree (vocational) - do I want that? I feel like Musick didn't include vocational.
+tab  hiqual_dv isced11_dv // see what bachelors in isced is considered in hiqual // okay so bachelor's / master's in degree. some of bachelor's also in "other higher degree"
+tab  hiqual_dv isced // so here 5a and 6 are in degree. 5b is what is in other degree (vocational) - do I want that? I feel like Musick didn't include vocational.
 
 gen college_degree=0
 replace college_degree=1 if  hiqual_dv==1
@@ -200,11 +234,15 @@ replace race_use = -8 if racel_bh==-8 & survey==2 & inrange(year,2003,2008)
 label define race_use 1 "White" 2 "Black" 3 "Asian" 4 "Mixed" 5 "Other" -8 "Get"
 label values race_use race_use
 
+// leaving this, but the xw variables should be used (either xw_racel_dv or xw_ethn_dv)
+
 // country
 recode gor_dv (1/9=1)(10=2)(11=3)(12=4), gen(country_all)
 replace country_all=. if inlist(country_all,-9,13)
 label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
 label values country_all country
+
+replace urban_dv = . if urban_dv==-9
 
 // so many marital statuses STILL
 tab mlstat survey, m // present legal marital status - has a lot of inapplicable, so doesn't seem right - think only for new people?
@@ -330,6 +368,34 @@ recode fimnlabgrs_dv (-9=.)(-7=.)
 recode fimnlabnet_dv (-9=.)(-1=.)
 recode paynu_dv (-9=.)(-7=.)(-8=0)
 
+// earnings 
+recode fimnlabgrs_dv (-9=.)(-7=.) // Total personal monthly labour income gross
+recode fimnlabnet_dv (-9=.)(-1=.) // net is only asked in UKHLS
+recode paynu_dv (-9=.)(-7=.)(-8=0) // usual net pay per month: current job
+recode fimngrs_dv (-9/-1=.) // total monthly personal income gross
+
+tabstat fimnlabgrs_dv fimnlabnet_dv paynu_dv fimngrs_dv, by(year)
+
+// HH incomes
+tabstat fihhmngrs_dv fihhmnlabnet_dv fihhmnlabgrs_dv fihhml fihhyl grpay hhneti hhyneti hhyrlg hhyrln netlab, by(year)
+// fihhmngrs_dv is only one asked in all waves, though I could probably combine a few? But this is gross household income: month before interview
+recode fihhmngrs_dv (-9=.) // gross household income: month before interview
+
+// create total HH gross labor
+gen hh_gross_labor_income = .
+replace hh_gross_labor_income = fihhmnlabgrs_dv if survey==1 // total gross household labour income: month before interview
+replace hh_gross_labor_income = grpay*4.5 if survey==2 // hh gross labour earnings. I think this is weekly...
+
+gen hh_net_labor_income = .
+replace hh_net_labor_income = fihhmnlabnet_dv if survey==1
+replace hh_net_labor_income = hhneti*4.5 if survey==2
+
+tabstat hh_gross_labor_income fihhmnlabgrs_dv grpay hh_net_labor_income fihhmnlabnet_dv hhneti, stats(mean count)
+ 
+sort hidp year
+browse hidp pidp year fimnlabgrs_dv paynu_dv fihhmngrs_dv
+sort pidp year
+
 // unpaid labor variables
 foreach var in hubuys hufrys huiron humops{ // coding changed starting wave 12 (and then only asked every other year)
 	gen `var'_v0 = `var'
@@ -371,12 +437,22 @@ tab aidxhh survey, m
 tab aidhrs survey, m
 recode aidhrs (-8=0)(-10/-9=.)(-7/-1=.)
 
+// child variables
 foreach var in nch02_dv nch34_dv nch511_dv nch1215_dv{
 	replace `var'=. if `var'==-9
 }
 
 egen nchild_015 = rowtotal(nch02_dv nch34_dv nch511_dv nch1215_dv)
 browse nchild_dv nchild_015 nch02_dv nch34_dv nch511_dv nch1215_dv
+
+gen year_first_birth = xw_ch1by_dv
+replace year_first_birth = 9999 if xw_anychild_dv==2
+
+gen age_youngest_child = agechy_dv
+replace age_youngest_child = 9999 if agechy_dv==-8
+replace age_youngest_child = . if agechy_dv==-9
+tab age_youngest_child, m
+tab age_youngest_child nchild_dv, m
 
 tab husits if partnered==1, m
 tab husits if nchild_dv!=0, m
@@ -551,7 +627,7 @@ unique pidp, by(partnered) // 59866 0, 73581 1
 **# Now create temporary copy of the data to use to match partner characteristics
 ********************************************************************************
 // just keep necessary variables
-local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata istrtdaty indinub_xw indinus_xw indinus_lw indinub_lw mh_* rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end hh_weight ind_weight"
+local partnervars "pno sampst sex jbstat qfhigh racel racel_dv nmar aidhh aidxhh aidhrs jbhas jboff jbbgy jbhrs jbot jbotpd jbttwt ccare dinner howlng fimngrs_dv fimnlabgrs_dv fimnlabnet_dv fihhmngrs_dv paygl paynl paygu_dv payg_dv paynu_dv payn_dv ethn_dv nchild_dv nkids_dv ndepchl_dv rach16_dv qfhigh_dv hiqual_dv lcohnpi coh1bm coh1by coh1mr coh1em coh1ey lmar1m lmar1y cohab cohabn lmcbm1 lmcby41 currpart1 lmspm1 lmspy41 lmcbm2 lmcby42 currpart2 lmspm2 lmspy42 lmcbm3 lmcby43 currpart3 lmspm3 lmspy43 lmcbm4 lmcby44 currpart4 lmspm4 lmspy44 hubuys hufrys humops huiron husits huboss lmcbm5 lmcby45 currpart5 lmspm5 lmspy45 lmcbm6 lmcby46 currpart6 lmspm6 lmspy46 lmcbm7 lmcby47 currpart7 lmspm7 lmspy47 isced11_dv region hiqualb_dv huxpch hunurs race qfedhi qfachi isced nmar_bh racel_bh age_all dob_year marital_status_legal marital_status_defacto partnered employed total_hours country_all college_degree race_use psu strata istrtdaty indinub_xw indinus_xw indinus_lw indinub_lw mh_* rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing current_rel_marr_end current_rel_coh_end hh_weight ind_weight xw_racel_dv xw_ethn_dv xw_ch1by_dv xw_anychild_dv xw_memorig xw_sampst age_youngest_child xw_bornuk_dv xw_where_uk urban_dv"
 
 keep pidp pid survey wavename year `partnervars'
 
